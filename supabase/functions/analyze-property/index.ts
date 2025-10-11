@@ -173,8 +173,32 @@ serve(async (req) => {
       analysis = newAnalysis;
     }
 
-    // Sanitize address for AI prompt to prevent injection
-    const sanitizedAddress = propertyAddress.trim().substring(0, 200);
+    // Comprehensive sanitization to prevent AI prompt injection
+    let sanitizedAddress = propertyAddress.trim();
+    
+    // 1. Strip control characters (newlines, tabs, etc.)
+    sanitizedAddress = sanitizedAddress.replace(/[\n\r\t\f\v\u0000-\u001F\u007F-\u009F]/g, ' ');
+    
+    // 2. Remove Unicode directional overrides and other problematic characters
+    sanitizedAddress = sanitizedAddress.replace(/[\u202A-\u202E\u2066-\u2069]/g, '');
+    
+    // 3. Detect prompt injection keywords
+    const injectionKeywords = ['ignore', 'override', 'system', 'assistant', 'instructions', 'prompt', 'role'];
+    const lowerAddress = sanitizedAddress.toLowerCase();
+    for (const keyword of injectionKeywords) {
+      if (lowerAddress.includes(keyword)) {
+        return new Response(
+          JSON.stringify({ error: "Property address contains invalid characters" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    // 4. Apply allowlist for safe characters (alphanumeric, spaces, basic punctuation)
+    sanitizedAddress = sanitizedAddress.replace(/[^a-zA-Z0-9\s,.\-#']/g, '');
+    
+    // 5. Collapse multiple spaces and limit length
+    sanitizedAddress = sanitizedAddress.replace(/\s+/g, ' ').substring(0, 200);
     
     // Call AI for analysis
     const aiPrompt = `You are a property investment analyst. Analyze this property deal and provide detailed investment insights.
