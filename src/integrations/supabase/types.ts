@@ -173,7 +173,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_subscription_tier_unchanged: {
+        Args: { _new_tier: string; _user_id: string }
+        Returns: boolean
+      }
+      increment: {
+        Args: { row_id: string; x: number }
+        Returns: undefined
+      }
     }
     Enums: {
       analysis_status: "pending" | "completed" | "failed"
