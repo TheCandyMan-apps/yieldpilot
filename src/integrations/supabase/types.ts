@@ -14,7 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      portfolio_properties: {
+        Row: {
+          added_at: string | null
+          analysis_id: string
+          portfolio_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          analysis_id: string
+          portfolio_id: string
+        }
+        Update: {
+          added_at?: string | null
+          analysis_id?: string
+          portfolio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_properties_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "property_analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_properties_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          total_roi: number | null
+          total_value: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          total_roi?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          total_roi?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          analyses_count: number | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          subscription_tier: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          analyses_count?: number | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          analyses_count?: number | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      property_analyses: {
+        Row: {
+          ai_commentary: string | null
+          analysis_status: Database["public"]["Enums"]["analysis_status"] | null
+          cash_flow_monthly: number | null
+          created_at: string | null
+          deal_quality_score: number | null
+          deposit_amount: number | null
+          estimated_rent: number | null
+          id: string
+          monthly_costs: number | null
+          mortgage_rate: number | null
+          net_yield_percentage: number | null
+          property_address: string
+          property_price: number
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_commentary?: string | null
+          analysis_status?:
+            | Database["public"]["Enums"]["analysis_status"]
+            | null
+          cash_flow_monthly?: number | null
+          created_at?: string | null
+          deal_quality_score?: number | null
+          deposit_amount?: number | null
+          estimated_rent?: number | null
+          id?: string
+          monthly_costs?: number | null
+          mortgage_rate?: number | null
+          net_yield_percentage?: number | null
+          property_address: string
+          property_price: number
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_commentary?: string | null
+          analysis_status?:
+            | Database["public"]["Enums"]["analysis_status"]
+            | null
+          cash_flow_monthly?: number | null
+          created_at?: string | null
+          deal_quality_score?: number | null
+          deposit_amount?: number | null
+          estimated_rent?: number | null
+          id?: string
+          monthly_costs?: number | null
+          mortgage_rate?: number | null
+          net_yield_percentage?: number | null
+          property_address?: string
+          property_price?: number
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +176,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      analysis_status: "pending" | "completed" | "failed"
+      property_type: "residential" | "commercial" | "mixed_use" | "land"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +304,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      analysis_status: ["pending", "completed", "failed"],
+      property_type: ["residential", "commercial", "mixed_use", "land"],
+    },
   },
 } as const

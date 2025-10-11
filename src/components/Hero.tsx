@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import heroImage from "@/assets/hero-property.jpg";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -34,20 +35,24 @@ const Hero = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">
-            <Button 
-              size="lg" 
-              className="text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group"
-            >
-              Start Analysis
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="text-lg border-2 hover:bg-accent/50 backdrop-blur-sm"
-            >
-              View Demo
-            </Button>
+            <Link to="/auth">
+              <Button 
+                size="lg" 
+                className="text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group"
+              >
+                Start Analysis
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="text-lg border-2 hover:bg-accent/50 backdrop-blur-sm"
+              >
+                View Demo
+              </Button>
+            </Link>
           </div>
 
           {/* Stats */}

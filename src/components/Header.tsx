@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Building2, Menu } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,10 +32,14 @@ const Header = () => {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost">Sign In</Button>
-          <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
-            Get Started
-          </Button>
+          <Link to="/auth">
+            <Button variant="ghost">Sign In</Button>
+          </Link>
+          <Link to="/auth">
+            <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+              Get Started
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -60,10 +65,14 @@ const Header = () => {
               About
             </a>
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
-              <Button variant="ghost" className="w-full">Sign In</Button>
-              <Button className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
-                Get Started
-              </Button>
+              <Link to="/auth">
+                <Button variant="ghost" className="w-full">Sign In</Button>
+              </Link>
+              <Link to="/auth">
+                <Button className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+                  Get Started
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
