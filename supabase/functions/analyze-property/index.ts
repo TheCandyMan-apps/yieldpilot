@@ -21,14 +21,35 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get user profile and check subscription tier
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("subscription_tier, analyses_count")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
+      return new Response(
+        JSON.stringify({ error: "Unable to verify account status" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const {
@@ -42,7 +63,63 @@ serve(async (req) => {
       monthlyCosts,
     } = await req.json();
 
-    console.log("Analyzing property:", { propertyAddress, propertyPrice });
+    // Input validation
+    if (!propertyAddress || typeof propertyAddress !== "string" || propertyAddress.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Property address is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (propertyAddress.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Property address is too long" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const numericFields = {
+      propertyPrice: { value: propertyPrice, min: 1000, max: 100000000, name: "Property price" },
+      estimatedRent: { value: estimatedRent, min: 0, max: 1000000, name: "Estimated rent" },
+      mortgageRate: { value: mortgageRate, min: 0, max: 20, name: "Mortgage rate" },
+      depositAmount: { value: depositAmount, min: 0, max: propertyPrice, name: "Deposit amount" },
+      monthlyCosts: { value: monthlyCosts, min: 0, max: 100000, name: "Monthly costs" },
+    };
+
+    for (const [key, field] of Object.entries(numericFields)) {
+      const num = parseFloat(field.value);
+      if (isNaN(num) || num < field.min || num > field.max) {
+        return new Response(
+          JSON.stringify({ error: `${field.name} must be between ${field.min} and ${field.max}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Check subscription tier limits (only for new analyses)
+    if (!analysisId) {
+      const tierLimits: Record<string, number> = {
+        free: 10,
+        pro: 100,
+        investor: 500,
+        agency: -1, // unlimited
+      };
+
+      const limit = tierLimits[profile.subscription_tier] || tierLimits.free;
+      
+      if (limit !== -1 && profile.analyses_count >= limit) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Monthly analysis limit reached. Please upgrade your subscription to continue.",
+            limit: limit,
+            used: profile.analyses_count
+          }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    console.log("Analyzing property for user:", user.id);
 
     // Create or update the analysis record
     let analysis;
@@ -96,11 +173,14 @@ serve(async (req) => {
       analysis = newAnalysis;
     }
 
+    // Sanitize address for AI prompt to prevent injection
+    const sanitizedAddress = propertyAddress.trim().substring(0, 200);
+    
     // Call AI for analysis
     const aiPrompt = `You are a property investment analyst. Analyze this property deal and provide detailed investment insights.
 
 Property Details:
-- Address: ${propertyAddress}
+- Address: ${sanitizedAddress}
 - Purchase Price: £${propertyPrice.toLocaleString()}
 - Property Type: ${propertyType}
 - Estimated Monthly Rent: £${estimatedRent}
@@ -147,8 +227,26 @@ Format your response as JSON with these exact keys:
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI response error:", errorText);
-      throw new Error(`AI analysis failed: ${errorText}`);
+      console.error("AI response error:", aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Service is experiencing high demand. Please try again in a few moments." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Analysis service temporarily unavailable. Please contact support." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ error: "Unable to complete analysis at this time" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -208,10 +306,26 @@ Format your response as JSON with these exact keys:
     );
   } catch (error) {
     console.error("Error in analyze-property function:", error);
+    
+    // Generic error message for client, detailed logging on server
+    let clientMessage = "An error occurred while processing your request";
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      // Map specific error types to user-friendly messages
+      if (error.message.includes("JSON")) {
+        clientMessage = "Invalid data format received";
+        statusCode = 400;
+      } else if (error.message.includes("auth")) {
+        clientMessage = "Authentication required";
+        statusCode = 401;
+      }
+    }
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: clientMessage }),
       {
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
