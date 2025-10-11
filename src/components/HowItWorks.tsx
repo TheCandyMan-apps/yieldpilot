@@ -4,20 +4,20 @@ import { Upload, Brain, BarChart3 } from "lucide-react";
 const steps = [
   {
     icon: Upload,
-    title: "Input Property",
-    description: "Paste a Rightmove/Zoopla URL or enter property details manually",
+    title: "Input Property Details",
+    description: "Simply paste a property listing URL or manually enter the address, price, and basic details. Takes just 30 seconds—no complicated forms or endless data entry. Works with UK, EU, and US markets.",
     number: "01",
   },
   {
     icon: Brain,
-    title: "AI Analysis",
-    description: "Our AI processes market data, costs, and returns in seconds",
+    title: "AI Analyzes Everything",
+    description: "Our AI instantly crunches the numbers—calculating purchase costs, stamp duty, renovation estimates, rental income potential, void periods, maintenance costs, and mortgage scenarios. What takes hours in Excel happens in under 30 seconds.",
     number: "02",
   },
   {
     icon: BarChart3,
-    title: "Get Insights",
-    description: "Receive detailed ROI, yield, and cash flow projections instantly",
+    title: "Get Actionable Insights",
+    description: "Review comprehensive ROI metrics, net yield percentages, monthly cash flow projections, and a deal quality score. See exactly how profitable this property will be and whether it's worth pursuing. Export reports to share with partners or save for your records.",
     number: "03",
   },
 ];
@@ -32,7 +32,7 @@ const HowItWorks = () => {
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"> Works</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            From property listing to investment decision in three simple steps
+            From property listing to confident investment decision in under 60 seconds. No spreadsheets, no guesswork—just clear, actionable data that helps you move faster than the competition.
           </p>
         </div>
 

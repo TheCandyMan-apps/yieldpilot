@@ -31,7 +31,7 @@ const Hero = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed animate-fade-in-up [animation-delay:100ms]">
-            Analyze ROI, yields, and cash flow instantly. Make data-driven property investment decisions with AI-powered insights.
+            Stop wasting hours on spreadsheets and guesswork. Get instant ROI analysis, accurate yield projections, and cash flow forecasts in under 30 seconds. Avoid costly mistakes and identify profitable deals before your competition—save 10+ hours per property analysis while making smarter investment decisions backed by AI-powered market intelligence.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">

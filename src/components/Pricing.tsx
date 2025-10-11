@@ -60,7 +60,7 @@ const Pricing = () => {
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"> Pricing</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your investment strategy
+            Invest in the right tool to protect your capital. One avoided bad deal pays for itself—multiple times over.
           </p>
         </div>
 

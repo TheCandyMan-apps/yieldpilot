@@ -5,32 +5,32 @@ const features = [
   {
     icon: Calculator,
     title: "ROI Calculator",
-    description: "Instant return on investment calculations with real-time market data",
+    description: "Get precise return on investment calculations instantly. No more manual spreadsheets—automatically factor in purchase costs, renovation expenses, and ongoing fees. Save 3+ hours per property and avoid calculation errors that could cost thousands.",
   },
   {
     icon: TrendingUp,
     title: "Yield Analysis",
-    description: "Comprehensive yield forecasts and cash flow projections",
+    description: "Project your annual rental yields and long-term cash flow with accuracy. Understand your monthly income potential, vacancy risks, and break-even timelines. Make confident decisions knowing exactly when your investment will start generating profit.",
   },
   {
     icon: FileText,
     title: "Deal Reports",
-    description: "Professional PDF reports ready to share with investors",
+    description: "Generate professional, investor-ready PDF reports in seconds. Impress partners, lenders, and stakeholders with comprehensive analysis documents. Save hours of formatting and present like a seasoned pro—no design skills required.",
   },
   {
     icon: DollarSign,
     title: "Mortgage Options",
-    description: "Compare mortgage rates and financing scenarios",
+    description: "Compare financing scenarios side-by-side to maximize your leverage. See how different mortgage rates, deposit amounts, and loan terms impact your returns. Find the optimal financing structure that could boost your ROI by 15-30%.",
   },
   {
     icon: MapPin,
     title: "Location Intel",
-    description: "Local market insights and rental demand analysis",
+    description: "Access hyperlocal market data including rental demand, average yields, and area growth trends. Identify up-and-coming neighborhoods before they peak. Avoid saturated markets and discover hidden gem locations with strong rental fundamentals.",
   },
   {
     icon: Zap,
     title: "AI Insights",
-    description: "Smart recommendations and deal quality scoring",
+    description: "Get intelligent deal quality scoring and risk assessment powered by AI. Instantly flag red flags like overpricing, poor rental potential, or hidden costs. Let AI learn from thousands of deals to give you the same insights as veteran investors.",
   },
 ];
 
@@ -44,7 +44,7 @@ const Features = () => {
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"> Analyze Deals</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Powerful features designed for serious property investors
+            Professional-grade tools that help you analyze faster, decide smarter, and invest with confidence. Every feature designed to save you time and protect your capital.
           </p>
         </div>
 
