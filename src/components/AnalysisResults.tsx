@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, DollarSign, Percent } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, DollarSign, Percent, Edit } from "lucide-react";
 
 interface AnalysisResultsProps {
   analysis: any;
+  onEdit?: () => void;
 }
 
-const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
+const AnalysisResults = ({ analysis, onEdit }: AnalysisResultsProps) => {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-success";
     if (score >= 60) return "text-warning";
@@ -26,12 +28,22 @@ const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
       {/* Property Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{analysis.property_address}</CardTitle>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="outline">{analysis.property_type}</Badge>
-            <Badge {...getScoreBadge(analysis.deal_quality_score)}>
-              {getScoreBadge(analysis.deal_quality_score).label} Deal
-            </Badge>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">{analysis.property_address}</CardTitle>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline">{analysis.property_type}</Badge>
+                <Badge {...getScoreBadge(analysis.deal_quality_score)}>
+                  {getScoreBadge(analysis.deal_quality_score).label} Deal
+                </Badge>
+              </div>
+            </div>
+            {onEdit && (
+              <Button variant="outline" onClick={onEdit}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Details
+              </Button>
+            )}
           </div>
         </CardHeader>
       </Card>

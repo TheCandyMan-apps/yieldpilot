@@ -17,18 +17,19 @@ import { Loader2 } from "lucide-react";
 interface PropertyAnalysisFormProps {
   onComplete: (analysis: any) => void;
   onCancel: () => void;
+  existingAnalysis?: any;
 }
 
-const PropertyAnalysisForm = ({ onComplete, onCancel }: PropertyAnalysisFormProps) => {
+const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: PropertyAnalysisFormProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    propertyAddress: "",
-    propertyPrice: "",
-    propertyType: "residential",
-    estimatedRent: "",
-    mortgageRate: "",
-    depositAmount: "",
-    monthlyCosts: "",
+    propertyAddress: existingAnalysis?.property_address || "",
+    propertyPrice: existingAnalysis?.property_price?.toString() || "",
+    propertyType: existingAnalysis?.property_type || "residential",
+    estimatedRent: existingAnalysis?.estimated_rent?.toString() || "",
+    mortgageRate: existingAnalysis?.mortgage_rate?.toString() || "",
+    depositAmount: existingAnalysis?.deposit_amount?.toString() || "",
+    monthlyCosts: existingAnalysis?.monthly_costs?.toString() || "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +39,7 @@ const PropertyAnalysisForm = ({ onComplete, onCancel }: PropertyAnalysisFormProp
     try {
       const { data, error } = await supabase.functions.invoke("analyze-property", {
         body: {
+          analysisId: existingAnalysis?.id,
           propertyAddress: formData.propertyAddress,
           propertyPrice: parseFloat(formData.propertyPrice),
           propertyType: formData.propertyType,
@@ -66,7 +68,9 @@ const PropertyAnalysisForm = ({ onComplete, onCancel }: PropertyAnalysisFormProp
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Property Details</CardTitle>
+        <CardTitle>
+          {existingAnalysis ? "Edit Property Analysis" : "Property Analysis"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -169,7 +173,7 @@ const PropertyAnalysisForm = ({ onComplete, onCancel }: PropertyAnalysisFormProp
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={loading} className="flex-1">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Analyze Property
+              {existingAnalysis ? "Update Analysis" : "Analyze Property"}
             </Button>
             <Button
               type="button"

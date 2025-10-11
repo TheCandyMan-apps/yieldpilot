@@ -32,6 +32,7 @@ serve(async (req) => {
     }
 
     const {
+      analysisId,
       propertyAddress,
       propertyPrice,
       propertyType,
@@ -43,26 +44,56 @@ serve(async (req) => {
 
     console.log("Analyzing property:", { propertyAddress, propertyPrice });
 
-    // Create the analysis record
-    const { data: analysis, error: insertError } = await supabase
-      .from("property_analyses")
-      .insert({
-        user_id: user.id,
-        property_address: propertyAddress,
-        property_price: propertyPrice,
-        property_type: propertyType,
-        estimated_rent: estimatedRent,
-        mortgage_rate: mortgageRate,
-        deposit_amount: depositAmount,
-        monthly_costs: monthlyCosts,
-        analysis_status: "pending",
-      })
-      .select()
-      .single();
+    // Create or update the analysis record
+    let analysis;
+    
+    if (analysisId) {
+      // Update existing analysis
+      const { data: updatedAnalysis, error: updateError } = await supabase
+        .from("property_analyses")
+        .update({
+          property_address: propertyAddress,
+          property_price: propertyPrice,
+          property_type: propertyType,
+          estimated_rent: estimatedRent,
+          mortgage_rate: mortgageRate,
+          deposit_amount: depositAmount,
+          monthly_costs: monthlyCosts,
+          analysis_status: "pending",
+        })
+        .eq("id", analysisId)
+        .eq("user_id", user.id)
+        .select()
+        .single();
 
-    if (insertError) {
-      console.error("Insert error:", insertError);
-      throw insertError;
+      if (updateError) {
+        console.error("Update error:", updateError);
+        throw updateError;
+      }
+      analysis = updatedAnalysis;
+    } else {
+      // Create new analysis
+      const { data: newAnalysis, error: insertError } = await supabase
+        .from("property_analyses")
+        .insert({
+          user_id: user.id,
+          property_address: propertyAddress,
+          property_price: propertyPrice,
+          property_type: propertyType,
+          estimated_rent: estimatedRent,
+          mortgage_rate: mortgageRate,
+          deposit_amount: depositAmount,
+          monthly_costs: monthlyCosts,
+          analysis_status: "pending",
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+      analysis = newAnalysis;
     }
 
     // Call AI for analysis
@@ -157,11 +188,13 @@ Format your response as JSON with these exact keys:
       throw updateError;
     }
 
-    // Increment user's analysis count
-    await supabase.rpc("increment", {
-      row_id: user.id,
-      x: 1,
-    }).select();
+    // Increment user's analysis count only for new analyses
+    if (!analysisId) {
+      await supabase.rpc("increment", {
+        row_id: user.id,
+        x: 1,
+      }).select();
+    }
 
     return new Response(
       JSON.stringify({ 

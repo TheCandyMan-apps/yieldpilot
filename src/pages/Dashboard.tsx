@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [editingAnalysis, setEditingAnalysis] = useState<any>(null);
 
   useEffect(() => {
     // Check authentication
@@ -48,8 +49,15 @@ const Dashboard = () => {
   const handleAnalysisComplete = (analysis: any) => {
     setCurrentAnalysis(analysis);
     setShowForm(false);
+    setEditingAnalysis(null);
     setRefreshTrigger((prev) => prev + 1);
-    toast.success("Property analysis completed!");
+    toast.success(editingAnalysis ? "Analysis updated successfully!" : "Property analysis completed!");
+  };
+
+  const handleEditAnalysis = (analysis: any) => {
+    setEditingAnalysis(analysis);
+    setCurrentAnalysis(null);
+    setShowForm(true);
   };
 
   if (loading) {
@@ -100,7 +108,11 @@ const Dashboard = () => {
           {showForm && (
             <PropertyAnalysisForm
               onComplete={handleAnalysisComplete}
-              onCancel={() => setShowForm(false)}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingAnalysis(null);
+              }}
+              existingAnalysis={editingAnalysis}
             />
           )}
 
@@ -110,13 +122,17 @@ const Dashboard = () => {
                 <h2 className="text-2xl font-bold">Analysis Results</h2>
                 <Button onClick={() => {
                   setCurrentAnalysis(null);
+                  setEditingAnalysis(null);
                   setShowForm(true);
                 }}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   New Analysis
                 </Button>
               </div>
-              <AnalysisResults analysis={currentAnalysis} />
+              <AnalysisResults 
+                analysis={currentAnalysis} 
+                onEdit={() => handleEditAnalysis(currentAnalysis)}
+              />
             </div>
           )}
         </div>
