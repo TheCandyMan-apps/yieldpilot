@@ -17,15 +17,15 @@ const Community = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="h-5 w-5 mr-2" />
-              Coming Soon
+              Join the YieldPilot Community
             </CardTitle>
             <CardDescription>
-              This feature is under development
+              Connect with investors, share insights, and grow together
             </CardDescription>
           </CardHeader>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">
-              Community forum and collaboration features will be available in Phase C
+              Our community features are launching soon. Be the first to know!
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
               <div className="p-4 bg-muted rounded-lg">

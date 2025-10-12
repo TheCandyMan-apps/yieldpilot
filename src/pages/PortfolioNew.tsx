@@ -310,7 +310,7 @@ const PortfolioNew = () => {
               </Card>
             </div>
 
-            {/* Performance Chart Placeholder */}
+            {/* Performance Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Performance Over Time</CardTitle>

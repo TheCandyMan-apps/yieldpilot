@@ -22,10 +22,10 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">API</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>
+              <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
+              <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
+              <li><a href="/deals" className="hover:text-primary transition-colors">Deal Feed</a></li>
+              <li><a href="/simulator" className="hover:text-primary transition-colors">Simulator</a></li>
             </ul>
           </div>
 
@@ -33,10 +33,10 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              <li><a href="#about" className="hover:text-primary transition-colors">About</a></li>
+              <li><a href="/insights" className="hover:text-primary transition-colors">Market Insights</a></li>
+              <li><a href="/portfolio" className="hover:text-primary transition-colors">Portfolio</a></li>
+              <li><a href="/community" className="hover:text-primary transition-colors">Community</a></li>
             </ul>
           </div>
 
@@ -44,8 +44,8 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Compliance</a></li>
             </ul>
