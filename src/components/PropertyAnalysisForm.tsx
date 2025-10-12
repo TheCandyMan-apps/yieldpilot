@@ -82,7 +82,9 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
               value={formData.propertyAddress}
               onChange={(e) => handleChange("propertyAddress", e.target.value)}
               required
+              aria-describedby="address-hint"
             />
+            <span id="address-hint" className="sr-only">Enter the full property address including street, city, and postcode</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
