@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   LogOut,
-  User
+  User,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Portfolio", href: "/portfolio", icon: Briefcase },
     { name: "Simulator", href: "/simulator", icon: Calculator },
     { name: "Insights", href: "/insights", icon: BarChart3 },
+    { name: "Alerts", href: "/alerts", icon: Bell },
     { name: "Community", href: "/community", icon: Users },
     { name: "Billing", href: "/billing", icon: CreditCard },
   ];

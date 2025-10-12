@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_matches: {
+        Row: {
+          alert_id: string
+          deal_id: string
+          id: string
+          is_read: boolean | null
+          matched_at: string | null
+        }
+        Insert: {
+          alert_id: string
+          deal_id: string
+          id?: string
+          is_read?: boolean | null
+          matched_at?: string | null
+        }
+        Update: {
+          alert_id?: string
+          deal_id?: string
+          id?: string
+          is_read?: boolean | null
+          matched_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_matches_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_matches_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_triggered_at: string | null
+          location_filter: string | null
+          max_price: number | null
+          min_price: number | null
+          min_roi: number | null
+          min_yield: number | null
+          name: string
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          location_filter?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          min_roi?: number | null
+          min_yield?: number | null
+          name: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          location_filter?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          min_roi?: number | null
+          min_yield?: number | null
+          name?: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       deals_feed: {
         Row: {
           ai_recommendation: string | null
@@ -98,6 +188,54 @@ export type Database = {
           square_feet?: number | null
           updated_at?: string | null
           yield_percentage?: number | null
+        }
+        Relationships: []
+      }
+      market_insights: {
+        Row: {
+          avg_price: number | null
+          avg_rent: number | null
+          avg_roi: number | null
+          avg_yield: number | null
+          city: string
+          created_at: string | null
+          data_date: string | null
+          growth_forecast_1yr: number | null
+          growth_forecast_5yr: number | null
+          id: string
+          postcode_prefix: string | null
+          sample_size: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_price?: number | null
+          avg_rent?: number | null
+          avg_roi?: number | null
+          avg_yield?: number | null
+          city: string
+          created_at?: string | null
+          data_date?: string | null
+          growth_forecast_1yr?: number | null
+          growth_forecast_5yr?: number | null
+          id?: string
+          postcode_prefix?: string | null
+          sample_size?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_price?: number | null
+          avg_rent?: number | null
+          avg_roi?: number | null
+          avg_yield?: number | null
+          city?: string
+          created_at?: string | null
+          data_date?: string | null
+          growth_forecast_1yr?: number | null
+          growth_forecast_5yr?: number | null
+          id?: string
+          postcode_prefix?: string | null
+          sample_size?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
