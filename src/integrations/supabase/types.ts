@@ -104,6 +104,56 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_summaries: {
+        Row: {
+          created_at: string | null
+          deal_id: string | null
+          id: string
+          key_metrics: Json | null
+          pdf_url: string | null
+          recommendation: string | null
+          risk_rating: string | null
+          summary: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          key_metrics?: Json | null
+          pdf_url?: string | null
+          recommendation?: string | null
+          risk_rating?: string | null
+          summary: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          key_metrics?: Json | null
+          pdf_url?: string | null
+          recommendation?: string | null
+          risk_rating?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_summaries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals_feed: {
         Row: {
           ai_recommendation: string | null
@@ -238,6 +288,56 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      portfolio_performance: {
+        Row: {
+          created_at: string | null
+          date: string
+          health_score: number | null
+          id: string
+          monthly_expenses: number | null
+          monthly_income: number | null
+          occupancy_rate: number | null
+          portfolio_id: string
+          total_debt: number | null
+          total_equity: number | null
+          total_value: number
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          health_score?: number | null
+          id?: string
+          monthly_expenses?: number | null
+          monthly_income?: number | null
+          occupancy_rate?: number | null
+          portfolio_id: string
+          total_debt?: number | null
+          total_equity?: number | null
+          total_value: number
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          health_score?: number | null
+          id?: string
+          monthly_expenses?: number | null
+          monthly_income?: number | null
+          occupancy_rate?: number | null
+          portfolio_id?: string
+          total_debt?: number | null
+          total_equity?: number | null
+          total_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_performance_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portfolio_properties: {
         Row: {
@@ -393,6 +493,82 @@ export type Database = {
         }
         Relationships: []
       }
+      property_comments: {
+        Row: {
+          analysis_id: string | null
+          comment: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          comment: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          comment?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_comments_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          portfolio_id: string | null
+          role: Database["public"]["Enums"]["team_role"]
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          portfolio_id?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          portfolio_id?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watchlist: {
         Row: {
           created_at: string | null
@@ -443,6 +619,7 @@ export type Database = {
       analysis_status: "pending" | "completed" | "failed"
       investment_score: "A" | "B" | "C" | "D" | "E"
       property_type: "residential" | "commercial" | "mixed_use" | "land"
+      team_role: "owner" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -573,6 +750,7 @@ export const Constants = {
       analysis_status: ["pending", "completed", "failed"],
       investment_score: ["A", "B", "C", "D", "E"],
       property_type: ["residential", "commercial", "mixed_use", "land"],
+      team_role: ["owner", "editor", "viewer"],
     },
   },
 } as const

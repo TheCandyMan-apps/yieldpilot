@@ -27,13 +27,11 @@ const Hero = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in-up">
-            Smart Property
-            <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent"> Investment </span>
-            Decisions
+            YieldPilot — Find • Analyze • Profit
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed animate-fade-in-up [animation-delay:100ms]">
-            Stop wasting hours on spreadsheets and guesswork. Get instant ROI analysis, accurate yield projections, and cash flow forecasts in under 30 seconds. Avoid costly mistakes and identify profitable deals before your competition—save 10+ hours per property analysis while making smarter investment decisions backed by AI-powered market intelligence.
+            AI-driven insights for smarter property investing. Stop wasting hours on spreadsheets and guesswork. Get instant ROI analysis, accurate yield projections, and cash flow forecasts in under 30 seconds.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">

@@ -14,7 +14,7 @@ const Deals = lazy(() => import("./pages/Deals"));
 const Simulator = lazy(() => import("./pages/Simulator"));
 const Insights = lazy(() => import("./pages/Insights"));
 const Alerts = lazy(() => import("./pages/Alerts"));
-const Portfolio = lazy(() => import("./pages/Portfolio"));
+const PortfolioNew = lazy(() => import("./pages/PortfolioNew"));
 const Community = lazy(() => import("./pages/Community"));
 const Billing = lazy(() => import("./pages/Billing"));
 
@@ -35,7 +35,7 @@ const App = () => (
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/alerts" element={<Alerts />} />
-            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/portfolio" element={<PortfolioNew />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, DollarSign, Percent, Edit } from "lucide-react";
+import CommentSection from "./analysis/CommentSection";
 
 interface AnalysisResultsProps {
   analysis: any;
@@ -163,6 +164,9 @@ const AnalysisResults = ({ analysis, onEdit }: AnalysisResultsProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Comments Section */}
+      <CommentSection analysisId={analysis.id} />
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Heart, MapPin, Bed, Bath, TrendingUp, DollarSign } from "lucide-react";
+import { Heart, MapPin, Bed, Bath, TrendingUp, DollarSign, FileText } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import DealSummaryGenerator from "./DealSummaryGenerator";
 
 interface DealCardProps {
   deal: {
@@ -203,10 +204,18 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
-        <Button className="w-full" variant="default">
+      <CardFooter className="p-4 pt-0 flex gap-2">
+        <Button className="flex-1" variant="default">
           Analyze This Deal
         </Button>
+        <DealSummaryGenerator
+          deal={deal}
+          trigger={
+            <Button variant="outline" size="icon">
+              <FileText className="h-4 w-4" />
+            </Button>
+          }
+        />
       </CardFooter>
     </Card>
   );
