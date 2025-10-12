@@ -35,7 +35,7 @@ const Header = () => {
           <Link to="/auth">
             <Button variant="ghost">Sign In</Button>
           </Link>
-          <Link to="/auth">
+          <Link to="/dashboard">
             <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
               Get Started
             </Button>
@@ -68,7 +68,7 @@ const Header = () => {
               <Link to="/auth">
                 <Button variant="ghost" className="w-full">Sign In</Button>
               </Link>
-              <Link to="/auth">
+              <Link to="/dashboard">
                 <Button className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
                   Get Started
                 </Button>

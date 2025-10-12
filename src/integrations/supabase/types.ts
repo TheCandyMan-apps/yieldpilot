@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      deals_feed: {
+        Row: {
+          ai_recommendation: string | null
+          ai_summary: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          cash_flow_monthly: number | null
+          city: string | null
+          created_at: string | null
+          estimated_rent: number | null
+          id: string
+          image_url: string | null
+          investment_score:
+            | Database["public"]["Enums"]["investment_score"]
+            | null
+          is_active: boolean | null
+          listing_url: string | null
+          location_lat: number | null
+          location_lng: number | null
+          postcode: string | null
+          price: number
+          property_address: string
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage: number | null
+          source: string | null
+          square_feet: number | null
+          updated_at: string | null
+          yield_percentage: number | null
+        }
+        Insert: {
+          ai_recommendation?: string | null
+          ai_summary?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cash_flow_monthly?: number | null
+          city?: string | null
+          created_at?: string | null
+          estimated_rent?: number | null
+          id?: string
+          image_url?: string | null
+          investment_score?:
+            | Database["public"]["Enums"]["investment_score"]
+            | null
+          is_active?: boolean | null
+          listing_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          postcode?: string | null
+          price: number
+          property_address: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage?: number | null
+          source?: string | null
+          square_feet?: number | null
+          updated_at?: string | null
+          yield_percentage?: number | null
+        }
+        Update: {
+          ai_recommendation?: string | null
+          ai_summary?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cash_flow_monthly?: number | null
+          city?: string | null
+          created_at?: string | null
+          estimated_rent?: number | null
+          id?: string
+          image_url?: string | null
+          investment_score?:
+            | Database["public"]["Enums"]["investment_score"]
+            | null
+          is_active?: boolean | null
+          listing_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          postcode?: string | null
+          price?: number
+          property_address?: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          roi_percentage?: number | null
+          source?: string | null
+          square_feet?: number | null
+          updated_at?: string | null
+          yield_percentage?: number | null
+        }
+        Relationships: []
+      }
       portfolio_properties: {
         Row: {
           added_at: string | null
@@ -168,6 +255,38 @@ export type Database = {
         }
         Relationships: []
       }
+      watchlist: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -184,6 +303,7 @@ export type Database = {
     }
     Enums: {
       analysis_status: "pending" | "completed" | "failed"
+      investment_score: "A" | "B" | "C" | "D" | "E"
       property_type: "residential" | "commercial" | "mixed_use" | "land"
     }
     CompositeTypes: {
@@ -313,6 +433,7 @@ export const Constants = {
   public: {
     Enums: {
       analysis_status: ["pending", "completed", "failed"],
+      investment_score: ["A", "B", "C", "D", "E"],
       property_type: ["residential", "commercial", "mixed_use", "land"],
     },
   },

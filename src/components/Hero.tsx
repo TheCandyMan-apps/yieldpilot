@@ -37,7 +37,7 @@ const Hero = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">
-            <Link to="/auth">
+            <Link to="/dashboard">
               <Button 
                 size="lg" 
                 className="text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group"
@@ -46,13 +46,13 @@ const Hero = () => {
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/deals">
               <Button 
                 size="lg" 
                 variant="outline"
                 className="text-lg border-2 hover:bg-accent/50 backdrop-blur-sm"
               >
-                View Demo
+                Browse Deals
               </Button>
             </Link>
           </div>
