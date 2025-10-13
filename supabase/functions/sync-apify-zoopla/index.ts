@@ -30,9 +30,12 @@ serve(async (req) => {
 
     console.log('Starting Apify actor run:', actorId);
 
+    // Format actor ID for API (replace / with ~)
+    const formattedActorId = actorId.replace('/', '~');
+
     // Start the actor run
     const runResponse = await fetch(
-      `https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`,
+      `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${APIFY_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +64,7 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/${actorId}/runs/${runId}?token=${APIFY_API_KEY}`
+        `https://api.apify.com/v2/acts/${formattedActorId}/runs/${runId}?token=${APIFY_API_KEY}`
       );
       
       if (statusResponse.ok) {
