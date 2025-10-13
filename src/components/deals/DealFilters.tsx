@@ -67,16 +67,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Min Price</Label>
                 <Select
-                  value={filters.minPrice?.toString() || ""}
+                  value={filters.minPrice?.toString() || "none"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("minPrice", value ? Number(value) : undefined)
+                    handleFilterUpdate("minPrice", value === "none" ? undefined : Number(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="No minimum" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No minimum</SelectItem>
+                    <SelectItem value="none">No minimum</SelectItem>
                     <SelectItem value="50000">£50,000</SelectItem>
                     <SelectItem value="100000">£100,000</SelectItem>
                     <SelectItem value="150000">£150,000</SelectItem>
@@ -90,16 +90,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Max Price</Label>
                 <Select
-                  value={filters.maxPrice?.toString() || ""}
+                  value={filters.maxPrice?.toString() || "none"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("maxPrice", value ? Number(value) : undefined)
+                    handleFilterUpdate("maxPrice", value === "none" ? undefined : Number(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="No maximum" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No maximum</SelectItem>
+                    <SelectItem value="none">No maximum</SelectItem>
                     <SelectItem value="100000">£100,000</SelectItem>
                     <SelectItem value="200000">£200,000</SelectItem>
                     <SelectItem value="300000">£300,000</SelectItem>
@@ -114,16 +114,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Min Yield %</Label>
                 <Select
-                  value={filters.minYield?.toString() || ""}
+                  value={filters.minYield?.toString() || "none"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("minYield", value ? Number(value) : undefined)
+                    handleFilterUpdate("minYield", value === "none" ? undefined : Number(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any yield" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any yield</SelectItem>
+                    <SelectItem value="none">Any yield</SelectItem>
                     <SelectItem value="3">3%+</SelectItem>
                     <SelectItem value="4">4%+</SelectItem>
                     <SelectItem value="5">5%+</SelectItem>
@@ -137,16 +137,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Min ROI %</Label>
                 <Select
-                  value={filters.minROI?.toString() || ""}
+                  value={filters.minROI?.toString() || "none"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("minROI", value ? Number(value) : undefined)
+                    handleFilterUpdate("minROI", value === "none" ? undefined : Number(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any ROI" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any ROI</SelectItem>
+                    <SelectItem value="none">Any ROI</SelectItem>
                     <SelectItem value="5">5%+</SelectItem>
                     <SelectItem value="10">10%+</SelectItem>
                     <SelectItem value="15">15%+</SelectItem>
@@ -160,16 +160,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Property Type</Label>
                 <Select
-                  value={filters.propertyType || ""}
+                  value={filters.propertyType || "all"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("propertyType", value || undefined)
+                    handleFilterUpdate("propertyType", value === "all" ? undefined : value)
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
+                    <SelectItem value="all">All types</SelectItem>
                     <SelectItem value="residential">Residential</SelectItem>
                     <SelectItem value="commercial">Commercial</SelectItem>
                     <SelectItem value="hmo">HMO</SelectItem>
@@ -182,16 +182,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>Min Score</Label>
                 <Select
-                  value={filters.investmentScore || ""}
+                  value={filters.investmentScore || "any"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("investmentScore", value || undefined)
+                    handleFilterUpdate("investmentScore", value === "any" ? undefined : value)
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any score" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any score</SelectItem>
+                    <SelectItem value="any">Any score</SelectItem>
                     <SelectItem value="A">A only</SelectItem>
                     <SelectItem value="B">B or better</SelectItem>
                     <SelectItem value="C">C or better</SelectItem>
@@ -204,16 +204,16 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
               <div className="space-y-2">
                 <Label>City</Label>
                 <Select
-                  value={filters.city || ""}
+                  value={filters.city || "all"}
                   onValueChange={(value) =>
-                    handleFilterUpdate("city", value || undefined)
+                    handleFilterUpdate("city", value === "all" ? undefined : value)
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All cities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All cities</SelectItem>
+                    <SelectItem value="all">All cities</SelectItem>
                     <SelectItem value="London">London</SelectItem>
                     <SelectItem value="Manchester">Manchester</SelectItem>
                     <SelectItem value="Birmingham">Birmingham</SelectItem>

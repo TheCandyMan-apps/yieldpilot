@@ -333,14 +333,14 @@ const Alerts = () => {
                 <div>
                   <Label>Property Type</Label>
                   <Select
-                    value={newAlert.property_type}
-                    onValueChange={(val) => setNewAlert({ ...newAlert, property_type: val })}
+                    value={newAlert.property_type || "any"}
+                    onValueChange={(val) => setNewAlert({ ...newAlert, property_type: val === "any" ? undefined : val })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Any type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any type</SelectItem>
+                      <SelectItem value="any">Any type</SelectItem>
                       <SelectItem value="residential">Residential</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
                       <SelectItem value="hmo">HMO</SelectItem>
