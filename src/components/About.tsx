@@ -33,7 +33,7 @@ const stats = [
 
 const About = () => {
   return (
-    <section className="py-24 bg-gradient-to-b from-background via-muted/20 to-background">
+    <section id="about" className="py-24 bg-gradient-to-b from-background via-muted/20 to-background">
       <div className="container mx-auto px-4">
         {/* Main About Content */}
         <div className="max-w-4xl mx-auto text-center mb-20">

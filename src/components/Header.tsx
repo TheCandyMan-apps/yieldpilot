@@ -19,13 +19,13 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#features" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
             Features
           </a>
-          <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
             Pricing
           </a>
-          <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#about" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
             About
           </a>
         </div>
@@ -55,13 +55,13 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-background border-b border-border">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="#features" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               Features
             </a>
-            <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               Pricing
             </a>
-            <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="#about" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               About
             </a>
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
