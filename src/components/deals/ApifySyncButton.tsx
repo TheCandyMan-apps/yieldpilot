@@ -23,7 +23,7 @@ export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
 
       const { data, error } = await supabase.functions.invoke('sync-apify-zoopla', {
         body: {
-          actorId: 'curious_coder/zoopla-scraper', // Replace with actual Apify actor ID
+          actorId: 'dhrumil/zoopla-scraper',
           input: {
             searchType: 'for-sale',
             maxResults: 50,
