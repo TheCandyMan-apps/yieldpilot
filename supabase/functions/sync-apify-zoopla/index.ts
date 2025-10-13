@@ -35,10 +35,13 @@ serve(async (req) => {
 
     // Start the actor run
     const runResponse = await fetch(
-      `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${APIFY_API_KEY}`,
+      `https://api.apify.com/v2/acts/${formattedActorId}/runs`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${APIFY_API_KEY}`,
+        },
         body: JSON.stringify(input || {}),
       }
     );
@@ -64,7 +67,8 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/${formattedActorId}/runs/${runId}?token=${APIFY_API_KEY}`
+        `https://api.apify.com/v2/acts/${formattedActorId}/runs/${runId}`,
+        { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
       );
       
       if (statusResponse.ok) {
@@ -92,7 +96,8 @@ serve(async (req) => {
     // Fetch dataset items
     console.log('Fetching dataset items from:', defaultDatasetId);
     const datasetResponse = await fetch(
-      `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?token=${APIFY_API_KEY}&format=json`
+      `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?format=json`,
+      { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
     );
 
     if (!datasetResponse.ok) {
