@@ -1,1 +1,4 @@
 project_id = "rgckrmuuathxrpohacds"
+
+[functions.sync-apify-zoopla]
+verify_jwt = false

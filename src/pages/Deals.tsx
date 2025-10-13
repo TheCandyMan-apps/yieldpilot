@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import DealCard from "@/components/deals/DealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
+import { ApifySyncButton } from "@/components/deals/ApifySyncButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -190,9 +191,12 @@ const Deals = () => {
               AI-analyzed investment opportunities
             </p>
           </div>
-          <Button onClick={handleGenerateSampleDeals}>
-            Generate Sample Deals
-          </Button>
+          <div className="flex gap-2">
+            <ApifySyncButton onSyncComplete={fetchDeals} />
+            <Button onClick={handleGenerateSampleDeals}>
+              Generate Sample Deals
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
