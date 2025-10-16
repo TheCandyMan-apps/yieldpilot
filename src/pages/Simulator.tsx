@@ -119,6 +119,83 @@ const Simulator = () => {
     }).format(value);
   };
 
+  const exportToPDF = () => {
+    const content = `
+YieldPilot Investment Simulator Report
+Generated: ${new Date().toLocaleString('en-GB')}
+
+========================================
+PROPERTY DETAILS
+========================================
+Property Price: ${formatCurrency(values.propertyPrice)}
+Deposit: ${values.deposit}% (${formatCurrency(depositAmount)})
+Interest Rate: ${values.interestRate}%
+Monthly Rent: ${formatCurrency(values.monthlyRent)}
+Monthly Expenses: ${formatCurrency(values.monthlyExpenses)}
+Refurbishment Cost: ${formatCurrency(values.refurbCost)}
+
+========================================
+KEY METRICS
+========================================
+Loan Amount: ${formatCurrency(loanAmount)}
+Monthly Mortgage: ${formatCurrency(monthlyMortgage)}
+Total Investment: ${formatCurrency(totalInvestment)}
+
+========================================
+RETURNS
+========================================
+Monthly Cash Flow: ${formatCurrency(monthlyCashFlow)}
+Annual Cash Flow: ${formatCurrency(annualCashFlow)}
+Gross Yield: ${grossYield.toFixed(2)}%
+Net Yield: ${netYield.toFixed(2)}%
+ROI: ${roi.toFixed(2)}%
+
+========================================
+SCENARIO COMPARISON
+========================================
+${scenarios.map(scenario => {
+  const scLoan = scenario.values.propertyPrice * (1 - scenario.values.deposit / 100);
+  const scDeposit = scenario.values.propertyPrice * (scenario.values.deposit / 100);
+  const scMortgage = calculateMortgage(scLoan, scenario.values.interestRate, 25);
+  const scCashFlow = scenario.values.monthlyRent - scMortgage - scenario.values.monthlyExpenses;
+  const scAnnualCF = scCashFlow * 12;
+  const scTotalInv = scDeposit + scenario.values.refurbCost;
+  const scROI = (scAnnualCF / scTotalInv) * 100;
+  const scYield = ((scenario.values.monthlyRent * 12) / scenario.values.propertyPrice) * 100;
+  
+  return `
+${scenario.name} Scenario:
+  Monthly Rent: ${formatCurrency(scenario.values.monthlyRent)}
+  Interest Rate: ${scenario.values.interestRate}%
+  Monthly Expenses: ${formatCurrency(scenario.values.monthlyExpenses)}
+  Monthly Cash Flow: ${formatCurrency(scCashFlow)}
+  Annual Cash Flow: ${formatCurrency(scAnnualCF)}
+  Gross Yield: ${scYield.toFixed(2)}%
+  ROI: ${scROI.toFixed(2)}%
+`;
+}).join('\n')}
+
+========================================
+DISCLAIMER
+========================================
+This report is for informational purposes only and does not constitute financial advice.
+Please consult with a qualified financial advisor before making any investment decisions.
+All calculations are estimates based on the inputs provided.
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `yieldpilot-simulator-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Report exported successfully");
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -145,9 +222,9 @@ const Simulator = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={exportToPDF}>
               <Download className="h-4 w-4 mr-2" />
-              Export PDF
+              Export Report
             </Button>
           </div>
         </div>
