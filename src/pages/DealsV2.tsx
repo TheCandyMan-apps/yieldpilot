@@ -10,6 +10,15 @@ import { Loader2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+interface ListingMetric {
+  listing_id: string;
+  score: number | null;
+  drivers: string[];
+  risks: string[];
+  kpis: any;
+  enrichment: any;
+}
+
 interface Listing {
   id: string;
   address_line1: string;
@@ -21,7 +30,7 @@ interface Listing {
   property_type: string | null;
   images: any[];
   source_refs: any[];
-  listing_metrics: any[];
+  listing_metrics: ListingMetric[];
 }
 
 const DealsV2 = () => {
@@ -66,16 +75,48 @@ const DealsV2 = () => {
 
   const fetchListings = async () => {
     try {
-      const { data, error } = await supabase
+      // Use raw query to avoid type inference issues
+      const { data: listingsData, error: listingsError } = await (supabase as any)
         .from("listings")
-        .select("*, listing_metrics(*)")
+        .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (listingsError) throw listingsError;
 
-      setListings((data as any) || []);
-      setFilteredListings((data as any) || []);
+      if (!listingsData || listingsData.length === 0) {
+        setListings([]);
+        setFilteredListings([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch metrics separately
+      const listingIds = listingsData.map((l: any) => l.id);
+      const { data: metricsData, error: metricsError } = await (supabase as any)
+        .from("listing_metrics")
+        .select("*")
+        .in("listing_id", listingIds);
+
+      if (metricsError) console.error("Error fetching metrics:", metricsError);
+
+      // Combine the data
+      const combinedData: Listing[] = listingsData.map((listing: any) => ({
+        id: listing.id,
+        address_line1: listing.address_line1,
+        address_town: listing.address_town,
+        postcode: listing.postcode,
+        price: listing.price,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        property_type: listing.property_type,
+        images: listing.images || [],
+        source_refs: listing.source_refs || [],
+        listing_metrics: metricsData?.filter((m: any) => m.listing_id === listing.id) || []
+      }));
+
+      setListings(combinedData);
+      setFilteredListings(combinedData);
     } catch (error: any) {
       toast({
         title: "Error loading listings",
@@ -143,7 +184,7 @@ const DealsV2 = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold">Smart Deal Feed</h1>
             <p className="text-muted-foreground mt-1">
