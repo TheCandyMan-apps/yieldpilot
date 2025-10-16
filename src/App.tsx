@@ -13,6 +13,8 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Deals = lazy(() => import("./pages/Deals"));
 const Simulator = lazy(() => import("./pages/Simulator"));
 const Insights = lazy(() => import("./pages/Insights"));
+const AreaInsights = lazy(() => import("./pages/AreaInsights"));
+const InvestorProfile = lazy(() => import("./pages/InvestorProfile"));
 const Alerts = lazy(() => import("./pages/Alerts"));
 const PortfolioNew = lazy(() => import("./pages/PortfolioNew"));
 const Community = lazy(() => import("./pages/Community"));
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/deals" element={<Deals />} />
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/area-insights" element={<AreaInsights />} />
+            <Route path="/investor-profile" element={<InvestorProfile />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/portfolio" element={<PortfolioNew />} />
             <Route path="/community" element={<Community />} />

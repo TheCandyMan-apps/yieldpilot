@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import DealCard from "@/components/deals/DealCard";
+import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
 import { ApifySyncButton } from "@/components/deals/ApifySyncButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Deal {
@@ -20,8 +20,10 @@ interface Deal {
   yield_percentage?: number;
   roi_percentage?: number;
   investment_score?: "A" | "B" | "C" | "D" | "E";
-  city?: string;
+  city: string | null;
   property_type?: string;
+  postcode: string | null;
+  listing_url: string | null;
 }
 
 const Deals = () => {
@@ -217,7 +219,7 @@ const Deals = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDeals.map((deal) => (
-              <DealCard
+              <EnhancedDealCard
                 key={deal.id}
                 deal={deal}
                 isWatchlisted={watchlistedIds.has(deal.id)}

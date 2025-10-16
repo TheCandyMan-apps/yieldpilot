@@ -104,6 +104,98 @@ export type Database = {
         }
         Relationships: []
       }
+      area_analytics: {
+        Row: {
+          avg_price_current: number | null
+          avg_yield_current: number | null
+          city: string
+          confidence_score: number | null
+          created_at: string | null
+          data_date: string | null
+          days_on_market_avg: number | null
+          id: string
+          market_gap_indicator: string | null
+          opportunity_score: number | null
+          postcode_prefix: string
+          price_growth_1yr: number | null
+          price_growth_5yr_forecast: number | null
+          rental_growth_1yr: number | null
+          transaction_volume: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_price_current?: number | null
+          avg_yield_current?: number | null
+          city: string
+          confidence_score?: number | null
+          created_at?: string | null
+          data_date?: string | null
+          days_on_market_avg?: number | null
+          id?: string
+          market_gap_indicator?: string | null
+          opportunity_score?: number | null
+          postcode_prefix: string
+          price_growth_1yr?: number | null
+          price_growth_5yr_forecast?: number | null
+          rental_growth_1yr?: number | null
+          transaction_volume?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_price_current?: number | null
+          avg_yield_current?: number | null
+          city?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          data_date?: string | null
+          days_on_market_avg?: number | null
+          id?: string
+          market_gap_indicator?: string | null
+          opportunity_score?: number | null
+          postcode_prefix?: string
+          price_growth_1yr?: number | null
+          price_growth_5yr_forecast?: number | null
+          rental_growth_1yr?: number | null
+          transaction_volume?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      deal_interactions: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          id: string
+          interaction_data: Json | null
+          interaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          id?: string
+          interaction_data?: Json | null
+          interaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+          interaction_data?: Json | null
+          interaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_interactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_summaries: {
         Row: {
           created_at: string | null
@@ -241,6 +333,143 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_products: {
+        Row: {
+          created_at: string | null
+          fees: Json | null
+          id: string
+          interest_rate: number
+          is_active: boolean | null
+          lender: string
+          ltv_max: number | null
+          max_loan: number | null
+          min_loan: number | null
+          product_name: string
+          product_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          interest_rate: number
+          is_active?: boolean | null
+          lender: string
+          ltv_max?: number | null
+          max_loan?: number | null
+          min_loan?: number | null
+          product_name: string
+          product_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          interest_rate?: number
+          is_active?: boolean | null
+          lender?: string
+          ltv_max?: number | null
+          max_loan?: number | null
+          min_loan?: number | null
+          product_name?: string
+          product_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      investor_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          investment_strategy: string | null
+          location_preferences: Json | null
+          max_budget: number | null
+          min_bedrooms: number | null
+          preferred_yield_max: number | null
+          preferred_yield_min: number | null
+          property_types: Json | null
+          refurb_comfort: string | null
+          risk_tolerance: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          investment_strategy?: string | null
+          location_preferences?: Json | null
+          max_budget?: number | null
+          min_bedrooms?: number | null
+          preferred_yield_max?: number | null
+          preferred_yield_min?: number | null
+          property_types?: Json | null
+          refurb_comfort?: string | null
+          risk_tolerance?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          investment_strategy?: string | null
+          location_preferences?: Json | null
+          max_budget?: number | null
+          min_bedrooms?: number | null
+          preferred_yield_max?: number | null
+          preferred_yield_min?: number | null
+          property_types?: Json | null
+          refurb_comfort?: string | null
+          risk_tolerance?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      investor_reports: {
+        Row: {
+          content: Json
+          created_at: string | null
+          deal_id: string | null
+          id: string
+          is_branded: boolean | null
+          pdf_url: string | null
+          report_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          is_branded?: boolean | null
+          pdf_url?: string | null
+          report_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          is_branded?: boolean | null
+          pdf_url?: string | null
+          report_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_reports_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_insights: {
         Row: {
           avg_price: number | null
@@ -288,6 +517,68 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      portfolio_holdings: {
+        Row: {
+          bedrooms: number | null
+          created_at: string | null
+          current_value: number | null
+          epc_rating: string | null
+          id: string
+          imported_from_analysis_id: string | null
+          monthly_costs: number | null
+          monthly_rent: number | null
+          mortgage_balance: number | null
+          property_address: string
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          purchase_date: string | null
+          purchase_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bedrooms?: number | null
+          created_at?: string | null
+          current_value?: number | null
+          epc_rating?: string | null
+          id?: string
+          imported_from_analysis_id?: string | null
+          monthly_costs?: number | null
+          monthly_rent?: number | null
+          mortgage_balance?: number | null
+          property_address: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          purchase_date?: string | null
+          purchase_price: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bedrooms?: number | null
+          created_at?: string | null
+          current_value?: number | null
+          epc_rating?: string | null
+          id?: string
+          imported_from_analysis_id?: string | null
+          monthly_costs?: number | null
+          monthly_rent?: number | null
+          mortgage_balance?: number | null
+          property_address?: string
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          purchase_date?: string | null
+          purchase_price?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_holdings_imported_from_analysis_id_fkey"
+            columns: ["imported_from_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portfolio_performance: {
         Row: {
@@ -524,6 +815,62 @@ export type Database = {
             columns: ["analysis_id"]
             isOneToOne: false
             referencedRelation: "property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renovation_estimates: {
+        Row: {
+          condition_score: number | null
+          created_at: string | null
+          deal_id: string | null
+          epc_current: string | null
+          epc_potential: string | null
+          epc_upgrade_cost: number | null
+          estimated_cost_max: number | null
+          estimated_cost_min: number | null
+          id: string
+          post_refurb_value: number | null
+          potential_rent_increase: number | null
+          recommendations: Json | null
+          user_id: string
+        }
+        Insert: {
+          condition_score?: number | null
+          created_at?: string | null
+          deal_id?: string | null
+          epc_current?: string | null
+          epc_potential?: string | null
+          epc_upgrade_cost?: number | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          id?: string
+          post_refurb_value?: number | null
+          potential_rent_increase?: number | null
+          recommendations?: Json | null
+          user_id: string
+        }
+        Update: {
+          condition_score?: number | null
+          created_at?: string | null
+          deal_id?: string | null
+          epc_current?: string | null
+          epc_potential?: string | null
+          epc_upgrade_cost?: number | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          id?: string
+          post_refurb_value?: number | null
+          potential_rent_increase?: number | null
+          recommendations?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovation_estimates_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
         ]
