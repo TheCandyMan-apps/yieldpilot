@@ -92,7 +92,57 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
   };
 
   const downloadPDF = () => {
-    toast.success("PDF export feature coming soon");
+    if (!summary) return;
+    
+    const reportContent = `
+INVESTMENT DEAL SUMMARY
+${summary.title}
+${deal.property_address}
+
+===========================================
+KEY METRICS
+===========================================
+
+Property Price: ${formatCurrency(deal.price)}
+Estimated Rent: ${formatCurrency(deal.estimated_rent)}
+Yield: ${summary.key_metrics.yield.toFixed(2)}%
+ROI: ${summary.key_metrics.roi.toFixed(2)}%
+Monthly Cash Flow: ${formatCurrency(deal.cash_flow_monthly)}
+Investment Score: ${summary.key_metrics.investmentScore}
+
+===========================================
+INVESTMENT SUMMARY
+===========================================
+
+${summary.summary}
+
+===========================================
+RISK ASSESSMENT
+===========================================
+
+${summary.risk_rating}
+
+===========================================
+RECOMMENDATION
+===========================================
+
+${summary.recommendation}
+
+===========================================
+Generated: ${new Date().toLocaleString()}
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `deal-summary-${deal.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Summary exported successfully");
   };
 
   const formatCurrency = (value?: number) => {
