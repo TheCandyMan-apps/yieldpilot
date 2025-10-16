@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Eye, MapPin, Bed, Bath, Home, TrendingUp, Brain, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import DealSummaryGenerator from "./DealSummaryGenerator";
 
 interface Deal {
   id: string;
@@ -188,15 +189,20 @@ export const EnhancedDealCard = ({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button 
-            variant="outline" 
-            className="flex-1" 
-            size="sm"
-            onClick={handleViewDeal}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Analyze
-          </Button>
+          <DealSummaryGenerator
+            deal={deal}
+            trigger={
+              <Button 
+                variant="outline" 
+                className="flex-1" 
+                size="sm"
+                onClick={handleViewDeal}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Analyze
+              </Button>
+            }
+          />
           {deal.listing_url && (
             <Button 
               variant="default" 

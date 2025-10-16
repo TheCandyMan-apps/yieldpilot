@@ -205,9 +205,14 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button className="flex-1" variant="default">
-          Analyze This Deal
-        </Button>
+        <DealSummaryGenerator
+          deal={deal}
+          trigger={
+            <Button className="flex-1" variant="default">
+              Analyze This Deal
+            </Button>
+          }
+        />
         <DealSummaryGenerator
           deal={deal}
           trigger={
