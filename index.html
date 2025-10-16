@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YieldPilot - AI-Powered Property Investment Analysis</title>
+    <title>YieldPilot - AI Property Deal Intelligence</title>
+    <meta name="description" content="Navigate property with data. Invest with certainty. AI-powered deal scoring, explainable KPIs, and real-time market intelligence." />
+    <meta name="theme-color" content="#00B2A9" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/placeholder.svg" />
     <meta name="description" content="Analyze property ROI, yields, and cash flow instantly with AI. Make smarter investment decisions in UK, EU & US markets." />
     <meta name="author" content="YieldPilot" />
 
@@ -44,5 +48,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ Service Worker registered'))
+            .catch(err => console.log('❌ SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>
