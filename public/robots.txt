@@ -1,7 +1,16 @@
 User-agent: *
 Allow: /
+Allow: /deals
+Allow: /insights
+Allow: /area-insights
 Disallow: /dashboard
 Disallow: /auth
+Disallow: /simulator
+Disallow: /portfolio
+Disallow: /billing
+Disallow: /investor-profile
+Disallow: /alerts
+Disallow: /community
 
 Sitemap: https://yieldpilot.lovable.app/sitemap.xml
 

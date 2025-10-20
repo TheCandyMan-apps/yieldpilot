@@ -49,7 +49,9 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to generate summaries");
+        toast.error("Please sign in to generate AI summaries");
+        setOpen(false);
+        window.location.href = "/auth";
         return;
       }
 

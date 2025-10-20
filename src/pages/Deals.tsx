@@ -6,8 +6,9 @@ import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
 import { ApifySyncButton } from "@/components/deals/ApifySyncButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Lock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Deal {
   id: string;
@@ -32,6 +33,7 @@ const Deals = () => {
   const [watchlistedIds, setWatchlistedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -41,12 +43,11 @@ const Deals = () => {
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    setIsAuthenticated(!!user);
     fetchDeals();
-    fetchWatchlist(user.id);
+    if (user) {
+      fetchWatchlist(user.id);
+    }
   };
 
   const fetchDeals = async () => {
@@ -194,12 +195,39 @@ const Deals = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <ApifySyncButton onSyncComplete={fetchDeals} />
-            <Button onClick={handleGenerateSampleDeals}>
-              Generate Sample Deals
-            </Button>
+            {isAuthenticated && (
+              <>
+                <ApifySyncButton onSyncComplete={fetchDeals} />
+                <Button onClick={handleGenerateSampleDeals}>
+                  Generate Sample Deals
+                </Button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Limited Preview Banner */}
+        {!isAuthenticated && deals.length > 0 && (
+          <Alert className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+            <Lock className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="font-semibold mb-1">🔓 Viewing Limited Preview</p>
+                <p className="text-sm text-muted-foreground">
+                  You're seeing {deals.length} sample deals. Sign up free to access {deals.length > 10 ? '80+' : 'all'} investment opportunities with full AI analysis, yield calculations, and export features.
+                </p>
+              </div>
+              <Button 
+                onClick={() => navigate("/auth")} 
+                size="sm"
+                className="ml-4 flex-shrink-0"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Sign Up Free
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <DealFilters onFilterChange={applyFilters} />
@@ -207,6 +235,11 @@ const Deals = () => {
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
           Showing {filteredDeals.length} of {deals.length} deals
+          {!isAuthenticated && deals.length >= 10 && (
+            <span className="ml-2 text-primary font-medium">
+              • Sign up to see 70+ more deals
+            </span>
+          )}
         </div>
 
         {/* Deals Grid */}
