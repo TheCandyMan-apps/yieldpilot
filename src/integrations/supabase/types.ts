@@ -957,6 +957,12 @@ export type Database = {
         Args: { _new_tier: string; _user_id: string }
         Returns: boolean
       }
+      get_preview_deal_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          deal_id: string
+        }[]
+      }
       increment: {
         Args: { row_id: string; x: number }
         Returns: undefined
