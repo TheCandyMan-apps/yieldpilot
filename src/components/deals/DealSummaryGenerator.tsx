@@ -96,6 +96,8 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
   const downloadPDF = () => {
     if (!summary) return;
     
+    console.log("Starting PDF generation...");
+    
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -280,11 +282,13 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       }
 
       // Save the PDF
+      console.log("Saving PDF...");
       doc.save(`investment-analysis-${deal.id}.pdf`);
+      console.log("PDF saved successfully");
       toast.success("PDF report generated successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF report");
+      toast.error("Failed to generate PDF report: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 
