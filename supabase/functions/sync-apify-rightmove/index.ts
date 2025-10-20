@@ -29,10 +29,11 @@ serve(async (req) => {
     }
 
     const location = input?.location || 'London';
-    console.log('Starting Apify Rightmove actor run:', actorId, 'Location:', location);
+    console.log('Starting Apify Rightmove run:', actorId, 'Location:', location);
 
-    // Format actor ID for API (replace / with ~)
-    const formattedActorId = actorId.replace('/', '~');
+    // Determine if provided ID is an Actor slug (user/actor) or a Task ID
+    const isTask = !actorId.includes('/');
+    const formattedActorId = isTask ? actorId : actorId.replace('/', '~');
 
     // Prepare input with location search
     const actorInput = {
@@ -40,10 +41,13 @@ serve(async (req) => {
       startUrls: [`https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`],
     };
 
-    // Start the actor run
+    // Start the run (Actor or Task)
     const memory = 1024;
     const timeout = 300;
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
+    const runUrl = isTask
+      ? `https://api.apify.com/v2/actor-tasks/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`
+      : `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
+
     const runResponse = await fetch(
       runUrl,
       {
@@ -64,11 +68,11 @@ serve(async (req) => {
 
     const runData = await runResponse.json();
     const runId = runData.data.id;
-    const defaultDatasetId = runData.data.defaultDatasetId;
+    let datasetId = runData.data.defaultDatasetId;
     
     console.log('✓ Run started successfully');
     console.log(`  Run ID: ${runId}`);
-    console.log(`  Dataset ID: ${defaultDatasetId}`);
+    if (datasetId) console.log(`  Dataset ID: ${datasetId}`);
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
 
     // Poll for completion (max 5 minutes)
@@ -81,13 +85,17 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/${formattedActorId}/runs/${runId}`,
+        `https://api.apify.com/v2/runs/${runId}`,
         { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
       );
       
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         status = statusData.data.status;
+        // Capture dataset id if available
+        if (!datasetId && statusData.data.defaultDatasetId) {
+          datasetId = statusData.data.defaultDatasetId;
+        }
         const progress = Math.round((attempts / maxAttempts) * 100);
         console.log(`  [${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
         
@@ -121,9 +129,12 @@ serve(async (req) => {
     
     // Fetch dataset items
     console.log('📥 Fetching dataset items...');
-    console.log(`  Dataset ID: ${defaultDatasetId}`);
+    console.log(`  Dataset ID: ${datasetId}`);
+    if (!datasetId) {
+      throw new Error('No datasetId found from Apify run');
+    }
     const datasetResponse = await fetch(
-      `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?format=json`,
+      `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
       { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
     );
 
