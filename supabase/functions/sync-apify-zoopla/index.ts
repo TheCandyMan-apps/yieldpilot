@@ -59,13 +59,17 @@ serve(async (req) => {
     const runId = runData.data.id;
     const defaultDatasetId = runData.data.defaultDatasetId;
     
-    console.log('Run started:', runId, 'Dataset:', defaultDatasetId);
+    console.log('✓ Run started successfully');
+    console.log(`  Run ID: ${runId}`);
+    console.log(`  Dataset ID: ${defaultDatasetId}`);
+    console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
 
     // Poll for completion (max 5 minutes)
     let status = 'RUNNING';
     let attempts = 0;
     const maxAttempts = 60; // 5 minutes with 5-second intervals
 
+    console.log('⏳ Polling for run completion...');
     while (status === 'RUNNING' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
@@ -77,27 +81,40 @@ serve(async (req) => {
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         status = statusData.data.status;
-        console.log('Run status:', status);
+        const progress = Math.round((attempts / maxAttempts) * 100);
+        console.log(`  [${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
+        
+        // Log any status changes
+        if (statusData.data.stats) {
+          console.log(`  Stats: ${JSON.stringify(statusData.data.stats)}`);
+        }
       }
       
       attempts++;
     }
 
     if (status !== 'SUCCEEDED') {
-      console.warn('Run did not complete successfully. Status:', status);
+      console.error(`❌ Run did not complete successfully`);
+      console.error(`  Final status: ${status}`);
+      console.error(`  Run ID: ${runId}`);
+      console.error(`  View run details: https://console.apify.com/actors/runs/${runId}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Run timed out or failed',
+          message: `Run ${status === 'RUNNING' ? 'timed out' : 'failed'}. Status: ${status}`,
           status,
-          runId 
+          runId,
+          runUrl: `https://console.apify.com/actors/runs/${runId}`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('✓ Run completed successfully');
+    
     // Fetch dataset items
-    console.log('Fetching dataset items from:', defaultDatasetId);
+    console.log('📥 Fetching dataset items...');
+    console.log(`  Dataset ID: ${defaultDatasetId}`);
     const datasetResponse = await fetch(
       `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?format=json`,
       { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
@@ -108,9 +125,23 @@ serve(async (req) => {
     }
 
     const properties = await datasetResponse.json();
-    console.log('Fetched properties:', properties.length);
+    console.log(`✓ Fetched ${properties.length} Zoopla properties from dataset`);
+
+    if (properties.length === 0) {
+      console.warn('⚠️  No properties found in dataset');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          inserted: 0,
+          message: 'No properties found in the search results',
+          runId 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Transform and insert into deals_feed
+    console.log('🔄 Transforming property data...');
     const dealsToInsert = properties.map((prop: any) => ({
       property_address: prop.address || prop.displayAddress || 'Unknown Address',
       postcode: prop.postcode || null,
@@ -133,24 +164,54 @@ serve(async (req) => {
       investment_score: calculateScore(parsePrice(prop.price)),
     }));
 
+    // Filter out invalid entries
+    const validDeals = dealsToInsert.filter((deal: any) => 
+      deal.price > 0 && deal.property_address !== 'Unknown Address'
+    );
+
+    console.log(`  Valid properties: ${validDeals.length}/${dealsToInsert.length}`);
+    
+    if (validDeals.length === 0) {
+      console.error('❌ No valid properties to import after filtering');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'No valid properties to import',
+          inserted: 0,
+          total: properties.length,
+          filtered: dealsToInsert.length - validDeals.length
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('💾 Inserting deals into database...');
+
     const { data: insertedDeals, error: insertError } = await supabase
       .from('deals_feed')
-      .insert(dealsToInsert)
+      .insert(validDeals)
       .select();
 
     if (insertError) {
-      console.error('Error inserting deals:', insertError);
+      console.error('❌ Database insertion error:', insertError);
       throw insertError;
     }
 
-    console.log('Successfully inserted deals:', insertedDeals?.length);
+    console.log('✅ Sync completed successfully!');
+    console.log(`  Properties fetched: ${properties.length}`);
+    console.log(`  Valid properties: ${validDeals.length}`);
+    console.log(`  Inserted into database: ${insertedDeals?.length}`);
+    console.log(`  Run ID: ${runId}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         inserted: insertedDeals?.length,
+        total: properties.length,
+        valid: validDeals.length,
         runId,
-        status 
+        status,
+        runUrl: `https://console.apify.com/actors/runs/${runId}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
