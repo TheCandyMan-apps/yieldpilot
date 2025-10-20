@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DealCardV2 } from "@/components/deals/DealCardV2";
-import { ZooplaSyncButton } from "@/components/deals/ZooplaSyncButton";
-import { RightmoveSyncButton } from "@/components/deals/RightmoveSyncButton";
+import { UnifiedSyncButton } from "@/components/deals/UnifiedSyncButton";
 import { AssumptionsDrawer } from "@/components/deals/AssumptionsDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -197,8 +196,7 @@ const DealsV2 = () => {
               assumptions={globalAssumptions} 
               onUpdate={setGlobalAssumptions}
             />
-            <ZooplaSyncButton onSyncComplete={fetchListings} />
-            <RightmoveSyncButton onSyncComplete={fetchListings} />
+            <UnifiedSyncButton onSyncComplete={fetchListings} />
           </div>
         </div>
 

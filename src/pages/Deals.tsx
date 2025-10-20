@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
-import { ApifySyncButton } from "@/components/deals/ApifySyncButton";
-import { RightmoveSyncButton } from "@/components/deals/RightmoveSyncButton";
+import { UnifiedSyncButton } from "@/components/deals/UnifiedSyncButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, MapPin, Lock, TrendingUp } from "lucide-react";
@@ -198,8 +197,7 @@ const Deals = () => {
           <div className="flex gap-2">
             {isAuthenticated && (
               <>
-                <ApifySyncButton onSyncComplete={fetchDeals} />
-                <RightmoveSyncButton onSyncComplete={fetchDeals} />
+            <UnifiedSyncButton onSyncComplete={fetchDeals} />
                 <Button onClick={handleGenerateSampleDeals}>
                   Generate Sample Deals
                 </Button>
