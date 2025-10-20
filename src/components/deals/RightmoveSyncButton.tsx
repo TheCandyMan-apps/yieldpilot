@@ -4,11 +4,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Download } from "lucide-react";
 
-interface ApifySyncButtonProps {
+interface RightmoveSyncButtonProps {
   onSyncComplete?: () => void;
 }
 
-export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
+export const RightmoveSyncButton = ({ onSyncComplete }: RightmoveSyncButtonProps) => {
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -29,16 +29,18 @@ export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
 
       toast({
         title: "Starting sync...",
-        description: "Fetching latest Zoopla properties from Apify",
+        description: "Fetching latest Rightmove properties from Apify",
       });
 
-      const { data, error } = await supabase.functions.invoke('sync-apify-zoopla', {
+      const { data, error } = await supabase.functions.invoke('sync-apify-rightmove', {
         body: {
-          actorId: 'dhrumil/zoopla-scraper',
+          actorId: 'curious_coder/rightmove-scraper',
           input: {
-            searchType: 'for-sale',
-            maxResults: 50,
-            location: 'London',
+            locationIdentifier: 'REGION^876', // London
+            maxItems: 50,
+            propertyType: 'for-sale',
+            includeSSTC: false,
+            includeUnderOffer: false,
           }
         }
       });
@@ -48,7 +50,7 @@ export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
       if (data?.success) {
         toast({
           title: "Sync complete!",
-          description: `Successfully imported ${data.inserted} properties from Zoopla`,
+          description: `Successfully imported ${data.inserted} properties from Rightmove`,
         });
         onSyncComplete?.();
       } else {
@@ -59,10 +61,10 @@ export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
         });
       }
     } catch (error) {
-      console.error('Error syncing Apify data:', error);
+      console.error('Error syncing Rightmove data:', error);
       toast({
         title: "Sync failed",
-        description: error instanceof Error ? error.message : "Failed to sync data",
+        description: error instanceof Error ? error.message : "Failed to sync data from Rightmove",
         variant: "destructive",
       });
     } finally {
@@ -78,7 +80,7 @@ export const ApifySyncButton = ({ onSyncComplete }: ApifySyncButtonProps) => {
       className="gap-2"
     >
       <Download className="h-4 w-4" />
-      {isSyncing ? "Syncing Zoopla..." : "Sync Zoopla Data"}
+      {isSyncing ? "Syncing Rightmove..." : "Sync Rightmove Data"}
     </Button>
   );
 };
