@@ -28,10 +28,17 @@ serve(async (req) => {
       throw new Error('actorId is required');
     }
 
-    console.log('Starting Apify Rightmove actor run:', actorId);
+    const location = input?.location || 'London';
+    console.log('Starting Apify Rightmove actor run:', actorId, 'Location:', location);
 
     // Format actor ID for API (replace / with ~)
     const formattedActorId = actorId.replace('/', '~');
+
+    // Prepare input with location search
+    const actorInput = {
+      ...input,
+      startUrls: [`https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`],
+    };
 
     // Start the actor run
     const runResponse = await fetch(
@@ -42,7 +49,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${APIFY_API_KEY}`,
         },
-        body: JSON.stringify(input || {}),
+        body: JSON.stringify(actorInput),
       }
     );
 
