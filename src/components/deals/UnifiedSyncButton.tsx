@@ -58,7 +58,7 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('sync-apify-rightmove', {
           body: {
-            actorId: 'curious_coder/rightmove-scraper',
+            actorId: 'yyyyuaYekB0HQkfoy',
             input: {
               location: location,
               maxItems: maxResults,
