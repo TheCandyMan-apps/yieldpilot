@@ -255,14 +255,20 @@ Format your response as JSON with these exact keys:
       
       if (aiResponse.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Service is experiencing high demand. Please try again in a few moments." }),
+          JSON.stringify({ 
+            error: "AI service rate limit reached. We're processing too many requests right now. Please wait 1 minute and try again.",
+            retryAfter: 60
+          }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       if (aiResponse.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Analysis service temporarily unavailable. Please contact support." }),
+          JSON.stringify({ 
+            error: "AI service credit limit reached. Please contact support@yieldpilot.com to restore service or add credits to your workspace.",
+            supportEmail: "support@yieldpilot.com"
+          }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

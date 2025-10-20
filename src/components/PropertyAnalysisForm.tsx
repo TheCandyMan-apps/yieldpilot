@@ -13,6 +13,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const propertyAnalysisSchema = z.object({
+  propertyAddress: z.string()
+    .trim()
+    .min(1, "Property address is required")
+    .max(500, "Property address must be less than 500 characters")
+    .regex(/^[a-zA-Z0-9\s,.\-#']+$/, "Property address contains invalid characters"),
+  propertyPrice: z.string()
+    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => parseFloat(val) >= 1000, "Property price must be at least £1,000")
+    .refine((val) => parseFloat(val) <= 100000000, "Property price must be less than £100,000,000"),
+  propertyType: z.enum(["residential", "commercial", "mixed_use", "land"]),
+  estimatedRent: z.string()
+    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => parseFloat(val) >= 0, "Estimated rent must be positive")
+    .refine((val) => parseFloat(val) <= 1000000, "Estimated rent must be less than £1,000,000"),
+  mortgageRate: z.string()
+    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => parseFloat(val) >= 0, "Mortgage rate must be positive")
+    .refine((val) => parseFloat(val) <= 20, "Mortgage rate must be less than 20%"),
+  depositAmount: z.string()
+    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => parseFloat(val) >= 0, "Deposit amount must be positive"),
+  monthlyCosts: z.string()
+    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => parseFloat(val) >= 0, "Monthly costs must be positive")
+    .refine((val) => parseFloat(val) <= 100000, "Monthly costs must be less than £100,000"),
+}).refine((data) => parseFloat(data.depositAmount) <= parseFloat(data.propertyPrice), {
+  message: "Deposit cannot exceed property price",
+  path: ["depositAmount"],
+});
 
 interface PropertyAnalysisFormProps {
   onComplete: (analysis: any) => void;
@@ -22,6 +54,7 @@ interface PropertyAnalysisFormProps {
 
 const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: PropertyAnalysisFormProps) => {
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     propertyAddress: existingAnalysis?.property_address || "",
     propertyPrice: existingAnalysis?.property_price?.toString() || "",
@@ -34,6 +67,23 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
+    // Validate form data
+    const validation = propertyAnalysisSchema.safeParse(formData);
+    
+    if (!validation.success) {
+      const newErrors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      toast.error("Please fix the validation errors");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -55,7 +105,21 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
       onComplete(data);
     } catch (error: any) {
       console.error("Analysis error:", error);
-      toast.error(error.message || "Failed to analyze property");
+      
+      // Enhanced error messages for production
+      let errorMessage = "Failed to analyze property";
+      
+      if (error?.message?.includes("rate limit") || error?.message?.includes("429")) {
+        errorMessage = "Service is busy. Please wait a moment and try again.";
+      } else if (error?.message?.includes("credit") || error?.message?.includes("402")) {
+        errorMessage = "Service temporarily unavailable. Please contact support.";
+      } else if (error?.message?.includes("auth")) {
+        errorMessage = "Please sign in to analyze properties.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -83,7 +147,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
               onChange={(e) => handleChange("propertyAddress", e.target.value)}
               required
               aria-describedby="address-hint"
+              className={errors.propertyAddress ? "border-destructive" : ""}
             />
+            {errors.propertyAddress && (
+              <p className="text-xs text-destructive mt-1">{errors.propertyAddress}</p>
+            )}
             <span id="address-hint" className="sr-only">Enter the full property address including street, city, and postcode</span>
           </div>
 
@@ -97,7 +165,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
                 value={formData.propertyPrice}
                 onChange={(e) => handleChange("propertyPrice", e.target.value)}
                 required
+                className={errors.propertyPrice ? "border-destructive" : ""}
               />
+              {errors.propertyPrice && (
+                <p className="text-xs text-destructive mt-1">{errors.propertyPrice}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -129,7 +201,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
                 value={formData.estimatedRent}
                 onChange={(e) => handleChange("estimatedRent", e.target.value)}
                 required
+                className={errors.estimatedRent ? "border-destructive" : ""}
               />
+              {errors.estimatedRent && (
+                <p className="text-xs text-destructive mt-1">{errors.estimatedRent}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -142,7 +218,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
                 value={formData.mortgageRate}
                 onChange={(e) => handleChange("mortgageRate", e.target.value)}
                 required
+                className={errors.mortgageRate ? "border-destructive" : ""}
               />
+              {errors.mortgageRate && (
+                <p className="text-xs text-destructive mt-1">{errors.mortgageRate}</p>
+              )}
             </div>
           </div>
 
@@ -156,7 +236,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
                 value={formData.depositAmount}
                 onChange={(e) => handleChange("depositAmount", e.target.value)}
                 required
+                className={errors.depositAmount ? "border-destructive" : ""}
               />
+              {errors.depositAmount && (
+                <p className="text-xs text-destructive mt-1">{errors.depositAmount}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -168,7 +252,11 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
                 value={formData.monthlyCosts}
                 onChange={(e) => handleChange("monthlyCosts", e.target.value)}
                 required
+                className={errors.monthlyCosts ? "border-destructive" : ""}
               />
+              {errors.monthlyCosts && (
+                <p className="text-xs text-destructive mt-1">{errors.monthlyCosts}</p>
+              )}
             </div>
           </div>
 
