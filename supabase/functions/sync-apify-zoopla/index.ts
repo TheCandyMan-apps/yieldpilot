@@ -34,8 +34,11 @@ serve(async (req) => {
     const formattedActorId = actorId.replace('/', '~');
 
     // Start the actor run
+    const memory = 1024;
+    const timeout = 300;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
     const runResponse = await fetch(
-      `https://api.apify.com/v2/acts/${formattedActorId}/runs`,
+      runUrl,
       {
         method: 'POST',
         headers: { 
