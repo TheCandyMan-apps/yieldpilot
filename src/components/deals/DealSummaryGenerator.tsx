@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Download, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Deal {
   id: string;
@@ -94,55 +96,196 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
   const downloadPDF = () => {
     if (!summary) return;
     
-    const reportContent = `
-INVESTMENT DEAL SUMMARY
-${summary.title}
-${deal.property_address}
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
 
-===========================================
-KEY METRICS
-===========================================
+      // Header
+      doc.setFillColor(59, 130, 246); // Blue
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont(undefined, 'bold');
+      doc.text("INVESTMENT DEAL ANALYSIS", pageWidth / 2, 20, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'normal');
+      doc.text(new Date().toLocaleDateString(), pageWidth / 2, 30, { align: 'center' });
+      
+      yPos = 50;
+      
+      // Property Details Section
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Property Details", 14, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(summary.title, 14, yPos);
+      yPos += 7;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(deal.property_address, 14, yPos);
+      yPos += 5;
+      
+      if (deal.city) {
+        doc.text(`Location: ${deal.city}`, 14, yPos);
+        yPos += 5;
+      }
+      
+      if (deal.property_type) {
+        doc.text(`Type: ${deal.property_type}`, 14, yPos);
+        yPos += 10;
+      } else {
+        yPos += 5;
+      }
 
-Property Price: ${formatCurrency(deal.price)}
-Estimated Rent: ${formatCurrency(deal.estimated_rent)}
-Yield: ${summary.key_metrics.yield.toFixed(2)}%
-ROI: ${summary.key_metrics.roi.toFixed(2)}%
-Monthly Cash Flow: ${formatCurrency(deal.cash_flow_monthly)}
-Investment Score: ${summary.key_metrics.investmentScore}
+      // Key Metrics Table
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Key Financial Metrics", 14, yPos);
+      yPos += 5;
+      
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Metric', 'Value']],
+        body: [
+          ['Property Price', formatCurrency(deal.price)],
+          ['Estimated Monthly Rent', formatCurrency(deal.estimated_rent)],
+          ['Annual Yield', `${summary.key_metrics.yield.toFixed(2)}%`],
+          ['ROI', `${summary.key_metrics.roi.toFixed(2)}%`],
+          ['Monthly Cash Flow', formatCurrency(deal.cash_flow_monthly)],
+          ['Investment Score', summary.key_metrics.investmentScore],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246], fontSize: 11, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 70 },
+          1: { cellWidth: 'auto' }
+        }
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
 
-===========================================
-INVESTMENT SUMMARY
-===========================================
+      // Visual Metrics Bar Chart
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Performance Indicators", 14, yPos);
+      yPos += 10;
+      
+      const drawMetricBar = (label: string, value: number, maxValue: number, color: [number, number, number], y: number) => {
+        const barWidth = 120;
+        const barHeight = 8;
+        const labelWidth = 60;
+        
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(label, 14, y);
+        
+        // Background bar
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14 + labelWidth, y - 5, barWidth, barHeight, 'F');
+        
+        // Value bar
+        const fillWidth = (value / maxValue) * barWidth;
+        doc.setFillColor(...color);
+        doc.rect(14 + labelWidth, y - 5, fillWidth, barHeight, 'F');
+        
+        // Value text
+        doc.setFont(undefined, 'bold');
+        doc.text(`${value.toFixed(1)}%`, 14 + labelWidth + barWidth + 5, y);
+      };
+      
+      drawMetricBar('Yield', summary.key_metrics.yield, 15, [34, 197, 94], yPos);
+      yPos += 12;
+      drawMetricBar('ROI', summary.key_metrics.roi, 25, [59, 130, 246], yPos);
+      yPos += 20;
 
-${summary.summary}
+      // Investment Summary Section
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Investment Summary", 14, yPos);
+      yPos += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const summaryLines = doc.splitTextToSize(summary.summary, pageWidth - 28);
+      doc.text(summaryLines, 14, yPos);
+      yPos += (summaryLines.length * 5) + 10;
 
-===========================================
-RISK ASSESSMENT
-===========================================
+      // Risk Assessment Section
+      if (yPos > pageHeight - 50) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Risk Assessment", 14, yPos);
+      yPos += 8;
+      
+      doc.setFillColor(255, 237, 213); // Light orange
+      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
+      yPos += 5;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const riskLines = doc.splitTextToSize(summary.risk_rating, pageWidth - 28);
+      doc.text(riskLines, 14, yPos);
+      yPos += (riskLines.length * 5) + 10;
 
-${summary.risk_rating}
+      // Recommendation Section
+      if (yPos > pageHeight - 50) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text("Recommendation", 14, yPos);
+      yPos += 8;
+      
+      doc.setFillColor(219, 234, 254); // Light blue
+      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
+      yPos += 5;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const recommendationLines = doc.splitTextToSize(summary.recommendation, pageWidth - 28);
+      doc.text(recommendationLines, 14, yPos);
+      yPos += (recommendationLines.length * 5) + 15;
 
-===========================================
-RECOMMENDATION
-===========================================
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `YieldPilot Investment Analysis | Generated: ${new Date().toLocaleString()} | Page ${i} of ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
 
-${summary.recommendation}
-
-===========================================
-Generated: ${new Date().toLocaleString()}
-    `.trim();
-
-    const blob = new Blob([reportContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `deal-summary-${deal.id}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success("Summary exported successfully");
+      // Save the PDF
+      doc.save(`investment-analysis-${deal.id}.pdf`);
+      toast.success("PDF report generated successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF report");
+    }
   };
 
   const formatCurrency = (value?: number) => {
