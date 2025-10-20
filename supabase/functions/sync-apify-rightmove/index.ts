@@ -72,12 +72,12 @@ serve(async (req) => {
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
 
     // Poll for completion (max 5 minutes)
-    let status = 'RUNNING';
+    let status = 'READY';
     let attempts = 0;
     const maxAttempts = 60; // 5 minutes with 5-second intervals
 
     console.log('⏳ Polling for run completion...');
-    while (status === 'RUNNING' && attempts < maxAttempts) {
+    while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
       const statusResponse = await fetch(
