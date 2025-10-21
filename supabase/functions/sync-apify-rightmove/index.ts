@@ -75,162 +75,120 @@ serve(async (req) => {
     if (datasetId) console.log(`  Dataset ID: ${datasetId}`);
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
 
-    // Poll for completion (max 5 minutes)
-    let status = 'READY';
-    let attempts = 0;
-    const pollIntervalMs = 5000; // 5 seconds
-    const maxAttempts = Math.ceil((timeout * 1000) / pollIntervalMs);
+    // Start background processing without blocking the response
+    const processRun = async () => {
+      try {
+        let status = 'READY';
+        let attempts = 0;
+        const pollIntervalMs = 5000; // 5 seconds
+        const maxAttempts = Math.ceil((timeout * 1000) / pollIntervalMs);
 
-    console.log('⏳ Polling for run completion...');
-    while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      
-      const statusResponse = await fetch(
-        `https://api.apify.com/v2/runs/${runId}`,
-        { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
-      );
-      
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        status = statusData.data.status;
-        // Capture dataset id if available
-        if (!datasetId && statusData.data.defaultDatasetId) {
-          datasetId = statusData.data.defaultDatasetId;
+        console.log('⏳ [BG] Polling for run completion...');
+        while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+
+          const statusResponse = await fetch(`https://api.apify.com/v2/runs/${runId}`,
+            { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
+
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            status = statusData.data.status;
+            if (!datasetId && statusData.data.defaultDatasetId) {
+              datasetId = statusData.data.defaultDatasetId;
+            }
+            const progress = Math.round((attempts / maxAttempts) * 100);
+            console.log(`  [BG ${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
+          }
+
+          attempts++;
         }
-        const progress = Math.round((attempts / maxAttempts) * 100);
-        console.log(`  [${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
-        
-        // Log any status changes
-        if (statusData.data.stats) {
-          console.log(`  Stats: ${JSON.stringify(statusData.data.stats)}`);
+
+        if (status !== 'SUCCEEDED') {
+          console.error(`❌ [BG] Run did not complete successfully (status: ${status}) - ${runId}`);
+          return;
         }
+
+        console.log('✓ [BG] Run completed successfully');
+        if (!datasetId) {
+          console.warn('[BG] No datasetId from Apify run');
+          return;
+        }
+
+        console.log('📥 [BG] Fetching dataset items...', datasetId);
+        const datasetResponse = await fetch(
+          `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
+          { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } }
+        );
+        if (!datasetResponse.ok) {
+          console.error('[BG] Failed to fetch dataset items');
+          return;
+        }
+
+        const properties = await datasetResponse.json();
+        console.log(`✓ [BG] Fetched ${properties.length} Rightmove properties from dataset`);
+        if (!Array.isArray(properties) || properties.length === 0) {
+          console.warn('[BG] No properties found in dataset');
+          return;
+        }
+
+        console.log('[BG] Transforming property data...');
+        const dealsToInsert = properties.map((prop: any) => ({
+          property_address: prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address',
+          postcode: prop.address?.postcode || null,
+          city: prop.address?.town || prop.address?.city || null,
+          property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
+          price: parsePrice(prop.price?.amount || prop.price),
+          estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
+          bedrooms: parseInt(prop.bedrooms) || null,
+          bathrooms: parseInt(prop.bathrooms) || null,
+          square_feet: prop.size?.max ? parseInt(prop.size.max) : null,
+          image_url: prop.propertyImages?.[0] || prop.images?.[0] || null,
+          listing_url: prop.propertyUrl || prop.url || null,
+          location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : null,
+          location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : null,
+          source: 'apify-rightmove',
+          is_active: true,
+          yield_percentage: calculateYield(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
+          roi_percentage: calculateROI(parsePrice(prop.price?.amount || prop.price)),
+          cash_flow_monthly: calculateCashFlow(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
+          investment_score: calculateScore(parsePrice(prop.price?.amount || prop.price)),
+        }));
+
+        const validDeals = dealsToInsert.filter((deal: any) => deal.price > 0 && deal.property_address !== 'Unknown Address');
+        console.log(`[BG] Valid properties: ${validDeals.length}/${dealsToInsert.length}`);
+        if (validDeals.length === 0) {
+          console.warn('[BG] No valid properties to import after filtering');
+          return;
+        }
+
+        console.log('[BG] Inserting deals into database...');
+        const { error: insertError } = await supabase
+          .from('deals_feed')
+          .insert(validDeals);
+
+        if (insertError) {
+          console.error('❌ [BG] Database insertion error:', insertError);
+          return;
+        }
+
+        console.log(`✅ [BG] Sync completed. Inserted ${validDeals.length} deals (run ${runId})`);
+      } catch (err) {
+        console.error('❌ [BG] Error while processing run:', err);
       }
-      
-      attempts++;
-    }
+    };
 
-    if (status !== 'SUCCEEDED') {
-      console.error(`❌ Run did not complete successfully`);
-      console.error(`  Final status: ${status}`);
-      console.error(`  Run ID: ${runId}`);
-      console.error(`  View run details: https://console.apify.com/actors/runs/${runId}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: `Run ${status === 'RUNNING' ? 'timed out' : 'failed'}. Status: ${status}`,
-          status,
-          runId,
-          runUrl: `https://console.apify.com/actors/runs/${runId}`
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Fire and forget
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(processRun());
 
-    console.log('✓ Run completed successfully');
-    
-    // Fetch dataset items
-    console.log('📥 Fetching dataset items...');
-    console.log(`  Dataset ID: ${datasetId}`);
-    if (!datasetId) {
-      throw new Error('No datasetId found from Apify run');
-    }
-    const datasetResponse = await fetch(
-      `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
-      { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
-    );
-
-    if (!datasetResponse.ok) {
-      throw new Error('Failed to fetch dataset items');
-    }
-
-    const properties = await datasetResponse.json();
-    console.log(`✓ Fetched ${properties.length} Rightmove properties from dataset`);
-
-    if (properties.length === 0) {
-      console.warn('⚠️  No properties found in dataset');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          inserted: 0,
-          message: 'No properties found in the search results',
-          runId 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Transform and insert into deals_feed
-    console.log('🔄 Transforming property data...');
-    const dealsToInsert = properties.map((prop: any) => ({
-      property_address: prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address',
-      postcode: prop.address?.postcode || null,
-      city: prop.address?.town || prop.address?.city || null,
-      property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
-      price: parsePrice(prop.price?.amount || prop.price),
-      estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
-      bedrooms: parseInt(prop.bedrooms) || null,
-      bathrooms: parseInt(prop.bathrooms) || null,
-      square_feet: prop.size?.max ? parseInt(prop.size.max) : null,
-      image_url: prop.propertyImages?.[0] || prop.images?.[0] || null,
-      listing_url: prop.propertyUrl || prop.url || null,
-      location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : null,
-      location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : null,
-      source: 'apify-rightmove',
-      is_active: true,
-      yield_percentage: calculateYield(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-      roi_percentage: calculateROI(parsePrice(prop.price?.amount || prop.price)),
-      cash_flow_monthly: calculateCashFlow(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-      investment_score: calculateScore(parsePrice(prop.price?.amount || prop.price)),
-    }));
-
-    // Filter out invalid entries
-    const validDeals = dealsToInsert.filter((deal: any) => 
-      deal.price > 0 && deal.property_address !== 'Unknown Address'
-    );
-
-    console.log(`  Valid properties: ${validDeals.length}/${dealsToInsert.length}`);
-    
-    if (validDeals.length === 0) {
-      console.error('❌ No valid properties to import after filtering');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'No valid properties to import',
-          inserted: 0,
-          total: properties.length,
-          filtered: dealsToInsert.length - validDeals.length
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('💾 Inserting deals into database...');
-
-    const { data: insertedDeals, error: insertError } = await supabase
-      .from('deals_feed')
-      .insert(validDeals)
-      .select();
-
-    if (insertError) {
-      console.error('❌ Database insertion error:', insertError);
-      throw insertError;
-    }
-
-    console.log('✅ Sync completed successfully!');
-    console.log(`  Properties fetched: ${properties.length}`);
-    console.log(`  Valid properties: ${validDeals.length}`);
-    console.log(`  Inserted into database: ${insertedDeals?.length}`);
-    console.log(`  Run ID: ${runId}`);
-
+    // Respond immediately so the UI doesn't wait
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        inserted: insertedDeals?.length,
-        total: properties.length,
-        valid: validDeals.length,
+      JSON.stringify({
+        started: true,
+        source: 'rightmove',
         runId,
-        status,
-        runUrl: `https://console.apify.com/actors/runs/${runId}`
+        runUrl: `https://console.apify.com/actors/runs/${runId}`,
+        message: 'Rightmove sync started and is processing in the background.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -23,7 +23,7 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [location, setLocation] = useState("");
-  const [maxResults, setMaxResults] = useState(50);
+  const [maxResults, setMaxResults] = useState(20);
 
   const handleSync = async () => {
     if (!location.trim()) {
@@ -51,10 +51,10 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
 
       toast({
         title: "Starting sync...",
-        description: `Fetching properties from Rightmove and Zoopla in ${location}`,
+        description: `Starting Rightmove and Zoopla in ${location}. Results will appear shortly.`,
       });
 
-      // Sync both sources in parallel
+      // Kick off both sources in parallel (functions now process in background)
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('sync-apify-rightmove', {
           body: {
@@ -84,47 +84,39 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         })
       ]);
 
-      let rightmoveCount = 0;
-      let zooplaCount = 0;
+      let rightmoveStarted = false;
+      let zooplaStarted = false;
       const errors: string[] = [];
 
-      // Process Rightmove result
+      // Process Rightmove start
       if (rightmoveResult.status === 'fulfilled' && !rightmoveResult.value.error) {
         const data = rightmoveResult.value.data;
-        if (data?.success) {
-          rightmoveCount = data.inserted || 0;
-        } else {
-          errors.push("Rightmove sync incomplete");
-        }
+        rightmoveStarted = !!data?.started;
+        if (!rightmoveStarted) errors.push("Rightmove failed to start");
       } else {
-        errors.push("Rightmove sync failed");
+        errors.push("Rightmove failed to start");
       }
 
-      // Process Zoopla result
+      // Process Zoopla start
       if (zooplaResult.status === 'fulfilled' && !zooplaResult.value.error) {
         const data = zooplaResult.value.data;
-        if (data?.success) {
-          zooplaCount = data.inserted || 0;
-        } else {
-          errors.push("Zoopla sync incomplete");
-        }
+        zooplaStarted = !!data?.started;
+        if (!zooplaStarted) errors.push("Zoopla failed to start");
       } else {
-        errors.push("Zoopla sync failed");
+        errors.push("Zoopla failed to start");
       }
 
-      const totalImported = rightmoveCount + zooplaCount;
-
-      if (totalImported > 0) {
+      if (rightmoveStarted || zooplaStarted) {
         toast({
-          title: "Sync complete!",
-          description: `Imported ${rightmoveCount} from Rightmove and ${zooplaCount} from Zoopla (${totalImported} total)`,
+          title: "Sync started",
+          description: `We\'re fetching properties now. You\'ll see new listings on the Deals page shortly.`,
         });
         setIsOpen(false);
         onSyncComplete?.();
       } else {
         toast({
-          title: "Sync incomplete",
-          description: errors.join(". ") || "No properties were imported. Check your Apify account limits.",
+          title: "Sync couldn\'t start",
+          description: errors.join(". ") || "Please try again or reduce the max properties.",
           variant: "destructive",
         });
       }
