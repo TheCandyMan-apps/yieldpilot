@@ -54,10 +54,13 @@ Deno.serve(async (req) => {
       })
     }];
 
+    // Apify expects Base64-encoded JSON for the `webhooks` query param
+    const webhooksParam = btoa(JSON.stringify(webhooks));
+
     // Start the actor run with webhook
     const memory = input?.memoryMB ?? 2048;
     const timeout = input?.timeoutSec ?? 900;
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(JSON.stringify(webhooks))}`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(webhooksParam)}`;
     const runResponse = await fetch(
       runUrl,
       {
