@@ -43,10 +43,21 @@ Deno.serve(async (req) => {
       startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/${location.toLowerCase().replace(/\s+/g, '-')}/` }],
     };
 
+    // Construct webhook configuration
+    const webhooks = [{
+      eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+      requestUrl: webhookUrl,
+      payloadTemplate: JSON.stringify({
+        datasetId: "{{resource.defaultDatasetId}}",
+        source: "zoopla",
+        runId: "{{resource.id}}"
+      })
+    }];
+
     // Start the actor run with webhook
     const memory = input?.memoryMB ?? 2048;
     const timeout = input?.timeoutSec ?? 900;
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=[{"eventTypes":["ACTOR.RUN.SUCCEEDED"],"requestUrl":"${encodeURIComponent(webhookUrl)}","payloadTemplate":"{\\"datasetId\\":\\"{{resource.defaultDatasetId}}\\",\\"source\\":\\"zoopla\\",\\"runId\\":\\"{{resource.id}}\\"}"}]`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(JSON.stringify(webhooks))}`;
     const runResponse = await fetch(
       runUrl,
       {

@@ -38,18 +38,29 @@ Deno.serve(async (req) => {
     // Webhook URL for Apify to call when done
     const webhookUrl = `${SUPABASE_URL}/functions/v1/apify-webhook`;
 
-    // Prepare input with location search and webhook
+    // Prepare input with location search
     const actorInput = {
       ...input,
       startUrls: [`https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`],
     };
 
+    // Construct webhook configuration
+    const webhooks = [{
+      eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+      requestUrl: webhookUrl,
+      payloadTemplate: JSON.stringify({
+        datasetId: "{{resource.defaultDatasetId}}",
+        source: "rightmove",
+        runId: "{{resource.id}}"
+      })
+    }];
+
     // Start the run (Actor or Task) with webhook
     const memory = input?.memoryMB ?? 2048;
     const timeout = input?.timeoutSec ?? 900;
     const runUrl = isTask
-      ? `https://api.apify.com/v2/actor-tasks/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=[{"eventTypes":["ACTOR.RUN.SUCCEEDED"],"requestUrl":"${encodeURIComponent(webhookUrl)}","payloadTemplate":"{\\"datasetId\\":\\"{{resource.defaultDatasetId}}\\",\\"source\\":\\"rightmove\\",\\"runId\\":\\"{{resource.id}}\\"}"}]`
-      : `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=[{"eventTypes":["ACTOR.RUN.SUCCEEDED"],"requestUrl":"${encodeURIComponent(webhookUrl)}","payloadTemplate":"{\\"datasetId\\":\\"{{resource.defaultDatasetId}}\\",\\"source\\":\\"rightmove\\",\\"runId\\":\\"{{resource.id}}\\"}"}]`;
+      ? `https://api.apify.com/v2/actor-tasks/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(JSON.stringify(webhooks))}`
+      : `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(JSON.stringify(webhooks))}`;
 
     const runResponse = await fetch(
       runUrl,
