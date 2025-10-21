@@ -42,8 +42,8 @@ serve(async (req) => {
     };
 
     // Start the run (Actor or Task)
-    const memory = 1024;
-    const timeout = 300;
+    const memory = input?.memoryMB ?? 2048;
+    const timeout = input?.timeoutSec ?? 900;
     const runUrl = isTask
       ? `https://api.apify.com/v2/actor-tasks/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`
       : `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
@@ -78,7 +78,8 @@ serve(async (req) => {
     // Poll for completion (max 5 minutes)
     let status = 'READY';
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes with 5-second intervals
+    const pollIntervalMs = 5000; // 5 seconds
+    const maxAttempts = Math.ceil((timeout * 1000) / pollIntervalMs);
 
     console.log('⏳ Polling for run completion...');
     while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {

@@ -60,11 +60,13 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
           body: {
             actorId: 'yyyyuaYekB0HQkfoy',
             input: {
-              location: location,
+              location,
               maxItems: maxResults,
               propertyType: 'for-sale',
               includeSSTC: false,
               includeUnderOffer: false,
+              timeoutSec: 900,
+              memoryMB: 2048,
             }
           }
         }),
@@ -74,7 +76,9 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
             input: {
               searchType: 'for-sale',
               maxResults: maxResults,
-              location: location,
+              location,
+              timeoutSec: 900,
+              memoryMB: 2048,
             }
           }
         })

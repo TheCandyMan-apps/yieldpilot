@@ -34,8 +34,8 @@ serve(async (req) => {
     const formattedActorId = actorId.replace('/', '~');
 
     // Start the actor run
-    const memory = 1024;
-    const timeout = 300;
+    const memory = input?.memoryMB ?? 2048;
+    const timeout = input?.timeoutSec ?? 900;
     const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
     const runResponse = await fetch(
       runUrl,
@@ -57,30 +57,34 @@ serve(async (req) => {
 
     const runData = await runResponse.json();
     const runId = runData.data.id;
-    const defaultDatasetId = runData.data.defaultDatasetId;
+    let datasetId = runData.data.defaultDatasetId;
     
     console.log('✓ Run started successfully');
     console.log(`  Run ID: ${runId}`);
-    console.log(`  Dataset ID: ${defaultDatasetId}`);
+    if (datasetId) console.log(`  Dataset ID: ${datasetId}`);
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
 
     // Poll for completion (max 5 minutes)
     let status = 'READY';
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes with 5-second intervals
+    const pollIntervalMs = 5000; // 5 seconds
+    const maxAttempts = Math.ceil((timeout * 1000) / pollIntervalMs);
 
     console.log('⏳ Polling for run completion...');
     while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/${formattedActorId}/runs/${runId}`,
+        `https://api.apify.com/v2/runs/${runId}`,
         { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
       );
       
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         status = statusData.data.status;
+        if (!datasetId && statusData.data.defaultDatasetId) {
+          datasetId = statusData.data.defaultDatasetId;
+        }
         const progress = Math.round((attempts / maxAttempts) * 100);
         console.log(`  [${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
         
@@ -114,9 +118,12 @@ serve(async (req) => {
     
     // Fetch dataset items
     console.log('📥 Fetching dataset items...');
-    console.log(`  Dataset ID: ${defaultDatasetId}`);
+    console.log(`  Dataset ID: ${datasetId}`);
+    if (!datasetId) {
+      throw new Error('No datasetId found from Apify run');
+    }
     const datasetResponse = await fetch(
-      `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?format=json`,
+      `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
       { headers: { 'Authorization': `Bearer ${APIFY_API_KEY}` } }
     );
 
