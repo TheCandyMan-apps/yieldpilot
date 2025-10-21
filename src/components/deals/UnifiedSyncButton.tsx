@@ -108,8 +108,8 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
 
       if (rightmoveStarted || zooplaStarted) {
         toast({
-          title: "Sync started",
-          description: `We\'re fetching properties now. You\'ll see new listings on the Deals page shortly.`,
+          title: "Sync Started",
+          description: `Scraping ${location} for properties. New deals will appear automatically in 1-2 minutes.`,
         });
         setIsOpen(false);
         onSyncComplete?.();

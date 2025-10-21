@@ -28,15 +28,25 @@ Deno.serve(async (req) => {
       throw new Error('actorId is required');
     }
 
-    console.log('Starting Apify actor run:', actorId);
+    const location = input?.location || 'London';
+    console.log('Starting Apify Zoopla run:', actorId, 'Location:', location);
 
     // Format actor ID for API (replace / with ~)
     const formattedActorId = actorId.replace('/', '~');
 
-    // Start the actor run
+    // Webhook URL for Apify to call when done
+    const webhookUrl = `${SUPABASE_URL}/functions/v1/apify-webhook`;
+
+    // Prepare input for Zoopla scraper with location
+    const actorInput = {
+      ...input,
+      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/${location.toLowerCase().replace(/\s+/g, '-')}/` }],
+    };
+
+    // Start the actor run with webhook
     const memory = input?.memoryMB ?? 2048;
     const timeout = input?.timeoutSec ?? 900;
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=[{"eventTypes":["ACTOR.RUN.SUCCEEDED"],"requestUrl":"${encodeURIComponent(webhookUrl)}","payloadTemplate":"{\\"datasetId\\":\\"{{resource.defaultDatasetId}}\\",\\"source\\":\\"zoopla\\",\\"runId\\":\\"{{resource.id}}\\"}"}]`;
     const runResponse = await fetch(
       runUrl,
       {
@@ -45,7 +55,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${APIFY_API_KEY}`,
         },
-        body: JSON.stringify(input || {}),
+        body: JSON.stringify(actorInput),
       }
     );
 
@@ -57,126 +67,22 @@ Deno.serve(async (req) => {
 
     const runData = await runResponse.json();
     const runId = runData.data.id;
-    let datasetId = runData.data.defaultDatasetId;
+    const datasetId = runData.data.defaultDatasetId;
     
-    console.log('✓ Run started successfully');
+    console.log('✓ Zoopla run started with webhook');
     console.log(`  Run ID: ${runId}`);
     if (datasetId) console.log(`  Dataset ID: ${datasetId}`);
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
+    console.log(`  Webhook will call back when complete`);
 
-    // Process in background, respond immediately
-    const processRun = async () => {
-      try {
-        let status = 'READY';
-        let attempts = 0;
-        const pollIntervalMs = 5000; // 5 seconds
-        const maxAttempts = Math.ceil((timeout * 1000) / pollIntervalMs);
-
-        console.log('⏳ [BG] Polling for run completion...');
-        while ((status === 'READY' || status === 'RUNNING') && attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-
-          const statusResponse = await fetch(`https://api.apify.com/v2/runs/${runId}`,
-            { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
-
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
-            status = statusData.data.status;
-            if (!datasetId && statusData.data.defaultDatasetId) {
-              datasetId = statusData.data.defaultDatasetId;
-            }
-            const progress = Math.round((attempts / maxAttempts) * 100);
-            console.log(`  [BG ${progress}%] Status: ${status} (attempt ${attempts + 1}/${maxAttempts})`);
-          }
-
-          attempts++;
-        }
-
-        if (status !== 'SUCCEEDED') {
-          console.error(`❌ [BG] Run did not complete successfully (status: ${status}) - ${runId}`);
-          return;
-        }
-
-        if (!datasetId) {
-          console.warn('[BG] No datasetId from Apify run');
-          return;
-        }
-
-        console.log('📥 [BG] Fetching dataset items...', datasetId);
-        const datasetResponse = await fetch(
-          `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
-          { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } }
-        );
-        if (!datasetResponse.ok) {
-          console.error('[BG] Failed to fetch dataset items');
-          return;
-        }
-
-        const properties = await datasetResponse.json();
-        console.log(`✓ [BG] Fetched ${properties.length} Zoopla properties from dataset`);
-        if (!Array.isArray(properties) || properties.length === 0) {
-          console.warn('[BG] No properties found in dataset');
-          return;
-        }
-
-        console.log('[BG] Transforming property data...');
-        const dealsToInsert = properties.map((prop: any) => ({
-          property_address: prop.address || prop.displayAddress || 'Unknown Address',
-          postcode: prop.postcode || null,
-          city: prop.town || prop.city || prop.county || null,
-          property_type: mapPropertyType(prop.propertyType),
-          price: parsePrice(prop.price),
-          estimated_rent: estimateRent(parsePrice(prop.price)),
-          bedrooms: parseInt(prop.bedrooms) || null,
-          bathrooms: parseInt(prop.bathrooms) || null,
-          square_feet: prop.floorArea ? parseInt(prop.floorArea) : null,
-          image_url: prop.images?.[0] || prop.image || null,
-          listing_url: prop.url || prop.detailsUrl || null,
-          location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
-          location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
-          source: 'apify-zoopla',
-          is_active: true,
-          yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-          roi_percentage: calculateROI(parsePrice(prop.price)),
-          cash_flow_monthly: calculateCashFlow(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-          investment_score: calculateScore(parsePrice(prop.price)),
-        }));
-
-        const validDeals = dealsToInsert.filter((deal: any) => deal.price > 0 && deal.property_address !== 'Unknown Address');
-        console.log(`[BG] Valid properties: ${validDeals.length}/${dealsToInsert.length}`);
-        if (validDeals.length === 0) {
-          console.warn('[BG] No valid properties to import after filtering');
-          return;
-        }
-
-        console.log('[BG] Inserting deals into database...');
-        const { error: insertError } = await supabase
-          .from('deals_feed')
-          .insert(validDeals);
-
-        if (insertError) {
-          console.error('❌ [BG] Database insertion error:', insertError);
-          return;
-        }
-
-        console.log(`✅ [BG] Sync completed. Inserted ${validDeals.length} deals (run ${runId})`);
-      } catch (err) {
-        console.error('❌ [BG] Error while processing run:', err);
-      }
-    };
-
-    // Fire and forget
-    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
-    EdgeRuntime.waitUntil(processRun());
-
-    // Respond immediately so the UI doesn't wait
+    // Respond immediately - webhook will handle data import
     return new Response(
       JSON.stringify({
         started: true,
         source: 'zoopla',
         runId,
         runUrl: `https://console.apify.com/actors/runs/${runId}`,
-        message: 'Zoopla sync started and is processing in the background.'
+        message: 'Zoopla sync started. Data will appear automatically when ready.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
