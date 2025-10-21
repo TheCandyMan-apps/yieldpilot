@@ -151,7 +151,7 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         <DialogHeader>
           <DialogTitle>Sync Property Data</DialogTitle>
           <DialogDescription>
-            Fetch property listings from Rightmove and Zoopla via Apify
+            Fetch property listings from Rightmove and Zoopla
           </DialogDescription>
         </DialogHeader>
 
