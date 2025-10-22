@@ -23,20 +23,43 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const { datasetId, source, runId } = await req.json();
-    
-    if (!datasetId || !source) {
-      throw new Error('datasetId and source are required');
+
+    if (!source) {
+      throw new Error('source is required');
     }
 
-    console.log(`📥 Webhook received: ${source} dataset ${datasetId} from run ${runId}`);
+    // Resolve datasetId if missing or not interpolated
+    let effectiveDatasetId = datasetId as string | undefined;
+    if (!effectiveDatasetId || /\{\{.*\}\}/.test(effectiveDatasetId)) {
+      if (!runId) {
+        throw new Error('datasetId missing and runId not provided');
+      }
+      console.log(`Webhook missing datasetId; polling run ${runId} for dataset...`);
+      for (let i = 0; i < 40; i++) { // ~200s
+        const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
+        const statusJson = await statusRes.json();
+        const status = statusJson.data?.status;
+        effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
+        if (status === 'SUCCEEDED' && effectiveDatasetId) break;
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+
+    if (!effectiveDatasetId) {
+      throw new Error('Unable to resolve datasetId from webhook payload or run status');
+    }
+
+    console.log(`📥 Webhook received: ${source} dataset ${effectiveDatasetId} from run ${runId}`);
 
     // Fetch dataset items
     const datasetResponse = await fetch(
-      `https://api.apify.com/v2/datasets/${datasetId}/items?format=json`,
+      `https://api.apify.com/v2/datasets/${effectiveDatasetId}/items?format=json`,
       { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } }
     );
 
     if (!datasetResponse.ok) {
+      const errText = await datasetResponse.text();
+      console.error('Failed to fetch dataset items:', datasetResponse.status, errText);
       throw new Error('Failed to fetch dataset items');
     }
 
