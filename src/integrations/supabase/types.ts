@@ -958,15 +958,12 @@ export type Database = {
         Returns: boolean
       }
       get_preview_deal_ids: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           deal_id: string
         }[]
       }
-      increment: {
-        Args: { row_id: string; x: number }
-        Returns: undefined
-      }
+      increment: { Args: { row_id: string; x: number }; Returns: undefined }
     }
     Enums: {
       analysis_status: "pending" | "completed" | "failed"
