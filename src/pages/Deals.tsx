@@ -89,7 +89,7 @@ const Deals = () => {
           const pc = norm(deal.postcode);
           return addr.includes(target) || city.includes(target) || pc.includes(target);
         });
-        setFilteredDeals(filtered);
+        setFilteredDeals(filtered.length > 0 ? filtered : (data || []));
       } else {
         setFilteredDeals(data || []);
       }

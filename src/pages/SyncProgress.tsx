@@ -12,6 +12,7 @@ export default function SyncProgress() {
   const location = searchParams.get("location") || "Unknown";
   const [dealCount, setDealCount] = useState(0);
   const [baseline, setBaseline] = useState<number | null>(null);
+  const [newDeals, setNewDeals] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,7 @@ export default function SyncProgress() {
           const base = count || 0;
           setBaseline(base);
           setDealCount(base);
+          setNewDeals(0);
         }
       } catch (err) {
         console.error('Error initializing baseline:', err);
@@ -46,7 +48,7 @@ export default function SyncProgress() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'deals_feed' },
         () => {
-          setDealCount((c) => c + 1);
+          setNewDeals((n) => n + 1);
           setIsComplete(true);
         }
       )
@@ -63,6 +65,7 @@ export default function SyncProgress() {
         if (error) throw error;
         if ((count || 0) > baseline) {
           setDealCount(count || 0);
+          setNewDeals((count || 0) - baseline);
           setTimeout(() => setIsComplete(true), 1500);
         }
       } catch (err) {
@@ -83,7 +86,11 @@ export default function SyncProgress() {
   }, [baseline]);
 
   const handleViewDeals = () => {
-    navigate(`/deals?location=${encodeURIComponent(location)}`);
+    if (newDeals > 0) {
+      navigate(`/deals?location=${encodeURIComponent(location)}`);
+    } else {
+      navigate(`/deals`);
+    }
   };
 
   return (
@@ -140,7 +147,9 @@ export default function SyncProgress() {
             {isComplete && !error && (
               <div className="text-center space-y-4 animate-fade-in">
                 <p className="text-muted-foreground">
-                  New properties have been added to your deals feed.
+                  {newDeals > 0
+                    ? 'New properties have been added to your deals feed.'
+                    : 'No new properties were added. You can view current deals.'}
                 </p>
               </div>
             )}
