@@ -76,10 +76,12 @@ Deno.serve(async (req) => {
     // Transform data based on source
     const dealsToInsert = properties.map((prop: any) => {
       if (source === 'rightmove') {
+        const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
+        const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city);
         return {
-          property_address: prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address',
+          property_address: address,
           postcode: prop.address?.postcode || null,
-          city: prop.address?.town || prop.address?.city || null,
+          city: extractedCity,
           property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
           price: parsePrice(prop.price?.amount || prop.price),
           estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
@@ -99,10 +101,12 @@ Deno.serve(async (req) => {
         };
       } else {
         // Zoopla format
+        const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
+        const extractedCity = extractCityFromAddress(address, prop.city, prop.county, prop.location);
         return {
-          property_address: prop.address || prop.title || 'Unknown Address',
+          property_address: address,
           postcode: prop.postcode || null,
-          city: prop.city || prop.county || null,
+          city: extractedCity,
           property_type: mapPropertyType(prop.propertyType),
           price: parsePrice(prop.price),
           estimated_rent: estimateRent(parsePrice(prop.price)),
@@ -163,6 +167,41 @@ Deno.serve(async (req) => {
 });
 
 // Helper functions
+function extractCityFromAddress(address: string, ...fallbacks: any[]): string | null {
+  // Try fallback values first
+  for (const fallback of fallbacks) {
+    if (fallback && typeof fallback === 'string' && fallback.trim()) {
+      return fallback.trim();
+    }
+  }
+  
+  // Extract from address string - look for known patterns
+  const parts = address.split(',').map(p => p.trim());
+  
+  // Look for common UK cities/counties in the address
+  const ukLocations = ['London', 'Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Bristol', 
+    'Sheffield', 'Surrey', 'Kent', 'Essex', 'Sussex', 'Hampshire', 'Berkshire', 'Middlesex',
+    'Westminster', 'Camden', 'Kensington', 'Chelsea'];
+  
+  for (const part of parts) {
+    for (const location of ukLocations) {
+      if (part.toLowerCase().includes(location.toLowerCase())) {
+        return location;
+      }
+    }
+  }
+  
+  // Return the second-to-last part if it exists (often the city)
+  if (parts.length >= 2) {
+    const candidate = parts[parts.length - 2];
+    if (candidate && !candidate.match(/^[A-Z]{1,2}\d{1,2}/)) { // Not a postcode
+      return candidate;
+    }
+  }
+  
+  return null;
+}
+
 function mapPropertyType(type: string): string {
   const typeMap: Record<string, string> = {
     'flat': 'residential',
