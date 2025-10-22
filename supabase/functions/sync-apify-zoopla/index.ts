@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
       .replace(/^-|-$/g, '');
     const actorInput = {
       ...input,
-      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/${slug}/` }],
+      // Use query-based search to improve location targeting reliability
+      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}` }],
     };
 
     // Construct webhook configuration
