@@ -263,14 +263,45 @@ const Deals = () => {
         {/* Filters */}
         <DealFilters onFilterChange={applyFilters} />
 
+        {/* No matches notice for location */}
+        {initialLocation && (() => {
+          const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const target = norm(initialLocation);
+          const hasMatches = deals.some((d) => {
+            const addr = norm(d.property_address);
+            const city = norm(d.city);
+            const pc = norm(d.postcode);
+            return addr.includes(target) || city.includes(target) || pc.includes(target);
+          });
+          return !hasMatches ? (
+            <div className="text-sm text-muted-foreground p-3 rounded-md border border-border/50 bg-muted/30">
+              No properties found for "{initialLocation}". Showing all available deals.
+            </div>
+          ) : null;
+        })()}
+
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
-          Showing {filteredDeals.length} of {deals.length} deals{initialLocation ? ` matching "${initialLocation}"` : ''}
-          {!isAuthenticated && deals.length >= 10 && (
-            <span className="ml-2 text-primary font-medium">
-              • Sign up to see 70+ more deals
-            </span>
-          )}
+          {(() => {
+            const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            const target = norm(initialLocation);
+            const hasMatches = initialLocation && deals.some((d) => {
+              const addr = norm(d.property_address);
+              const city = norm(d.city);
+              const pc = norm(d.postcode);
+              return addr.includes(target) || city.includes(target) || pc.includes(target);
+            });
+            return (
+              <>
+                Showing {filteredDeals.length} of {deals.length} deals{hasMatches ? ` matching "${initialLocation}"` : ''}
+                {!isAuthenticated && deals.length >= 10 && (
+                  <span className="ml-2 text-primary font-medium">
+                    • Sign up to see 70+ more deals
+                  </span>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Deals Grid */}

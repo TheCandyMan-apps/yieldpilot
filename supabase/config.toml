@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.apify-webhook]
 verify_jwt = false
+
+[functions.apify-import]
+verify_jwt = false

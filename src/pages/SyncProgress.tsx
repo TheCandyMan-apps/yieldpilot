@@ -86,11 +86,7 @@ export default function SyncProgress() {
   }, [baseline]);
 
   const handleViewDeals = () => {
-    if (newDeals > 0) {
-      navigate(`/deals?location=${encodeURIComponent(location)}`);
-    } else {
-      navigate(`/deals`);
-    }
+    navigate(`/deals?location=${encodeURIComponent(location)}`);
   };
 
   return (
