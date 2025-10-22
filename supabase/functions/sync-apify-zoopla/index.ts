@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
     const runData = await runResponse.json();
     const runId = runData.data.id;
-    const datasetId = runData.data.defaultDatasetId;
+    let datasetId: string | undefined = runData.data.defaultDatasetId;
     
     console.log('✓ Zoopla run started with webhook');
     console.log(`  Run ID: ${runId}`);
@@ -89,7 +89,86 @@ Deno.serve(async (req) => {
     console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
     console.log(`  Webhook will call back when complete`);
 
-    // Respond immediately - webhook will handle data import
+    // Background fallback importer in case webhook delivery fails
+    async function importFromApify(runId: string, dsId?: string) {
+      try {
+        let effectiveDatasetId = dsId;
+        if (!effectiveDatasetId) {
+          console.log('Polling Apify run for datasetId (zoopla)...');
+          for (let i = 0; i < 40; i++) { // up to ~200s
+            const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
+              headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
+            });
+            const statusJson = await statusRes.json();
+            const status = statusJson.data?.status;
+            effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
+            if (status === 'SUCCEEDED' && effectiveDatasetId) break;
+            await new Promise(r => setTimeout(r, 5000));
+          }
+        }
+
+        if (!effectiveDatasetId) {
+          console.warn('No datasetId available after polling; aborting fallback import (zoopla)');
+          return;
+        }
+
+        console.log('Fallback import (zoopla): fetching dataset', effectiveDatasetId);
+        const datasetResponse = await fetch(
+          `https://api.apify.com/v2/datasets/${effectiveDatasetId}/items?format=json`,
+          { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } }
+        );
+        if (!datasetResponse.ok) {
+          console.error('Fallback import (zoopla): failed to fetch dataset items');
+          return;
+        }
+        const properties = await datasetResponse.json();
+        console.log(`Fallback import (zoopla): got ${properties.length} items`);
+
+        if (!Array.isArray(properties) || properties.length === 0) return;
+
+        const dealsToInsert = properties.map((prop: any) => ({
+          property_address: prop.address || prop.title || 'Unknown Address',
+          postcode: prop.postcode || null,
+          city: prop.city || prop.county || null,
+          property_type: mapPropertyType(prop.propertyType),
+          price: parsePrice(prop.price),
+          estimated_rent: estimateRent(parsePrice(prop.price)),
+          bedrooms: parseInt(prop.bedrooms) || null,
+          bathrooms: parseInt(prop.bathrooms) || null,
+          square_feet: null,
+          image_url: prop.image || prop.images?.[0] || null,
+          listing_url: prop.url || null,
+          location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
+          location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
+          source: 'apify-zoopla',
+          is_active: true,
+          yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
+          roi_percentage: calculateROI(parsePrice(prop.price)),
+          cash_flow_monthly: calculateCashFlow(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
+          investment_score: calculateScore(parsePrice(prop.price)),
+        }));
+
+        const validDeals = dealsToInsert.filter((d: any) => d.price > 0 && d.property_address !== 'Unknown Address');
+        if (validDeals.length === 0) return;
+
+        const { error: insertError } = await supabase
+          .from('deals_feed')
+          .insert(validDeals);
+        if (insertError) {
+          console.error('Fallback import (zoopla): DB insert error', insertError);
+        } else {
+          console.log(`Fallback import: inserted ${validDeals.length} deals (zoopla)`);
+        }
+      } catch (e) {
+        console.error('Fallback import (zoopla) error:', e);
+      }
+    }
+
+    // Run fallback in background without blocking response
+    // @ts-ignore - Edge runtime helper available
+    EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
+
+    // Respond immediately - webhook or fallback will handle data import
     return new Response(
       JSON.stringify({
         started: true,
