@@ -81,12 +81,14 @@ const Deals = () => {
       setDeals(data || []);
       // If a location was provided in the URL (coming from SyncProgress), pre-filter results
       if (initialLocation) {
-        const lower = initialLocation.toLowerCase();
-        const filtered = (data || []).filter((deal) =>
-          deal.property_address.toLowerCase().includes(lower) ||
-          (deal.city?.toLowerCase().includes(lower)) ||
-          (deal.postcode?.toLowerCase().includes(lower))
-        );
+        const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const target = norm(initialLocation);
+        const filtered = (data || []).filter((deal) => {
+          const addr = norm(deal.property_address);
+          const city = norm(deal.city);
+          const pc = norm(deal.postcode);
+          return addr.includes(target) || city.includes(target) || pc.includes(target);
+        });
         setFilteredDeals(filtered);
       } else {
         setFilteredDeals(data || []);
