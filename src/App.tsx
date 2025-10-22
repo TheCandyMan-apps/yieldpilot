@@ -13,6 +13,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Deals = lazy(() => import("./pages/Deals"));
 const DealsV2 = lazy(() => import("./pages/DealsV2"));
+const SyncProgress = lazy(() => import("./pages/SyncProgress"));
 const Simulator = lazy(() => import("./pages/Simulator"));
 const Insights = lazy(() => import("./pages/Insights"));
 const AreaInsights = lazy(() => import("./pages/AreaInsights"));
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/deals" element={<Deals />} />
           <Route path="/deals-v2" element={<DealsV2 />} />
+          <Route path="/sync-progress" element={<SyncProgress />} />
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/area-insights" element={<AreaInsights />} />

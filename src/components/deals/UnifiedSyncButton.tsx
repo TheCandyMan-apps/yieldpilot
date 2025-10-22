@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ interface UnifiedSyncButtonProps {
 
 export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [location, setLocation] = useState("");
@@ -107,12 +109,9 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
       }
 
       if (rightmoveStarted || zooplaStarted) {
-        toast({
-          title: "Sync Started",
-          description: `Scraping ${location} for properties. New deals will appear automatically in 1-2 minutes.`,
-        });
         setIsOpen(false);
-        onSyncComplete?.();
+        // Navigate to sync progress page
+        navigate(`/sync-progress?location=${encodeURIComponent(location)}`);
       } else {
         toast({
           title: "Sync couldn\'t start",
