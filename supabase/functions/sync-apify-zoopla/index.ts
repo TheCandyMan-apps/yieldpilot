@@ -37,10 +37,18 @@ Deno.serve(async (req) => {
     // Webhook URL for Apify to call when done
     const webhookUrl = `${SUPABASE_URL}/functions/v1/apify-webhook`;
 
-    // Prepare input for Zoopla scraper with location
+    // Prepare input for Zoopla scraper with location (robust slug)
+    const slug = location
+      .toLowerCase()
+      .trim()
+      .replace(/,/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
     const actorInput = {
       ...input,
-      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/${location.toLowerCase().replace(/\s+/g, '-')}/` }],
+      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/${slug}/` }],
     };
 
     // Construct webhook configuration
@@ -164,11 +172,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Run fallback in background without blocking response
+    // Trigger importer function in background (more reliable than waitUntil)
+    try {
+      fetch(`${SUPABASE_URL}/functions/v1/apify-import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_SERVICE_ROLE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ runId, datasetId, source: 'zoopla' })
+      }).catch(() => {});
+    } catch (_) {}
+
+    // Still schedule local fallback when available
     // @ts-ignore - Edge runtime helper available
     EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
 
-    // Respond immediately - webhook or fallback will handle data import
+    // Respond immediately
     return new Response(
       JSON.stringify({
         started: true,

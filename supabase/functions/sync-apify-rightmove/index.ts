@@ -168,11 +168,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Run fallback in background without blocking response
+    // Trigger importer function in background (more reliable than waitUntil)
+    try {
+      fetch(`${SUPABASE_URL}/functions/v1/apify-import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_SERVICE_ROLE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ runId, datasetId, source: 'rightmove' })
+      }).catch(() => {});
+    } catch (_) {}
+
+    // Still schedule local fallback when available
     // @ts-ignore - Edge runtime helper available
     EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
 
-    // Respond immediately - webhook or fallback will handle data import
+    // Respond immediately
     return new Response(
       JSON.stringify({
         started: true,

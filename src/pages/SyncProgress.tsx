@@ -83,7 +83,7 @@ export default function SyncProgress() {
   }, [baseline]);
 
   const handleViewDeals = () => {
-    navigate('/deals');
+    navigate(`/deals?location=${encodeURIComponent(location)}`);
   };
 
   return (

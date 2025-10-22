@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
@@ -36,6 +36,8 @@ const Deals = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialLocation = searchParams.get('location') || '';
 
   useEffect(() => {
     checkAuth();
@@ -77,7 +79,18 @@ const Deals = () => {
       if (error) throw error;
 
       setDeals(data || []);
-      setFilteredDeals(data || []);
+      // If a location was provided in the URL (coming from SyncProgress), pre-filter results
+      if (initialLocation) {
+        const lower = initialLocation.toLowerCase();
+        const filtered = (data || []).filter((deal) =>
+          deal.property_address.toLowerCase().includes(lower) ||
+          (deal.city?.toLowerCase().includes(lower)) ||
+          (deal.postcode?.toLowerCase().includes(lower))
+        );
+        setFilteredDeals(filtered);
+      } else {
+        setFilteredDeals(data || []);
+      }
     } catch (error: any) {
       toast({
         title: "Error loading deals",
@@ -250,7 +263,7 @@ const Deals = () => {
 
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
-          Showing {filteredDeals.length} of {deals.length} deals
+          Showing {filteredDeals.length} of {deals.length} deals{initialLocation ? ` matching "${initialLocation}"` : ''}
           {!isAuthenticated && deals.length >= 10 && (
             <span className="ml-2 text-primary font-medium">
               • Sign up to see 70+ more deals
