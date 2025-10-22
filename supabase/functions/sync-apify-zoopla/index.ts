@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
           'apikey': SUPABASE_SERVICE_ROLE_KEY!,
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
-        body: JSON.stringify({ runId, datasetId, source: 'zoopla' })
+        body: JSON.stringify({ runId, datasetId, source: 'zoopla', location })
       }).catch(() => {});
     } catch (_) {}
 

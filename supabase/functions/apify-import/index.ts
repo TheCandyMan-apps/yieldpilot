@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       throw new Error('Missing required server configuration');
     }
 
-    const { runId, datasetId, source } = await req.json();
+    const { runId, datasetId, source, location } = await req.json();
     if (!runId || !source) throw new Error('runId and source are required');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -51,49 +51,57 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ imported: 0, message: 'No items in dataset' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const mapRightmove = (prop: any) => ({
-      property_address: prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address',
-      postcode: prop.address?.postcode || null,
-      city: prop.address?.town || prop.address?.city || null,
-      property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
-      price: parsePrice(prop.price?.amount || prop.price),
-      estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
-      bedrooms: parseInt(prop.bedrooms) || null,
-      bathrooms: parseInt(prop.bathrooms) || null,
-      square_feet: prop.size?.max ? parseInt(prop.size.max) : null,
-      image_url: prop.propertyImages?.[0] || prop.images?.[0] || null,
-      listing_url: prop.propertyUrl || prop.url || null,
-      location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : null,
-      location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : null,
-      source: 'apify-rightmove',
-      is_active: true,
-      yield_percentage: calculateYield(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-      roi_percentage: calculateROI(parsePrice(prop.price?.amount || prop.price)),
-      cash_flow_monthly: calculateCashFlow(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-      investment_score: calculateScore(parsePrice(prop.price?.amount || prop.price)),
-    });
+    const mapRightmove = (prop: any) => {
+      const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
+      const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city, location);
+      return {
+        property_address: address,
+        postcode: prop.address?.postcode || null,
+        city: extractedCity,
+        property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
+        price: parsePrice(prop.price?.amount || prop.price),
+        estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
+        bedrooms: parseInt(prop.bedrooms) || null,
+        bathrooms: parseInt(prop.bathrooms) || null,
+        square_feet: prop.size?.max ? parseInt(prop.size.max) : null,
+        image_url: prop.propertyImages?.[0] || prop.images?.[0] || null,
+        listing_url: prop.propertyUrl || prop.url || null,
+        location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : null,
+        location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : null,
+        source: 'apify-rightmove',
+        is_active: true,
+        yield_percentage: calculateYield(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
+        roi_percentage: calculateROI(parsePrice(prop.price?.amount || prop.price)),
+        cash_flow_monthly: calculateCashFlow(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
+        investment_score: calculateScore(parsePrice(prop.price?.amount || prop.price)),
+      };
+    };
 
-    const mapZoopla = (prop: any) => ({
-      property_address: prop.address || prop.title || 'Unknown Address',
-      postcode: prop.postcode || null,
-      city: prop.city || prop.county || null,
-      property_type: mapPropertyType(prop.propertyType),
-      price: parsePrice(prop.price),
-      estimated_rent: estimateRent(parsePrice(prop.price)),
-      bedrooms: parseInt(prop.bedrooms) || null,
-      bathrooms: parseInt(prop.bathrooms) || null,
-      square_feet: null,
-      image_url: prop.image || prop.images?.[0] || null,
-      listing_url: prop.url || null,
-      location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
-      location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
-      source: 'apify-zoopla',
-      is_active: true,
-      yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-      roi_percentage: calculateROI(parsePrice(prop.price)),
-      cash_flow_monthly: calculateCashFlow(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-      investment_score: calculateScore(parsePrice(prop.price)),
-    });
+    const mapZoopla = (prop: any) => {
+      const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
+      const extractedCity = extractCityFromAddress(address, prop.city, prop.county, prop.location, location);
+      return {
+        property_address: address,
+        postcode: prop.postcode || null,
+        city: extractedCity,
+        property_type: mapPropertyType(prop.propertyType),
+        price: parsePrice(prop.price),
+        estimated_rent: estimateRent(parsePrice(prop.price)),
+        bedrooms: parseInt(prop.bedrooms) || null,
+        bathrooms: parseInt(prop.bathrooms) || null,
+        square_feet: null,
+        image_url: prop.image || prop.images?.[0] || null,
+        listing_url: prop.url || null,
+        location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
+        location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
+        source: 'apify-zoopla',
+        is_active: true,
+        yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
+        roi_percentage: calculateROI(parsePrice(prop.price)),
+        cash_flow_monthly: calculateCashFlow(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
+        investment_score: calculateScore(parsePrice(prop.price)),
+      };
+    };
 
     const dealsToInsert = items.map((it) => (source === 'rightmove' ? mapRightmove(it) : mapZoopla(it)));
     const validDeals = dealsToInsert.filter((d: any) => d.price > 0 && d.property_address !== 'Unknown Address');
@@ -111,6 +119,24 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
+
+function extractCityFromAddress(address: string, ...fallbacks: any[]): string | null {
+  for (const fallback of fallbacks) {
+    if (fallback && typeof fallback === 'string' && fallback.trim()) return fallback.trim();
+  }
+  const parts = (address || '').split(',').map(p => p.trim());
+  const ukLocations = ['London','Manchester','Birmingham','Leeds','Liverpool','Bristol','Sheffield','Surrey','Kent','Essex','Sussex','Hampshire','Berkshire','Middlesex','Westminster','Camden','Kensington','Chelsea'];
+  for (const part of parts) {
+    for (const loc of ukLocations) {
+      if (part.toLowerCase().includes(loc.toLowerCase())) return loc;
+    }
+  }
+  if (parts.length >= 2) {
+    const candidate = parts[parts.length - 2];
+    if (candidate && !/^[A-Z]{1,2}\d{1,2}/.test(candidate)) return candidate;
+  }
+  return null;
+}
 
 function mapPropertyType(type: string): string {
   const typeMap: Record<string, string> = {

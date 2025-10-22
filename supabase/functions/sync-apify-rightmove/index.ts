@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
           'apikey': SUPABASE_SERVICE_ROLE_KEY!,
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
-        body: JSON.stringify({ runId, datasetId, source: 'rightmove' })
+        body: JSON.stringify({ runId, datasetId, source: 'rightmove', location })
       }).catch(() => {});
     } catch (_) {}
 
