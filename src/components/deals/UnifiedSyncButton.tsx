@@ -39,8 +39,8 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
 
     try {
       // Check authentication first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         toast({
           title: "Authentication required",
           description: "Please sign in to sync data",
