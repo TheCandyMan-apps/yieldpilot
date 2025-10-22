@@ -23,19 +23,17 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Poll Apify for completion and dataset id if needed
+    // Poll Apify until the run succeeds (even if datasetId is already known)
     let effectiveDatasetId: string | undefined = datasetId;
-    if (!effectiveDatasetId) {
-      for (let i = 0; i < 40; i++) { // ~200s
-        const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
-          headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
-        });
-        const statusJson = await statusRes.json();
-        const status = statusJson.data?.status;
-        effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
-        if (status === 'SUCCEEDED' && effectiveDatasetId) break;
-        await new Promise((r) => setTimeout(r, 5000));
-      }
+    for (let i = 0; i < 40; i++) { // ~200s
+      const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
+        headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
+      });
+      const statusJson = await statusRes.json();
+      const status = statusJson.data?.status;
+      effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
+      if (status === 'SUCCEEDED') break;
+      await new Promise((r) => setTimeout(r, 5000));
     }
 
     if (!effectiveDatasetId) {

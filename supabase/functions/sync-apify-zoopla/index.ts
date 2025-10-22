@@ -101,18 +101,14 @@ Deno.serve(async (req) => {
     async function importFromApify(runId: string, dsId?: string) {
       try {
         let effectiveDatasetId = dsId;
-        if (!effectiveDatasetId) {
-          console.log('Polling Apify run for datasetId (zoopla)...');
-          for (let i = 0; i < 40; i++) { // up to ~200s
-            const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
-              headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
-            });
-            const statusJson = await statusRes.json();
-            const status = statusJson.data?.status;
-            effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
-            if (status === 'SUCCEEDED' && effectiveDatasetId) break;
-            await new Promise(r => setTimeout(r, 5000));
-          }
+        console.log('Polling Apify run for completion (zoopla)...');
+        for (let i = 0; i < 40; i++) { // up to ~200s
+          const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
+          const statusJson = await statusRes.json();
+          const status = statusJson.data?.status;
+          effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
+          if (status === 'SUCCEEDED' && effectiveDatasetId) break;
+          await new Promise((r) => setTimeout(r, 5000));
         }
 
         if (!effectiveDatasetId) {
