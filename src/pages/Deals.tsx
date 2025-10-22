@@ -39,6 +39,22 @@ const Deals = () => {
 
   useEffect(() => {
     checkAuth();
+
+    // Realtime: refresh when new deals are inserted
+    const channel = supabase
+      .channel('deals-feed-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'deals_feed' },
+        () => {
+          fetchDeals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const checkAuth = async () => {

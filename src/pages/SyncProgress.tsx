@@ -11,24 +11,59 @@ export default function SyncProgress() {
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location") || "Unknown";
   const [dealCount, setDealCount] = useState(0);
+  const [baseline, setBaseline] = useState<number | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Poll for new deals every 3 seconds
-    const pollInterval = setInterval(async () => {
+    let mounted = true;
+
+    // Initialize baseline count first
+    const init = async () => {
       try {
         const { count, error } = await supabase
           .from('deals_feed')
           .select('*', { count: 'exact', head: true })
           .eq('is_active', true);
-
         if (error) throw error;
+        if (mounted) {
+          const base = count || 0;
+          setBaseline(base);
+          setDealCount(base);
+        }
+      } catch (err) {
+        console.error('Error initializing baseline:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize');
+      }
+    };
 
-        if (count && count > dealCount) {
-          setDealCount(count);
-          // If we got new deals, mark as complete after a short delay
-          setTimeout(() => setIsComplete(true), 2000);
+    init();
+
+    // Realtime: complete as soon as a new deal is inserted
+    const channel = supabase
+      .channel('deals-feed-sync')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'deals_feed' },
+        () => {
+          setDealCount((c) => c + 1);
+          setIsComplete(true);
+        }
+      )
+      .subscribe();
+
+    // Poll every 3s for new deals beyond baseline
+    const pollInterval = setInterval(async () => {
+      if (baseline === null) return;
+      try {
+        const { count, error } = await supabase
+          .from('deals_feed')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+        if (error) throw error;
+        if ((count || 0) > baseline) {
+          setDealCount(count || 0);
+          setTimeout(() => setIsComplete(true), 1500);
         }
       } catch (err) {
         console.error('Error polling deals:', err);
@@ -37,15 +72,15 @@ export default function SyncProgress() {
     }, 3000);
 
     // Auto-complete after 90 seconds regardless
-    const timeout = setTimeout(() => {
-      setIsComplete(true);
-    }, 90000);
+    const timeout = setTimeout(() => setIsComplete(true), 90000);
 
     return () => {
+      mounted = false;
       clearInterval(pollInterval);
       clearTimeout(timeout);
+      supabase.removeChannel(channel);
     };
-  }, [dealCount]);
+  }, [baseline]);
 
   const handleViewDeals = () => {
     navigate('/deals');
