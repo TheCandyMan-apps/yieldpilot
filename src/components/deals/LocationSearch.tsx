@@ -49,7 +49,7 @@ export const LocationSearch = ({
         return;
       }
 
-      // Trigger both Rightmove and Zoopla syncs in parallel
+      // Trigger both Rightmove and Zoopla syncs in parallel (allow partial success)
       const [rightmoveRes, zooplaRes] = await Promise.all([
         supabase.functions.invoke("sync-apify-rightmove", {
           body: {
@@ -79,14 +79,25 @@ export const LocationSearch = ({
         }),
       ]);
 
-      if (rightmoveRes.error || zooplaRes.error) {
-        throw new Error(rightmoveRes.error?.message || zooplaRes.error?.message);
+      // Proceed if at least one provider started successfully
+      const providersStarted: string[] = [];
+      const errors: string[] = [];
+
+      if (!rightmoveRes.error) providersStarted.push("Rightmove");
+      else errors.push(`Rightmove: ${rightmoveRes.error.message || 'unavailable'}`);
+
+      if (!zooplaRes.error) providersStarted.push("Zoopla");
+      else errors.push(`Zoopla: ${zooplaRes.error.message || 'unavailable'}`);
+
+      if (providersStarted.length === 0) {
+        throw new Error(errors.join(' | '));
       }
 
       toast({
         title: "Search started!",
-        description: `Searching for properties in ${location}. Results will appear automatically when ready.`,
+        description: `Searching for properties in ${location}. Providers: ${providersStarted.join(', ')}${errors.length ? ` (skipped: ${errors.join(', ')})` : ''}`,
       });
+
 
       // Navigate to deals page with location param (realtime will update automatically)
       navigate(`/deals?location=${encodeURIComponent(location.trim())}`);
