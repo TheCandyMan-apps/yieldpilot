@@ -41,7 +41,17 @@ const Deals = () => {
 
   // Simple county-to-postcode prefix mapping (helps when listings don't include the county name)
   const countyPostcodePrefixes: Record<string, string[]> = {
-    surrey: ['gu', 'kt', 'rh', 'sm'],
+    // Postcode area prefixes predominantly covering the county
+    surrey: ['gu', 'kt', 'rh', 'sm', 'tw', 'cr'],
+  };
+
+  // Key towns for counties to disambiguate cross-border postcodes
+  const countyTowns: Record<string, string[]> = {
+    surrey: [
+      'guildford', 'woking', 'epsom', 'esher', 'leatherhead', 'redhill', 'reigate',
+      'camberley', 'farnham', 'ewell', 'waltononthames', 'weybridge', 'godalming',
+      'banstead', 'caterham', 'warlingham', 'horley', 'dorking', 'staines', 'ashtead'
+    ],
   };
 
   const norm = (s: string | null | undefined) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -52,14 +62,34 @@ const Deals = () => {
     const city = norm(deal.city);
     const pc = norm(deal.postcode);
 
+    // If user typed a postcode district (e.g. KT1, GU10), match by prefix
+    const districtMatch = target.match(/^([a-z]{1,2}\d{1,2})/);
+    if (districtMatch && pc && pc.startsWith(districtMatch[1])) return true;
+
     // Direct substring match against address, city, or postcode
     if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
 
-    // County fallback via postcode area prefixes
-    const prefixes = countyPostcodePrefixes[target];
-    if (prefixes && pc) {
-      const pcPrefix = pc.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 2);
-      if (prefixes.some((p) => pcPrefix.startsWith(p))) return true;
+    // County-specific handling to avoid cross-border leaks (e.g. KT/SM into London)
+    if (target in countyPostcodePrefixes) {
+      const county = target;
+      const prefixes = countyPostcodePrefixes[county];
+      const towns = countyTowns[county] || [];
+
+      // Exclude obvious London results when searching for Surrey
+      const isClearlyLondon = city.includes('london') || addr.includes('london');
+
+      // Town-based inclusion (preferred when present)
+      if (!isClearlyLondon && (towns.some(t => addr.includes(t) || city.includes(t)) || addr.includes(county))) {
+        return true;
+      }
+
+      // Postcode-area inclusion with London exclusion
+      if (prefixes && pc) {
+        const pcPrefix = pc.slice(0, 2);
+        if (!isClearlyLondon && prefixes.some((p) => pcPrefix.startsWith(p))) return true;
+      }
+
+      return false;
     }
 
     return false;
