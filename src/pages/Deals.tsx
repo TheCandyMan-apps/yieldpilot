@@ -39,6 +39,31 @@ const Deals = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get('location') || '';
 
+  // Simple county-to-postcode prefix mapping (helps when listings don't include the county name)
+  const countyPostcodePrefixes: Record<string, string[]> = {
+    surrey: ['gu', 'kt', 'rh', 'sm'],
+  };
+
+  const norm = (s: string | null | undefined) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const matchesLocation = (deal: Deal, location: string) => {
+    const target = norm(location);
+    const addr = norm(deal.property_address);
+    const city = norm(deal.city);
+    const pc = norm(deal.postcode);
+
+    // Direct substring match against address, city, or postcode
+    if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
+
+    // County fallback via postcode area prefixes
+    const prefixes = countyPostcodePrefixes[target];
+    if (prefixes && pc) {
+      const pcPrefix = pc.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 2);
+      if (prefixes.some((p) => pcPrefix.startsWith(p))) return true;
+    }
+
+    return false;
+  };
   useEffect(() => {
     checkAuth();
 
@@ -81,14 +106,7 @@ const Deals = () => {
       setDeals(data || []);
       // If a location was provided in the URL (coming from SyncProgress), pre-filter results
       if (initialLocation) {
-        const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const target = norm(initialLocation);
-        const filtered = (data || []).filter((deal) => {
-          const addr = norm(deal.property_address);
-          const city = norm(deal.city);
-          const pc = norm(deal.postcode);
-          return addr.includes(target) || city.includes(target) || pc.includes(target);
-        });
+        const filtered = (data || []).filter((deal) => matchesLocation(deal, initialLocation));
         setFilteredDeals(filtered.length > 0 ? filtered : (data || []));
       } else {
         setFilteredDeals(data || []);
@@ -265,14 +283,7 @@ const Deals = () => {
 
         {/* No matches notice for location */}
         {initialLocation && (() => {
-          const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-          const target = norm(initialLocation);
-          const hasMatches = deals.some((d) => {
-            const addr = norm(d.property_address);
-            const city = norm(d.city);
-            const pc = norm(d.postcode);
-            return addr.includes(target) || city.includes(target) || pc.includes(target);
-          });
+          const hasMatches = deals.some((d) => matchesLocation(d, initialLocation));
           return !hasMatches ? (
             <div className="text-sm text-muted-foreground p-3 rounded-md border border-border/50 bg-muted/30">
               No properties found for "{initialLocation}". Showing all available deals.
@@ -283,14 +294,7 @@ const Deals = () => {
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
           {(() => {
-            const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-            const target = norm(initialLocation);
-            const hasMatches = initialLocation && deals.some((d) => {
-              const addr = norm(d.property_address);
-              const city = norm(d.city);
-              const pc = norm(d.postcode);
-              return addr.includes(target) || city.includes(target) || pc.includes(target);
-            });
+            const hasMatches = initialLocation && deals.some((d) => matchesLocation(d, initialLocation));
             return (
               <>
                 Showing {filteredDeals.length} of {deals.length} deals{hasMatches ? ` matching "${initialLocation}"` : ''}
