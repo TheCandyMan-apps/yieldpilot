@@ -54,6 +54,11 @@ const Deals = () => {
     ],
   };
 
+  // Town-to-postcode prefixes for stricter matching (e.g., Leatherhead -> KT22)
+  const townPostcodePrefixes: Record<string, string[]> = {
+    leatherhead: ['kt22'],
+  };
+
   const norm = (s: string | null | undefined) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const matchesLocation = (deal: Deal, location: string) => {
@@ -68,6 +73,13 @@ const Deals = () => {
 
     // Direct substring match against address, city, or postcode
     if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
+
+    // Town-specific postcode prefixes (e.g., Leatherhead -> KT22)
+    if (target in townPostcodePrefixes) {
+      if (pc && townPostcodePrefixes[target].some((p) => pc.startsWith(p))) return true;
+      // Keep strict: if postcode doesn't match, do not include
+      return false;
+    }
 
     // County-specific handling to avoid cross-border leaks (e.g. KT/SM into London)
     if (target in countyPostcodePrefixes) {
