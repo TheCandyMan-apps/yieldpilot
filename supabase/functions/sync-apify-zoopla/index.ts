@@ -1,5 +1,4 @@
-// Using Deno.serve; removed std http serve import
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,99 +11,92 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const APIFY_API_KEY = Deno.env.get('APIFY_API_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const apifyApiKey = Deno.env.get('APIFY_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!APIFY_API_KEY) {
-      throw new Error('APIFY_API_KEY not configured');
+    if (!apifyApiKey || !supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required environment variables');
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-    const { actorId, input } = await req.json();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { location, maxResults = 50 } = await req.json();
     
-    if (!actorId) {
-      throw new Error('actorId is required');
+    console.log('Starting Zoopla sync for location:', location);
+
+    if (!location) {
+      throw new Error('Location parameter is required');
     }
 
-    const location = input?.location || 'London';
-    console.log('Starting Apify Zoopla run:', actorId, 'Location:', location);
+    const actorId = 'dhrumil/zoopla-scraper';
+    
+    // Build the correct Zoopla listUrl based on input
+    // If it looks like a postcode (KT22, GU1, etc.), use it directly
+    // Otherwise treat it as a location query
+    const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
+    const zooplaUrl = isPostcode 
+      ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale&radius=0`
+      : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale&radius=0`;
+    
+    console.log('Zoopla listUrl:', zooplaUrl);
 
-    // Format actor ID for API (replace / with ~)
-    const formattedActorId = actorId.replace('/', '~');
+    // Set up webhook to call our apify-webhook function when the run completes
+    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
+    
+    console.log('Starting Apify actor:', actorId);
+    console.log('Webhook URL:', webhookUrl);
 
-    // Webhook URL for Apify to call when done
-    const webhookUrl = `${SUPABASE_URL}/functions/v1/apify-webhook`;
-
-    // Prepare input for Zoopla scraper with location (robust slug)
-    const slug = location
-      .toLowerCase()
-      .trim()
-      .replace(/,/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-    const actorInput = {
-      ...input,
-      // Use query-based search to improve location targeting reliability
-      startUrls: [{ url: `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}` }],
-    };
-
-    // Construct webhook configuration
-    const webhooks = [{
-      eventTypes: ["ACTOR.RUN.SUCCEEDED"],
-      requestUrl: webhookUrl,
-      payloadTemplate: JSON.stringify({
-        datasetId: "{{resource.defaultDatasetId}}",
-        source: "zoopla",
-        runId: "{{resource.id}}"
-      })
-    }];
-
-    // Apify expects Base64-encoded JSON for the `webhooks` query param
-    const webhooksParam = btoa(JSON.stringify(webhooks));
-
-    // Start the actor run with webhook
-    const memory = input?.memoryMB ?? 2048;
-    const timeout = input?.timeoutSec ?? 900;
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(webhooksParam)}`;
-    const runResponse = await fetch(
-      runUrl,
-      {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${APIFY_API_KEY}`,
-        },
-        body: JSON.stringify(actorInput),
-      }
-    );
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyApiKey}&webhooks=[{\"eventTypes\":[\"ACTOR.RUN.SUCCEEDED\"],\"requestUrl\":\"${encodeURIComponent(webhookUrl)}\"}]`;
+    
+    const runResponse = await fetch(apifyRunUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        listUrls: [{ url: zooplaUrl }],
+        fullPropertyDetails: false,
+        monitoringMode: false,
+        maxItems: maxResults,
+        maxResults: maxResults,
+        proxy: {
+          useApifyProxy: true,
+          apifyProxyGroups: ['RESIDENTIAL'],
+          apifyProxyCountry: 'GB'
+        }
+      }),
+    });
 
     if (!runResponse.ok) {
       const errorText = await runResponse.text();
-      console.error('Failed to start Apify run:', errorText);
       throw new Error(`Failed to start Apify run: ${errorText}`);
     }
 
     const runData = await runResponse.json();
+    console.log('Apify run started:', runData);
+
+    if (!runData.data?.id) {
+      throw new Error('Failed to start Apify run');
+    }
+
     const runId = runData.data.id;
-    let datasetId: string | undefined = runData.data.defaultDatasetId;
-    
-    console.log('✓ Zoopla run started with webhook');
-    console.log(`  Run ID: ${runId}`);
-    if (datasetId) console.log(`  Dataset ID: ${datasetId}`);
-    console.log(`  View run: https://console.apify.com/actors/runs/${runId}`);
-    console.log(`  Webhook will call back when complete`);
+    const datasetId = runData.data.defaultDatasetId;
+    const runUrl = `https://console.apify.com/view/runs/${runId}`;
+
+    console.log('Run ID:', runId);
+    console.log('Dataset ID:', datasetId);
+    console.log('Run URL:', runUrl);
+    console.log('Actor input:', JSON.stringify({ listUrls: [{ url: zooplaUrl }], fullPropertyDetails: false, maxItems: maxResults }));
 
     // Background fallback importer in case webhook delivery fails
     async function importFromApify(runId: string, dsId?: string) {
       try {
         let effectiveDatasetId = dsId;
         console.log('Polling Apify run for completion (zoopla)...');
-        for (let i = 0; i < 40; i++) { // up to ~200s
-          const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
+        for (let i = 0; i < 40; i++) {
+          const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { 
+            headers: { Authorization: `Bearer ${apifyApiKey}` } 
+          });
           const statusJson = await statusRes.json();
           const status = statusJson.data?.status;
           effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
@@ -118,94 +110,46 @@ Deno.serve(async (req) => {
         }
 
         console.log('Fallback import (zoopla): fetching dataset', effectiveDatasetId);
-        const datasetResponse = await fetch(
-          `https://api.apify.com/v2/datasets/${effectiveDatasetId}/items?format=json`,
-          { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } }
-        );
-        if (!datasetResponse.ok) {
-          console.error('Fallback import (zoopla): failed to fetch dataset items');
-          return;
-        }
-        const properties = await datasetResponse.json();
-        console.log(`Fallback import (zoopla): got ${properties.length} items`);
-
-        if (!Array.isArray(properties) || properties.length === 0) return;
-
-        const dealsToInsert = properties.map((prop: any) => {
-          const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
-          const extractedCity = extractCityFromAddress(address, prop.city, prop.county, prop.location, location);
-          return {
-            property_address: address,
-            postcode: prop.postcode || null,
-            city: extractedCity,
-            property_type: mapPropertyType(prop.propertyType),
-            price: parsePrice(prop.price),
-            estimated_rent: estimateRent(parsePrice(prop.price)),
-            bedrooms: parseInt(prop.bedrooms) || null,
-            bathrooms: parseInt(prop.bathrooms) || null,
-            square_feet: null,
-            image_url: prop.image || prop.images?.[0] || null,
-            listing_url: prop.url || null,
-            location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
-            location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
-            source: 'apify-zoopla',
-            is_active: true,
-            yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-            roi_percentage: calculateROI(parsePrice(prop.price)),
-            cash_flow_monthly: calculateCashFlow(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
-            investment_score: calculateScore(parsePrice(prop.price)),
-          };
-        });
-
-        const validDeals = dealsToInsert.filter((d: any) => d.price > 0 && d.property_address !== 'Unknown Address');
-        if (validDeals.length === 0) return;
-
-        const { error: insertError } = await supabase
-          .from('deals_feed')
-          .insert(validDeals);
-        if (insertError) {
-          console.error('Fallback import (zoopla): DB insert error', insertError);
-        } else {
-          console.log(`Fallback import: inserted ${validDeals.length} deals (zoopla)`);
-        }
       } catch (e) {
         console.error('Fallback import (zoopla) error:', e);
       }
     }
 
-    // Trigger importer function in background (more reliable than waitUntil)
+    // Trigger importer function in background
     try {
-      fetch(`${SUPABASE_URL}/functions/v1/apify-import`, {
+      fetch(`${supabaseUrl}/functions/v1/apify-import`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': SUPABASE_SERVICE_ROLE_KEY!,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({ runId, datasetId, source: 'zoopla', location })
       }).catch(() => {});
     } catch (_) {}
 
     // Still schedule local fallback when available
-    // @ts-ignore - Edge runtime helper available
+    // @ts-ignore
     EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
 
-    // Respond immediately
     return new Response(
-      JSON.stringify({
-        started: true,
-        source: 'zoopla',
+      JSON.stringify({ 
+        message: 'Zoopla sync started',
         runId,
-        runUrl: `https://console.apify.com/actors/runs/${runId}`,
-        message: 'Zoopla sync started. Data will appear automatically when ready.'
+        datasetId,
+        runUrl,
+        location
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
     );
 
   } catch (error) {
     console.error('Error in sync-apify-zoopla:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -213,84 +157,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-// Helper functions
-function mapPropertyType(type: string): string {
-  const typeMap: Record<string, string> = {
-    'flat': 'residential',
-    'apartment': 'residential',
-    'house': 'residential',
-    'bungalow': 'residential',
-    'maisonette': 'residential',
-    'detached': 'residential',
-    'semi-detached': 'residential',
-    'terraced': 'residential',
-    'land': 'land',
-    'commercial': 'commercial',
-  };
-  
-  const lowered = type?.toLowerCase() || '';
-  return typeMap[lowered] || 'residential';
-}
-
-function parsePrice(priceStr: string | number): number {
-  if (typeof priceStr === 'number') return priceStr;
-  if (!priceStr) return 0;
-  
-  const cleaned = priceStr.toString().replace(/[£,\s]/g, '');
-  return parseFloat(cleaned) || 0;
-}
-
-function estimateRent(price: number): number {
-  // Rough estimate: 0.4% of property value per month
-  return Math.round(price * 0.004);
-}
-
-function calculateYield(price: number, rent: number): number {
-  if (!price || !rent) return 0;
-  return parseFloat(((rent * 12 / price) * 100).toFixed(2));
-}
-
-function calculateROI(price: number): number {
-  // Simplified ROI calculation
-  const deposit = price * 0.25;
-  const annualAppreciation = price * 0.03;
-  return parseFloat(((annualAppreciation / deposit) * 100).toFixed(2));
-}
-
-function calculateCashFlow(price: number, rent: number): number {
-  if (!price || !rent) return 0;
-  
-  const mortgage = (price * 0.75) * 0.05 / 12; // 75% LTV, 5% interest
-  const expenses = rent * 0.2; // 20% for expenses
-  
-  return Math.round(rent - mortgage - expenses);
-}
-
-function calculateScore(price: number): string {
-  const yieldPct = (estimateRent(price) * 12 / price) * 100;
-  
-  if (yieldPct >= 8) return 'A';
-  if (yieldPct >= 6) return 'B';
-  if (yieldPct >= 4) return 'C';
-  if (yieldPct >= 2) return 'D';
-  return 'E';
-}
-
-function extractCityFromAddress(address: string, ...fallbacks: any[]): string | null {
-  for (const fallback of fallbacks) {
-    if (typeof fallback === 'string' && fallback.trim()) return fallback.trim();
-  }
-  const parts = (address || '').split(',').map(p => p.trim());
-  const ukLocations = ['Surrey','London','Manchester','Birmingham','Leeds','Liverpool','Bristol','Sheffield','Kent','Essex','Sussex','Hampshire','Berkshire','Middlesex','Westminster','Camden','Kensington','Chelsea','Guildford','Woking','Epsom','Reigate','Redhill','Weybridge','Walton-on-Thames'];
-  for (const part of parts) {
-    for (const loc of ukLocations) {
-      if (part.toLowerCase().includes(loc.toLowerCase())) return loc;
-    }
-  }
-  if (parts.length >= 2) {
-    const candidate = parts[parts.length - 2];
-    if (candidate && !/^[A-Z]{1,2}\d{1,2}/.test(candidate)) return candidate;
-  }
-  return null;
-}

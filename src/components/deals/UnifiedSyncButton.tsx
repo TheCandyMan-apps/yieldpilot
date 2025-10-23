@@ -56,69 +56,40 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         description: `Starting Rightmove and Zoopla in ${location}. Results will appear shortly.`,
       });
 
-      // Kick off both sources in parallel (functions now process in background)
+      // Kick off both sources in parallel
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('sync-apify-rightmove', {
-          body: {
-            actorId: 'yyyyuaYekB0HQkfoy',
-            input: {
-              location,
-              maxItems: maxResults,
-              propertyType: 'for-sale',
-              includeSSTC: false,
-              includeUnderOffer: false,
-              timeoutSec: 900,
-              memoryMB: 2048,
-            }
-          }
+          body: { location, maxResults }
         }),
         supabase.functions.invoke('sync-apify-zoopla', {
-          body: {
-            actorId: 'dhrumil/zoopla-scraper',
-            input: {
-              searchType: 'for-sale',
-              maxResults: maxResults,
-              location,
-              timeoutSec: 900,
-              memoryMB: 2048,
-            }
-          }
+          body: { location, maxResults }
         })
       ]);
 
-      let rightmoveStarted = false;
-      let zooplaStarted = false;
-      const errors: string[] = [];
+      const rightmoveResponse = rightmoveResult.status === 'fulfilled' ? rightmoveResult.value.data : null;
+      const zooplaResponse = zooplaResult.status === 'fulfilled' ? zooplaResult.value.data : null;
 
-      // Process Rightmove start
-      if (rightmoveResult.status === 'fulfilled' && !rightmoveResult.value.error) {
-        const data = rightmoveResult.value.data;
-        rightmoveStarted = !!data?.started;
-        if (!rightmoveStarted) errors.push("Rightmove failed to start");
-      } else {
-        errors.push("Rightmove failed to start");
-      }
-
-      // Process Zoopla start
-      if (zooplaResult.status === 'fulfilled' && !zooplaResult.value.error) {
-        const data = zooplaResult.value.data;
-        zooplaStarted = !!data?.started;
-        if (!zooplaStarted) errors.push("Zoopla failed to start");
-      } else {
-        errors.push("Zoopla failed to start");
-      }
-
-      if (rightmoveStarted || zooplaStarted) {
-        setIsOpen(false);
-        // Navigate to sync progress page
-        navigate(`/sync-progress?location=${encodeURIComponent(location)}`);
-      } else {
+      if (!rightmoveResponse?.runId && !zooplaResponse?.runId) {
         toast({
-          title: "Sync couldn\'t start",
-          description: errors.join(". ") || "Please try again or reduce the max properties.",
+          title: "Sync Failed",
+          description: "Failed to start sync jobs. Please try again.",
           variant: "destructive",
         });
+        return;
       }
+
+      toast({
+        title: "Sync Started",
+        description: "Fetching properties from Rightmove and Zoopla. This will take a moment...",
+      });
+
+      // Build query params with run URLs
+      const params = new URLSearchParams({ location });
+      if (rightmoveResponse?.runUrl) params.append('rightmoveRun', rightmoveResponse.runUrl);
+      if (zooplaResponse?.runUrl) params.append('zooplaRun', zooplaResponse.runUrl);
+
+      setIsOpen(false);
+      navigate(`/sync-progress?${params.toString()}`);
     } catch (error) {
       toast({
         title: "Sync failed",

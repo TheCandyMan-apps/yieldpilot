@@ -49,58 +49,50 @@ export const LocationSearch = ({
         return;
       }
 
-      // Trigger both Rightmove and Zoopla syncs in parallel (allow partial success)
-      const [rightmoveRes, zooplaRes] = await Promise.all([
-        supabase.functions.invoke("sync-apify-rightmove", {
-          body: {
-            actorId: "yyyyuaYekB0HQkfoy",
-            input: {
-              location: location.trim(),
-              maxItems: 20,
-              propertyType: "for-sale",
-              includeSSTC: false,
-              includeUnderOffer: false,
-              timeoutSec: 900,
-              memoryMB: 2048,
-            },
-          },
+      // Trigger both Rightmove and Zoopla syncs in parallel
+      const [rightmoveResult, zooplaResult] = await Promise.allSettled([
+        supabase.functions.invoke('sync-apify-rightmove', {
+          body: { location: location.trim(), maxResults: 50 }
         }),
-        supabase.functions.invoke("sync-apify-zoopla", {
-          body: {
-            actorId: "dhrumil/zoopla-scraper",
-            input: {
-              searchType: "for-sale",
-              maxResults: 20,
-              location: location.trim(),
-              timeoutSec: 900,
-              memoryMB: 2048,
-            },
-          },
-        }),
+        supabase.functions.invoke('sync-apify-zoopla', {
+          body: { location: location.trim(), maxResults: 50 }
+        })
       ]);
 
-      // Proceed if at least one provider started successfully
-      const providersStarted: string[] = [];
-      const errors: string[] = [];
+      console.log('Rightmove result:', rightmoveResult);
+      console.log('Zoopla result:', zooplaResult);
 
-      if (!rightmoveRes.error) providersStarted.push("Rightmove");
-      else errors.push(`Rightmove: ${rightmoveRes.error.message || 'unavailable'}`);
+      const rightmoveData = rightmoveResult.status === 'fulfilled' ? rightmoveResult.value.data : null;
+      const zooplaData = zooplaResult.status === 'fulfilled' ? zooplaResult.value.data : null;
 
-      if (!zooplaRes.error) providersStarted.push("Zoopla");
-      else errors.push(`Zoopla: ${zooplaRes.error.message || 'unavailable'}`);
+      let successCount = 0;
+      if (rightmoveResult.status === 'fulfilled' && !rightmoveResult.value.error) successCount++;
+      if (zooplaResult.status === 'fulfilled' && !zooplaResult.value.error) successCount++;
 
-      if (providersStarted.length === 0) {
-        throw new Error(errors.join(' | '));
+      if (successCount > 0) {
+        toast({
+          title: "Search Started",
+          description: `Searching ${successCount} source${successCount > 1 ? 's' : ''} for properties in ${location}. This will take a moment...`,
+        });
+        
+        if (onSearchComplete) {
+          onSearchComplete();
+        }
+        
+        // Build query params for sync progress page
+        const params = new URLSearchParams({ location: location.trim() });
+        if (rightmoveData?.runUrl) params.append('rightmoveRun', rightmoveData.runUrl);
+        if (zooplaData?.runUrl) params.append('zooplaRun', zooplaData.runUrl);
+        
+        // Navigate to sync progress page with run info
+        navigate(`/sync-progress?${params.toString()}`);
+      } else {
+        toast({
+          title: "Search failed",
+          description: "Failed to start property search. Please try again.",
+          variant: "destructive",
+        });
       }
-
-      toast({
-        title: "Search started!",
-        description: `Searching for properties in ${location}. Providers: ${providersStarted.join(', ')}${errors.length ? ` (skipped: ${errors.join(', ')})` : ''}`,
-      });
-
-
-      // Navigate to deals page with location param (realtime will update automatically)
-      navigate(`/deals?location=${encodeURIComponent(location.trim())}`);
       
     } catch (error: any) {
       console.error("Search error:", error);

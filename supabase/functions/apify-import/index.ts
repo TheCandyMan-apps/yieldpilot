@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
       if (isPostcodeLike(target)) {
         const targetOut = outward(target);
         if (pc && outward(pc).startsWith(targetOut)) return true;
+        // Also check if target outward has known towns
+        const townsForOutward = outwardTowns[target];
+        if (townsForOutward && townsForOutward.some((t) => addr.includes(t) || city.includes(t))) return true;
         // Fallback: match outward string in address text
         if (addr.includes(targetOut) || city.includes(targetOut)) return true;
       }
@@ -110,6 +113,7 @@ Deno.serve(async (req) => {
 
     const mapRightmove = (prop: any) => {
       const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
+      // Remove user's location from fallback - only use scraped fields
       const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city);
       return {
         property_address: address,
@@ -136,6 +140,7 @@ Deno.serve(async (req) => {
 
     const mapZoopla = (prop: any) => {
       const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
+      // Remove user's location from fallback - only use scraped fields
       const extractedCity = extractCityFromAddress(address, prop.city, prop.county);
       return {
         property_address: address,
