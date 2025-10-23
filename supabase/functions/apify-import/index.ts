@@ -64,6 +64,12 @@ Deno.serve(async (req) => {
         'haslemere','esher','cobham','banstead','caterham','addlestone','sunbury','shepperton','frimley','bagshot'
       ],
     };
+    
+    // Postcode outward (district) to known towns fallback
+    const outwardTowns: Record<string, string[]> = {
+      kt22: ['leatherhead', 'ashtead', 'fetcham'],
+    };
+    
     const norm = (s: any) => (s ? String(s).toLowerCase() : '');
     const normalizePc = (pc: string | undefined) => norm(pc).replace(/\s|[^a-z0-9]/g, '');
     const outward = (pc: string) => pc.replace(/([0-9][a-z]{2})$/i, '');
