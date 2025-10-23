@@ -105,10 +105,12 @@ export const LocationSearch = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isSearching) {
+    if (e.key === 'Enter' && !isSearching && location.trim()) {
       handleSearch();
     }
   };
+
+  const isButtonDisabled = isSearching || location.trim().length === 0;
 
   return (
     <div className="flex gap-2 w-full max-w-2xl">
@@ -126,7 +128,7 @@ export const LocationSearch = ({
       </div>
       <Button 
         onClick={handleSearch} 
-        disabled={isSearching || !location.trim()}
+        disabled={isButtonDisabled}
         size="default"
       >
         {isSearching ? (
