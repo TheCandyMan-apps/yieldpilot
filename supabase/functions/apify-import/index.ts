@@ -51,24 +51,60 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ imported: 0, message: 'No items in dataset' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Helper: loose matching of items to requested location (prevents cross-region noise)
+    // Helper: robust UK location matching (city/town or postcode outward)
     const countyPostcodePrefixes: Record<string, string[]> = {
-      surrey: ['gu', 'kt', 'rh', 'sm'],
+      surrey: ['gu', 'kt', 'rh', 'sm', 'tw', 'cr'],
       manchester: ['m', 'wa', 'sk'],
-      london: ['ec', 'wc', 'nw', 'sw', 'se', 'w', 'n', 'e'],
+      london: ['ec', 'wc', 'nw', 'sw', 'se', 'w', 'n', 'e', 'tw', 'cr', 'sm', 'br', 'ig', 'rm', 'ha', 'ub', 'en', 'da', 'kt'],
+    };
+    const countyTowns: Record<string, string[]> = {
+      surrey: [
+        'guildford','woking','epsom','ewell','reigate','redhill','weybridge','walton-on-thames','walton on thames',
+        'camberley','farnham','dorking','leatherhead','staines','staines-upon-thames','chertsey','egham','godalming',
+        'haslemere','esher','cobham','banstead','caterham','addlestone','sunbury','shepperton','frimley','bagshot'
+      ],
     };
     const norm = (s: any) => (s ? String(s).toLowerCase() : '');
     const normalizePc = (pc: string | undefined) => norm(pc).replace(/\s|[^a-z0-9]/g, '');
+    const outward = (pc: string) => pc.replace(/([0-9][a-z]{2})$/i, '');
+    const isPostcodeLike = (s: string) => /^[a-z]{1,2}\d[a-z\d]?/i.test(s);
 
     const matchesRequestedLocation = (raw: any): boolean => {
       if (!location) return true;
       const addr = norm(raw.address?.displayAddress || raw.propertyAddress || raw.address || raw.displayAddress || raw.title);
       const city = norm(raw.address?.town || raw.address?.city || raw.city || raw.county || raw.location);
-      const pc = normalizePc(raw.address?.postcode || raw.postcode);
+      const rawPc = raw.address?.postcode || raw.postcode || raw.outcode;
+      const pc = normalizePc(rawPc);
       const target = norm(location).replace(/[^a-z0-9]/g, '');
-      if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
+
+      // Direct matches against text
+      if (addr.includes(target) || city.includes(target)) return true;
+
+      // Postcode outward matching (e.g., GU1, KT12, SW1A)
+      if (isPostcodeLike(target)) {
+        const targetOut = outward(target);
+        if (pc && outward(pc).startsWith(targetOut)) return true;
+        // Fallback: match outward string in address text
+        if (addr.includes(targetOut) || city.includes(targetOut)) return true;
+      }
+
+      // County-level matching via postcode prefixes
       const prefixes = countyPostcodePrefixes[target];
-      if (prefixes && pc) return prefixes.some((p) => pc.startsWith(p));
+      if (prefixes && pc && prefixes.some((p) => pc.startsWith(p))) return true;
+
+      // County-level matching via known towns
+      const townsForTarget = countyTowns[target] || [];
+      if (townsForTarget.some((t) => addr.includes(t) || city.includes(t))) return true;
+
+      // If searching by a town name, infer its county and match
+      for (const [county, towns] of Object.entries(countyTowns)) {
+        if (towns.includes(target)) {
+          if (addr.includes(target) || city.includes(target)) return true;
+          const pref = countyPostcodePrefixes[county];
+          if (pref && pc && pref.some((p) => pc.startsWith(p))) return true;
+        }
+      }
+
       return false;
     };
 
@@ -147,7 +183,13 @@ function extractCityFromAddress(address: string, ...fallbacks: any[]): string | 
     if (fallback && typeof fallback === 'string' && fallback.trim()) return fallback.trim();
   }
   const parts = (address || '').split(',').map(p => p.trim());
-  const ukLocations = ['London','Manchester','Birmingham','Leeds','Liverpool','Bristol','Sheffield','Surrey','Kent','Essex','Sussex','Hampshire','Berkshire','Middlesex','Westminster','Camden','Kensington','Chelsea'];
+  const ukLocations = [
+    'London','Manchester','Birmingham','Leeds','Liverpool','Bristol','Sheffield','Surrey','Kent','Essex','Sussex','Hampshire','Berkshire','Middlesex',
+    'Westminster','Camden','Kensington','Chelsea',
+    // Surrey towns
+    'Guildford','Woking','Epsom','Ewell','Reigate','Redhill','Weybridge','Walton-on-Thames','Camberley','Farnham','Dorking','Leatherhead',
+    'Staines','Staines-upon-Thames','Chertsey','Egham','Godalming','Haslemere','Esher','Cobham','Banstead','Caterham','Addlestone','Sunbury','Shepperton','Frimley','Bagshot'
+  ];
   for (const part of parts) {
     for (const loc of ukLocations) {
       if (part.toLowerCase().includes(loc.toLowerCase())) return loc;
