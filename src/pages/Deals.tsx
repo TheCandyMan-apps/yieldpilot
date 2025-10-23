@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
-import { UnifiedSyncButton } from "@/components/deals/UnifiedSyncButton";
+import { LocationSearch } from "@/components/deals/LocationSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Lock, TrendingUp } from "lucide-react";
+import { Loader2, Lock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -236,21 +236,28 @@ const Deals = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Deal Feed</h1>
-            <p className="text-muted-foreground mt-1">
-              AI-analyzed investment opportunities
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <div>
+          <h1 className="text-3xl font-bold">Deal Feed</h1>
+          <p className="text-muted-foreground mt-1">
+            AI-analyzed investment opportunities
+          </p>
+        </div>
+
+        {/* Location Search */}
+        <div className="bg-card rounded-lg border p-6 shadow-sm">
+          <div className="flex flex-col items-center gap-4">
+            <LocationSearch 
+              defaultLocation={initialLocation}
+              onSearchComplete={fetchDeals}
+            />
             {isAuthenticated && (
-              <>
-            <UnifiedSyncButton onSyncComplete={fetchDeals} />
-                <Button onClick={handleGenerateSampleDeals}>
-                  Generate Sample Deals
-                </Button>
-              </>
+              <Button 
+                onClick={handleGenerateSampleDeals}
+                variant="outline"
+                size="sm"
+              >
+                Generate Sample Deals
+              </Button>
             )}
           </div>
         </div>
