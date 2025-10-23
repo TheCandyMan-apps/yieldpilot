@@ -137,7 +137,7 @@ const Deals = () => {
       // If a location was provided in the URL (coming from SyncProgress), pre-filter results
       if (initialLocation) {
         const filtered = (data || []).filter((deal) => matchesLocation(deal, initialLocation));
-        setFilteredDeals(filtered.length > 0 ? filtered : (data || []));
+        setFilteredDeals(filtered);
       } else {
         setFilteredDeals(data || []);
       }
@@ -170,7 +170,9 @@ const Deals = () => {
   const applyFilters = (filterValues: FilterValues) => {
     setFilters(filterValues);
     
-    let filtered = [...deals];
+    let filtered = initialLocation
+      ? deals.filter((deal) => matchesLocation(deal, initialLocation))
+      : [...deals];
 
     // Search filter
     if (filterValues.search) {
@@ -323,7 +325,7 @@ const Deals = () => {
           const hasMatches = deals.some((d) => matchesLocation(d, initialLocation));
           return !hasMatches ? (
             <div className="text-sm text-muted-foreground p-3 rounded-md border border-border/50 bg-muted/30">
-              No properties found for "{initialLocation}". Showing all available deals.
+              No properties found for "{initialLocation}". Try a nearby area or refine your search.
             </div>
           ) : null;
         })()}
