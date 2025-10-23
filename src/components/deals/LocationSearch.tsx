@@ -110,7 +110,7 @@ export const LocationSearch = ({
     }
   };
 
-  const isButtonDisabled = isSearching || location.trim().length === 0;
+  const isButtonDisabled = isSearching;
 
   return (
     <div className="flex gap-2 w-full max-w-2xl">
@@ -119,7 +119,11 @@ export const LocationSearch = ({
           type="text"
           placeholder="Enter city, town, or postcode (e.g. Surrey, GU1, Manchester)"
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            console.debug('LocationSearch input value:', v);
+            setLocation(v);
+          }}
           onKeyDown={handleKeyDown}
           disabled={isSearching}
           className="pr-10"
@@ -127,6 +131,7 @@ export const LocationSearch = ({
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
       <Button 
+        type="button"
         onClick={handleSearch} 
         disabled={isButtonDisabled}
         size="default"
