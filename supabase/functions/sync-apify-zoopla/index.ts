@@ -29,10 +29,9 @@ Deno.serve(async (req) => {
     }
 
     const actorId = 'dhrumil/zoopla-scraper';
+    const formattedActorId = actorId.replace('/', '~');
     
-    // Build the correct Zoopla listUrl based on input
-    // If it looks like a postcode (KT22, GU1, etc.), use it directly
-    // Otherwise treat it as a location query
+    // Build the correct Zoopla listUrl
     const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
     const zooplaUrl = isPostcode 
       ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale&radius=0`
@@ -40,25 +39,36 @@ Deno.serve(async (req) => {
     
     console.log('Zoopla listUrl:', zooplaUrl);
 
-    // Set up webhook to call our apify-webhook function when the run completes
     const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
-    
-    console.log('Starting Apify actor:', actorId);
     console.log('Webhook URL:', webhookUrl);
 
-    const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyApiKey}&webhooks=[{\"eventTypes\":[\"ACTOR.RUN.SUCCEEDED\"],\"requestUrl\":\"${encodeURIComponent(webhookUrl)}\"}]`;
+    // Construct webhook configuration
+    const webhooks = [{
+      eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+      requestUrl: webhookUrl,
+      payloadTemplate: JSON.stringify({
+        datasetId: "{{resource.defaultDatasetId}}",
+        source: "zoopla",
+        runId: "{{resource.id}}",
+        location: location
+      })
+    }];
+
+    const webhooksParam = btoa(JSON.stringify(webhooks));
+
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
     
     const runResponse = await fetch(apifyRunUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apifyApiKey}`,
       },
       body: JSON.stringify({
         listUrls: [{ url: zooplaUrl }],
         fullPropertyDetails: false,
         monitoringMode: false,
         maxItems: maxResults,
-        maxResults: maxResults,
         proxy: {
           useApifyProxy: true,
           apifyProxyGroups: ['RESIDENTIAL'],
@@ -69,6 +79,7 @@ Deno.serve(async (req) => {
 
     if (!runResponse.ok) {
       const errorText = await runResponse.text();
+      console.error('Apify API error:', errorText);
       throw new Error(`Failed to start Apify run: ${errorText}`);
     }
 
@@ -86,34 +97,6 @@ Deno.serve(async (req) => {
     console.log('Run ID:', runId);
     console.log('Dataset ID:', datasetId);
     console.log('Run URL:', runUrl);
-    console.log('Actor input:', JSON.stringify({ listUrls: [{ url: zooplaUrl }], fullPropertyDetails: false, maxItems: maxResults }));
-
-    // Background fallback importer in case webhook delivery fails
-    async function importFromApify(runId: string, dsId?: string) {
-      try {
-        let effectiveDatasetId = dsId;
-        console.log('Polling Apify run for completion (zoopla)...');
-        for (let i = 0; i < 40; i++) {
-          const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { 
-            headers: { Authorization: `Bearer ${apifyApiKey}` } 
-          });
-          const statusJson = await statusRes.json();
-          const status = statusJson.data?.status;
-          effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
-          if (status === 'SUCCEEDED' && effectiveDatasetId) break;
-          await new Promise((r) => setTimeout(r, 5000));
-        }
-
-        if (!effectiveDatasetId) {
-          console.warn('No datasetId available after polling; aborting fallback import (zoopla)');
-          return;
-        }
-
-        console.log('Fallback import (zoopla): fetching dataset', effectiveDatasetId);
-      } catch (e) {
-        console.error('Fallback import (zoopla) error:', e);
-      }
-    }
 
     // Trigger importer function in background
     try {
@@ -127,10 +110,6 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ runId, datasetId, source: 'zoopla', location })
       }).catch(() => {});
     } catch (_) {}
-
-    // Still schedule local fallback when available
-    // @ts-ignore
-    EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
 
     return new Response(
       JSON.stringify({ 

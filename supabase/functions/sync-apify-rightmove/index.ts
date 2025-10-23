@@ -33,21 +33,33 @@ Deno.serve(async (req) => {
     
     console.log('Rightmove URL:', rightmoveUrl);
 
-    // Set up webhook to call our apify-webhook function when the run completes
     const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
-    
-    console.log('Starting Apify actor:', actorId);
     console.log('Webhook URL:', webhookUrl);
 
-    const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyApiKey}&webhooks=[{"eventTypes":["ACTOR.RUN.SUCCEEDED"],"requestUrl":"${encodeURIComponent(webhookUrl)}"}]`;
+    // Construct webhook configuration
+    const webhooks = [{
+      eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+      requestUrl: webhookUrl,
+      payloadTemplate: JSON.stringify({
+        datasetId: "{{resource.defaultDatasetId}}",
+        source: "rightmove",
+        runId: "{{resource.id}}",
+        location: location
+      })
+    }];
+
+    const webhooksParam = btoa(JSON.stringify(webhooks));
+
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
     
     const runResponse = await fetch(apifyRunUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apifyApiKey}`,
       },
       body: JSON.stringify({
-        startUrls: [{ url: rightmoveUrl }],
+        startUrls: [rightmoveUrl],
         maxItems: maxResults,
         proxy: {
           useApifyProxy: true,
@@ -59,6 +71,7 @@ Deno.serve(async (req) => {
 
     if (!runResponse.ok) {
       const errorText = await runResponse.text();
+      console.error('Apify API error:', errorText);
       throw new Error(`Failed to start Apify run: ${errorText}`);
     }
 
@@ -77,33 +90,6 @@ Deno.serve(async (req) => {
     console.log('Dataset ID:', datasetId);
     console.log('Run URL:', runUrl);
 
-    // Background fallback importer
-    async function importFromApify(runId: string, dsId?: string) {
-      try {
-        let effectiveDatasetId = dsId;
-        console.log('Polling Apify run for completion...');
-        for (let i = 0; i < 40; i++) {
-          const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { 
-            headers: { Authorization: `Bearer ${apifyApiKey}` } 
-          });
-          const statusJson = await statusRes.json();
-          const status = statusJson.data?.status;
-          effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
-          if (status === 'SUCCEEDED' && effectiveDatasetId) break;
-          await new Promise((r) => setTimeout(r, 5000));
-        }
-
-        if (!effectiveDatasetId) {
-          console.warn('No datasetId available after polling; aborting fallback import');
-          return;
-        }
-
-        console.log('Fallback import: fetching dataset', effectiveDatasetId);
-      } catch (e) {
-        console.error('Fallback import error:', e);
-      }
-    }
-
     // Trigger importer function in background
     try {
       fetch(`${supabaseUrl}/functions/v1/apify-import`, {
@@ -116,10 +102,6 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ runId, datasetId, source: 'rightmove', location })
       }).catch(() => {});
     } catch (_) {}
-
-    // Still schedule local fallback when available
-    // @ts-ignore
-    EdgeRuntime?.waitUntil?.(importFromApify(runId, datasetId));
 
     return new Response(
       JSON.stringify({ 
