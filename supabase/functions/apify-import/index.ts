@@ -51,9 +51,30 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ imported: 0, message: 'No items in dataset' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Helper: loose matching of items to requested location (prevents cross-region noise)
+    const countyPostcodePrefixes: Record<string, string[]> = {
+      surrey: ['gu', 'kt', 'rh', 'sm'],
+      manchester: ['m', 'wa', 'sk'],
+      london: ['ec', 'wc', 'nw', 'sw', 'se', 'w', 'n', 'e'],
+    };
+    const norm = (s: any) => (s ? String(s).toLowerCase() : '');
+    const normalizePc = (pc: string | undefined) => norm(pc).replace(/\s|[^a-z0-9]/g, '');
+
+    const matchesRequestedLocation = (raw: any): boolean => {
+      if (!location) return true;
+      const addr = norm(raw.address?.displayAddress || raw.propertyAddress || raw.address || raw.displayAddress || raw.title);
+      const city = norm(raw.address?.town || raw.address?.city || raw.city || raw.county || raw.location);
+      const pc = normalizePc(raw.address?.postcode || raw.postcode);
+      const target = norm(location).replace(/[^a-z0-9]/g, '');
+      if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
+      const prefixes = countyPostcodePrefixes[target];
+      if (prefixes && pc) return prefixes.some((p) => pc.startsWith(p));
+      return false;
+    };
+
     const mapRightmove = (prop: any) => {
       const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
-      const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city, location);
+      const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city);
       return {
         property_address: address,
         postcode: prop.address?.postcode || null,
@@ -79,7 +100,7 @@ Deno.serve(async (req) => {
 
     const mapZoopla = (prop: any) => {
       const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
-      const extractedCity = extractCityFromAddress(address, prop.city, prop.county, prop.location, location);
+      const extractedCity = extractCityFromAddress(address, prop.city, prop.county);
       return {
         property_address: address,
         postcode: prop.postcode || null,
@@ -103,7 +124,8 @@ Deno.serve(async (req) => {
       };
     };
 
-    const dealsToInsert = items.map((it) => (source === 'rightmove' ? mapRightmove(it) : mapZoopla(it)));
+    const filteredItems = Array.isArray(items) ? items.filter((it) => matchesRequestedLocation(it)) : [];
+    const dealsToInsert = filteredItems.map((it) => (source === 'rightmove' ? mapRightmove(it) : mapZoopla(it)));
     const validDeals = dealsToInsert.filter((d: any) => d.price > 0 && d.property_address !== 'Unknown Address');
 
     if (validDeals.length === 0) {
