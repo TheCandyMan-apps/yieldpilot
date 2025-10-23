@@ -59,6 +59,10 @@ const Deals = () => {
     leatherhead: ['kt22'],
   };
 
+  // Postcode outward (district) to known towns fallback (covers missing postcodes)
+  const outwardTowns: Record<string, string[]> = {
+    kt22: ['leatherhead', 'ashtead', 'fetcham'],
+  };
   const norm = (s: string | null | undefined) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const matchesLocation = (deal: Deal, location: string) => {
@@ -67,9 +71,14 @@ const Deals = () => {
     const city = norm(deal.city);
     const pc = norm(deal.postcode);
 
-    // If user typed a postcode district (e.g. KT1, GU10), match by prefix
+    // If user typed a postcode district (e.g. KT1, GU10), match by prefix or known towns
     const districtMatch = target.match(/^([a-z]{1,2}\d{1,2})/);
-    if (districtMatch && pc && pc.startsWith(districtMatch[1])) return true;
+    if (districtMatch) {
+      const outward = districtMatch[1];
+      if (pc && pc.startsWith(outward)) return true;
+      const townsForOutward = outwardTowns[outward];
+      if (townsForOutward && townsForOutward.some((t) => addr.includes(t) || city.includes(t))) return true;
+    }
 
     // Direct substring match against address, city, or postcode
     if (addr.includes(target) || city.includes(target) || pc.includes(target)) return true;
