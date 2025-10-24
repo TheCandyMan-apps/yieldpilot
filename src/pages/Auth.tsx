@@ -62,7 +62,7 @@ const Auth = () => {
                 input: "auth-input",
               },
             }}
-            providers={[]}
+            providers={["google", "linkedin_oidc", "twitter", "azure"]}
             redirectTo={`${window.location.origin}/dashboard`}
           />
         </div>
