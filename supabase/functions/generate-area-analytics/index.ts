@@ -105,6 +105,7 @@ serve(async (req) => {
       }
 
       analytics.push({
+        id: crypto.randomUUID(),
         postcode_prefix: prefix,
         city: city,
         avg_yield_current: avgYield,
