@@ -250,6 +250,67 @@ const Deals = () => {
     setFilteredDeals(filtered);
   };
 
+  const handleWatchlistToggle = async (dealId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to add deals to your watchlist",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const isCurrentlyWatchlisted = watchlistedIds.has(dealId);
+
+      if (isCurrentlyWatchlisted) {
+        const { error } = await supabase
+          .from("watchlist")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("deal_id", dealId);
+
+        if (error) throw error;
+
+        setWatchlistedIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(dealId);
+          return newSet;
+        });
+
+        toast({
+          title: "Removed from watchlist",
+          description: "Deal removed from your watchlist",
+        });
+      } else {
+        const { error } = await supabase
+          .from("watchlist")
+          .insert({
+            user_id: user.id,
+            deal_id: dealId,
+          });
+
+        if (error) throw error;
+
+        setWatchlistedIds(prev => new Set([...prev, dealId]));
+
+        toast({
+          title: "Added to watchlist",
+          description: "Deal added to your watchlist",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error updating watchlist",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleGenerateSampleDeals = async () => {
     setLoading(true);
     try {
@@ -382,7 +443,7 @@ const Deals = () => {
                 key={deal.id}
                 deal={deal}
                 isWatchlisted={watchlistedIds.has(deal.id)}
-                onWatchlistToggle={() => checkAuth()}
+                onWatchlistToggle={handleWatchlistToggle}
               />
             ))}
           </div>
