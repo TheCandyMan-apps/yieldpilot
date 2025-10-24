@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, TrendingUp, TrendingDown, Activity, AlertCircle } from "lucide-react";
+import { MapPin, TrendingUp, TrendingDown, Activity, AlertCircle, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface AreaAnalytic {
   id: string;
@@ -26,6 +28,7 @@ const AreaInsights = () => {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AreaAnalytic[]>([]);
   const [sortBy, setSortBy] = useState<"yield" | "growth" | "opportunity">("opportunity");
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -53,6 +56,23 @@ const AreaInsights = () => {
       console.error("Error fetching analytics:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAnalytics = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-area-analytics");
+      
+      if (error) throw error;
+      
+      toast.success("Area analytics generated successfully!");
+      await fetchAnalytics();
+    } catch (error: any) {
+      console.error("Error generating analytics:", error);
+      toast.error(error.message || "Failed to generate analytics");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -107,16 +127,26 @@ const AreaInsights = () => {
               ML-powered predictive analytics across UK property markets
             </p>
           </div>
-          <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="opportunity">Opportunity Score</SelectItem>
-              <SelectItem value="yield">Current Yield</SelectItem>
-              <SelectItem value="growth">5Y Growth Forecast</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={generateAnalytics}
+              disabled={generating}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${generating ? "animate-spin" : ""}`} />
+              {generating ? "Generating..." : "Generate Analytics"}
+            </Button>
+            <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="opportunity">Opportunity Score</SelectItem>
+                <SelectItem value="yield">Current Yield</SelectItem>
+                <SelectItem value="growth">5Y Growth Forecast</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {analytics.length === 0 ? (
