@@ -1,9 +1,102 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Check } from "lucide-react";
+import { CreditCard, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+const SUBSCRIPTION_TIERS = {
+  pro: {
+    name: "Pro",
+    price: "£29",
+    priceId: "price_1SLpPpAWv4rktmqkpaH3qBnm",
+    productId: "prod_TIQGr19KW6WSf2",
+  },
+  investor: {
+    name: "Investor",
+    price: "£99",
+    priceId: "price_1SLpQ8AWv4rktmqkOqgFM8cg",
+    productId: "prod_TIQG8NQ9FVZHVD",
+  },
+  team: {
+    name: "Team",
+    price: "£249",
+    priceId: "price_1SLpZ5AWv4rktmqkPk9179Ls",
+    productId: "prod_TIQPO5z7ZmKw3Q",
+  },
+};
 
 const Billing = () => {
+  const [loading, setLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+
+  const checkSubscription = async () => {
+    try {
+      setCheckingStatus(true);
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      
+      if (error) throw error;
+      
+      if (data) {
+        setSubscriptionTier(data.subscription_tier || "free");
+        setSubscriptionEnd(data.subscription_end);
+      }
+    } catch (error: any) {
+      console.error("Error checking subscription:", error);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    checkSubscription();
+    
+    // Check subscription periodically
+    const interval = setInterval(checkSubscription, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleUpgrade = async (priceId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Error creating checkout:", error);
+      toast.error("Failed to start checkout process");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Error opening customer portal:", error);
+      toast.error("Failed to open subscription management");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const plans = [
     {
       name: "Free",
@@ -14,7 +107,7 @@ const Billing = () => {
         "Investment simulator",
         "Market insights",
       ],
-      current: true,
+      priceId: null,
     },
     {
       name: "Pro",
@@ -27,7 +120,7 @@ const Billing = () => {
         "Export to PDF",
         "Email support",
       ],
-      current: false,
+      priceId: SUBSCRIPTION_TIERS.pro.priceId,
     },
     {
       name: "Investor",
@@ -40,7 +133,7 @@ const Billing = () => {
         "White-label reports",
         "Priority support",
       ],
-      current: false,
+      priceId: SUBSCRIPTION_TIERS.investor.priceId,
     },
     {
       name: "Team",
@@ -53,7 +146,7 @@ const Billing = () => {
         "Custom integrations",
         "SLA guarantee",
       ],
-      current: false,
+      priceId: SUBSCRIPTION_TIERS.team.priceId,
     },
   ];
 
@@ -71,56 +164,96 @@ const Billing = () => {
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">Current Plan: Free</p>
-                <p className="text-sm text-muted-foreground">
-                  3 of 5 analyses used this month
+                <p className="font-semibold">
+                  Current Plan: {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}
                 </p>
+                {subscriptionEnd && (
+                  <p className="text-sm text-muted-foreground">
+                    Renews on {new Date(subscriptionEnd).toLocaleDateString()}
+                  </p>
+                )}
+                {subscriptionTier === "free" && (
+                  <p className="text-sm text-muted-foreground">
+                    3 of 5 analyses used this month
+                  </p>
+                )}
               </div>
-              <Button>Upgrade Now</Button>
+              {subscriptionTier !== "free" ? (
+                <Button 
+                  onClick={handleManageSubscription} 
+                  disabled={loading || checkingStatus}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Manage Subscription"
+                  )}
+                </Button>
+              ) : (
+                <Button onClick={() => handleUpgrade(SUBSCRIPTION_TIERS.pro.priceId)} disabled={loading}>
+                  Upgrade Now
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {plans.map((plan) => (
-            <Card key={plan.name} className={plan.current ? "border-primary" : ""}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {plan.name}
-                  {plan.current && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                      Current
+          {plans.map((plan) => {
+            const isCurrent = plan.name.toLowerCase() === subscriptionTier;
+            return (
+              <Card key={plan.name} className={isCurrent ? "border-primary" : ""}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    {plan.name}
+                    {isCurrent && (
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                        Current
+                      </span>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    <span className="text-3xl font-bold text-foreground">
+                      {plan.price}
                     </span>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  <span className="text-3xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  {plan.price !== "£0" && (
-                    <span className="text-muted-foreground">/month</span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start text-sm">
-                      <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  variant={plan.current ? "outline" : "default"}
-                  disabled={plan.current}
-                >
-                  {plan.current ? "Current Plan" : "Upgrade"}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                    {plan.price !== "£0" && (
+                      <span className="text-muted-foreground">/month</span>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start text-sm">
+                        <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="w-full"
+                    variant={isCurrent ? "outline" : "default"}
+                    disabled={isCurrent || loading || checkingStatus || !plan.priceId}
+                    onClick={() => plan.priceId && handleUpgrade(plan.priceId)}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : isCurrent ? (
+                      "Current Plan"
+                    ) : (
+                      "Upgrade"
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <Card>
