@@ -124,10 +124,31 @@ serve(async (req) => {
 
     console.log(`Generated analytics for ${analytics.length} areas`);
 
+    // Deduplicate analytics by (postcode_prefix, data_date) to satisfy upsert constraint
+    const dedupedMap = new Map<string, any>();
+    for (const a of analytics) {
+      const key = `${a.postcode_prefix}_${a.data_date}`;
+      const existing = dedupedMap.get(key);
+      if (!existing) {
+        dedupedMap.set(key, a);
+      } else {
+        // Prefer entries with higher transaction volume, then higher opportunity score
+        const aVol = a.transaction_volume ?? 0;
+        const eVol = existing.transaction_volume ?? 0;
+        const aScore = a.opportunity_score ?? 0;
+        const eScore = existing.opportunity_score ?? 0;
+        if (aVol > eVol || (aVol === eVol && aScore > eScore)) {
+          dedupedMap.set(key, a);
+        }
+      }
+    }
+    const dedupedAnalytics = Array.from(dedupedMap.values());
+    console.log(`Deduplicated analytics from ${analytics.length} to ${dedupedAnalytics.length} rows`);
+
     // Upsert analytics
     const { data: inserted, error: insertError } = await supabase
       .from("area_analytics")
-      .upsert(analytics, {
+      .upsert(dedupedAnalytics, {
         onConflict: "postcode_prefix,data_date",
       })
       .select();
