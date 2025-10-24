@@ -38,17 +38,36 @@ serve(async (req) => {
       );
     }
 
-    // Group deals by postcode prefix and city
+    // Group deals by postcode prefix and city (with robust fallbacks)
+    const extractOutwardCode = (value: string | null | undefined): string | null => {
+      if (!value) return null;
+      const upper = String(value).toUpperCase();
+      // Match UK outward postcode (e.g., KT23, SW1, EC1A)
+      const match = upper.match(/\b[A-Z]{1,2}\d[A-Z0-9]?\b/);
+      return match ? match[0] : null;
+    };
+
+    const inferCityFromAddress = (address: string | null | undefined): string | null => {
+      if (!address) return null;
+      const parts = String(address)
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parts.length === 0) return null;
+      // Prefer the second-to-last part (often the town/city before county/postcode), fallback to first
+      return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+    };
+
     const groupedData: Record<string, any[]> = {};
     deals.forEach((deal) => {
-      if (deal.postcode && deal.city) {
-        const prefix = deal.postcode.split(" ")[0];
-        const key = `${prefix}_${deal.city}`;
-        if (!groupedData[key]) {
-          groupedData[key] = [];
-        }
-        groupedData[key].push(deal);
+      const postcodePrefix = extractOutwardCode(deal.postcode) || extractOutwardCode(deal.property_address);
+      const city = deal.city || inferCityFromAddress(deal.property_address) || postcodePrefix || 'Unknown';
+      const prefixKey = postcodePrefix || `CITY-${city.toUpperCase().replace(/\s+/g, '-')}`;
+      const key = `${prefixKey}_${city}`;
+      if (!groupedData[key]) {
+        groupedData[key] = [];
       }
+      groupedData[key].push(deal);
     });
 
     console.log(`Grouped into ${Object.keys(groupedData).length} areas`);
