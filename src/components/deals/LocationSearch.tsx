@@ -54,11 +54,18 @@ export const LocationSearch = ({
       // Build URLs for both sites from location
       const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
       const normalizedOutcode = location.replace(/\s+/g, '').toUpperCase();
+      const slug = location
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-');
+
       const zooplaUrl = isPostcode 
         ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(normalizedOutcode.toLowerCase())}/`
-        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
+        : `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(slug)}/`;
+
       const rightmoveUrl = isPostcode
-        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}`
+        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0`
         : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
 
       analytics.ingestStart('rightmove', 50);
