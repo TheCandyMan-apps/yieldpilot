@@ -62,15 +62,17 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apifyApiKey}`,
       },
-      body: JSON.stringify({
-        startUrls: [rightmoveUrl],
-        maxItems: maxResults,
-        proxy: {
-          useApifyProxy: true,
-          apifyProxyGroups: ['RESIDENTIAL'],
-          apifyProxyCountry: 'GB'
-        }
-      }),
+        body: JSON.stringify({
+          listUrls: [{ url: rightmoveUrl }],
+          fullPropertyDetails: false,
+          monitoringMode: false,
+          maxProperties: maxResults,
+          proxy: {
+            useApifyProxy: true,
+            apifyProxyGroups: ['RESIDENTIAL'],
+            apifyProxyCountry: 'GB'
+          }
+        }),
     });
 
     if (!runResponse.ok) {
