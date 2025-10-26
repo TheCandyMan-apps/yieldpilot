@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       throw new Error('Missing required server configuration');
     }
 
-    const { runId, datasetId, source, location } = await req.json();
+    const { runId, datasetId, source, location, userId } = await req.json();
     if (!runId || !source) throw new Error('runId and source are required');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -231,7 +231,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ imported: 0, message: 'No valid items to insert' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { error } = await supabase.from('deals_feed').insert(validDeals);
+    const dealsWithUser = userId ? validDeals.map((d: any) => ({ ...d, user_id: userId })) : validDeals;
+
+    const { error } = await supabase.from('deals_feed').insert(dealsWithUser);
     if (error) throw error;
 
     return new Response(JSON.stringify({ imported: validDeals.length, source }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

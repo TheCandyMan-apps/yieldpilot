@@ -50,6 +50,7 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         });
         return;
       }
+      const userId = session.user.id;
 
       // Build URLs for both sites from location
       const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
@@ -66,10 +67,10 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
       // Call unified ingestion function for both sites
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('ingest-property-url', {
-          body: { url: rightmoveUrl, maxResults }
+          body: { url: rightmoveUrl, maxResults, userId }
         }),
         supabase.functions.invoke('ingest-property-url', {
-          body: { url: zooplaUrl, maxResults }
+          body: { url: zooplaUrl, maxResults, userId }
         })
       ]);
 

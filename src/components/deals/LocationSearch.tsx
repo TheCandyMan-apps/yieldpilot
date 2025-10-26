@@ -50,6 +50,7 @@ export const LocationSearch = ({
         navigate("/auth");
         return;
       }
+      const userId = user.id;
 
       // Build URLs for both sites from location
       const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
@@ -74,10 +75,10 @@ export const LocationSearch = ({
       // Call unified ingestion function for both sites
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('ingest-property-url', {
-          body: { url: rightmoveUrl, maxResults: 50 }
+          body: { url: rightmoveUrl, maxResults: 50, userId }
         }),
         supabase.functions.invoke('ingest-property-url', {
-          body: { url: zooplaUrl, maxResults: 50 }
+          body: { url: zooplaUrl, maxResults: 50, userId }
         })
       ]);
 

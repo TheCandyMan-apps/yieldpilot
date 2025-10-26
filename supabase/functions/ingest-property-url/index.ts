@@ -8,6 +8,7 @@ const corsHeaders = {
 interface IngestRequest {
   url: string;
   maxResults?: number;
+  userId?: string;
 }
 
 interface IngestSuccess {
@@ -92,18 +93,13 @@ async function startApifyRun(
   const actorId = config.actorId;
   const formattedActorId = actorId.replace('/', '~');
   
-  // Prepare webhook to import when the run succeeds
   const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
   const webhooks = [{
     eventTypes: ["ACTOR.RUN.SUCCEEDED"],
     requestUrl: webhookUrl,
-    payloadTemplate: JSON.stringify({
-      datasetId: "{{resource.defaultDatasetId}}",
-      source: site,
-      runId: "{{resource.id}}"
-    })
   }];
   const webhooksParam = btoa(JSON.stringify(webhooks));
+
   
   // First attempt with full details - different memory per actor
   let fullDetails = true;
@@ -489,7 +485,20 @@ Deno.serve(async (req) => {
     
     const { runId, datasetId: initialDatasetId } = startResult;
     
-    // Return immediately; importing will be handled by webhook when the run succeeds
+    // Fire importer in background so user doesn't wait on webhook
+    try {
+      fetch(`${supabaseUrl}/functions/v1/apify-import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ runId, datasetId: initialDatasetId, source: site, location: null, userId: body.userId })
+      }).catch(() => {});
+    } catch (_) {}
+    
+    // Return immediately; importing will also be handled by webhook if configured
     const success: IngestSuccess = {
       ok: true,
       site,
