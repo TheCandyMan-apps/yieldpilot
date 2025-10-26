@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const raw = await req.json();
+    console.log('📥 Webhook payload received:', JSON.stringify(raw, null, 2));
     // Accept both custom payloadTemplate and Apify's default payload shape
     let runId: string | undefined = raw.runId || raw.resource?.id || raw.payload?.resource?.id;
     let source: string | undefined = raw.source || raw.resource?.userData?.source || raw.payload?.source;
