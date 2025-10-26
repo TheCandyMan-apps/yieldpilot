@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       throw new Error('Location parameter is required');
     }
 
-    const actorId = 'dhrumil~rightmove-scraper';
+    const actorId = 'dhrumil/rightmove-scraper';
     const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location);
     const normalizedOutcode = location.replace(/\s+/g, '').toUpperCase();
     const rightmoveUrl = isPostcode

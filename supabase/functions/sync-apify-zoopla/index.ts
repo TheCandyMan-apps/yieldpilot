@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
     }
 
     const actorId = 'dhrumil/zoopla-scraper';
-    const formattedActorId = actorId.replace('/', '~');
     
     // Build the correct Zoopla listUrl
     const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
@@ -56,7 +55,7 @@ Deno.serve(async (req) => {
 
     const webhooksParam = btoa(JSON.stringify(webhooks));
 
-    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
     
     const runResponse = await fetch(apifyRunUrl, {
       method: 'POST',

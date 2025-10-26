@@ -88,7 +88,7 @@ async function startApifyRun(
   apifyApiKey: string
 ): Promise<{ runId: string; datasetId?: string } | IngestError> {
   const config = ACTOR_CONFIG[site];
-  const actorId = config.actorId.replace('/', '~');
+  const actorId = config.actorId;
   
   // First attempt with full details
   let fullDetails = true;
