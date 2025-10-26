@@ -21,15 +21,8 @@ const Hero = () => {
     site?: "zoopla" | "rightmove";
     message?: string;
   }>({ isValid: false });
-  const [debugInfo, setDebugInfo] = useState<{
-    normalized?: string;
-    status?: number;
-    error?: string;
-  }>({});
-  
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isDev = import.meta.env.DEV;
 
   // Debounce input
   useEffect(() => {
@@ -43,7 +36,6 @@ const Hero = () => {
   useEffect(() => {
     if (!debouncedInput.trim()) {
       setValidationState({ isValid: false });
-      setDebugInfo({});
       return;
     }
 
@@ -51,24 +43,19 @@ const Hero = () => {
       const url = new URL(debouncedInput);
       if (!["http:", "https:"].includes(url.protocol)) {
         setValidationState({ isValid: false, message: "URL must use http or https" });
-        setDebugInfo({ normalized: debouncedInput });
         return;
       }
 
       const hostname = url.hostname.toLowerCase();
       if (hostname.includes("zoopla.co.uk")) {
         setValidationState({ isValid: true, site: "zoopla", message: "Looks like Zoopla ✓" });
-        setDebugInfo({ normalized: url.toString() });
       } else if (hostname.includes("rightmove.co.uk")) {
         setValidationState({ isValid: true, site: "rightmove", message: "Looks like Rightmove ✓" });
-        setDebugInfo({ normalized: url.toString() });
       } else {
         setValidationState({ isValid: false, message: "Please paste a Zoopla or Rightmove URL" });
-        setDebugInfo({ normalized: url.toString() });
       }
     } catch {
       setValidationState({ isValid: false, message: "Invalid URL format" });
-      setDebugInfo({ normalized: debouncedInput });
     }
   }, [debouncedInput]);
 
@@ -96,7 +83,6 @@ const Hero = () => {
     if (!validationState.isValid || isAnalyzing) return;
 
     setIsAnalyzing(true);
-    setDebugInfo((prev) => ({ ...prev, status: undefined, error: undefined }));
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -117,15 +103,8 @@ const Hero = () => {
       if (error) throw error;
 
       if (!data.ok) {
-        setDebugInfo((prev) => ({ 
-          ...prev, 
-          status: data.status || 500, 
-          error: data.error || "Unknown error" 
-        }));
         throw new Error(data.details?.message || data.error || "Ingestion failed");
       }
-
-      setDebugInfo((prev) => ({ ...prev, status: 200 }));
       
       toast({
         title: "Analysis started",
@@ -140,11 +119,6 @@ const Hero = () => {
       }
     } catch (err: any) {
       console.error("Analysis error:", err);
-      setDebugInfo((prev) => ({ 
-        ...prev, 
-        status: err.status || 500, 
-        error: err.message 
-      }));
       toast({
         title: "Analysis failed",
         description: err.message || "Failed to analyze property",
@@ -248,17 +222,6 @@ const Hero = () => {
             </Button>
           </div>
 
-          {/* Dev Debug Strip */}
-          {isDev && (
-            <div className="mb-8 p-4 bg-muted/50 backdrop-blur-sm rounded-lg border border-border/50 text-xs font-mono space-y-1">
-              <div className="font-bold text-amber-600">🔧 DEV DEBUG</div>
-              <div><span className="text-muted-foreground">Input:</span> {rawInput || "(empty)"}</div>
-              <div><span className="text-muted-foreground">Normalized:</span> {debugInfo.normalized || "(pending)"}</div>
-              <div><span className="text-muted-foreground">Status:</span> {debugInfo.status || "(none)"}</div>
-              {debugInfo.error && <div className="text-destructive"><span className="text-muted-foreground">Error:</span> {debugInfo.error}</div>}
-            </div>
-          )}
-          
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">
             <Link to="/dashboard">
               <Button 
