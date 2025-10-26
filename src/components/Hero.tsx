@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, TrendingUp, Check, AlertCircle, Clipboard, Sparkles } from "lucide-react";
+import { ArrowRight, TrendingUp, Check, AlertCircle, Clipboard } from "lucide-react";
 import heroImage from "@/assets/hero-property.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const EXAMPLE_URLS = [
-  "https://www.zoopla.co.uk/for-sale/details/67891234/",
-  "https://www.rightmove.co.uk/properties/123456789",
-];
+const EXAMPLE_URLS = {
+  zoopla: "https://www.zoopla.co.uk/for-sale/details/67891234/",
+  rightmove: "https://www.rightmove.co.uk/properties/123456789#/?channel=RES_BUY",
+};
 
 const Hero = () => {
   const [rawInput, setRawInput] = useState("");
@@ -73,10 +73,12 @@ const Hero = () => {
     }
   };
 
-  const handleUseExample = () => {
-    const randomExample = EXAMPLE_URLS[Math.floor(Math.random() * EXAMPLE_URLS.length)];
-    setRawInput(randomExample);
-    toast({ title: "Example URL loaded" });
+  const handleUseExample = (site: 'zoopla' | 'rightmove') => {
+    setRawInput(EXAMPLE_URLS[site]);
+    toast({ 
+      title: `${site === 'zoopla' ? 'Zoopla' : 'Rightmove'} example loaded`,
+      description: "Try analyzing this sample property"
+    });
   };
 
   const handleAnalyze = async () => {
@@ -182,12 +184,23 @@ const Hero = () => {
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  onClick={handleUseExample}
+                  variant="secondary"
+                  onClick={() => handleUseExample('zoopla')}
                   disabled={isAnalyzing}
-                  title="Use example URL"
+                  title="Try Zoopla example"
+                  className="text-xs px-2"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  Zoopla
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleUseExample('rightmove')}
+                  disabled={isAnalyzing}
+                  title="Try Rightmove example"
+                  className="text-xs px-2"
+                >
+                  Rightmove
                 </Button>
               </div>
             </div>

@@ -118,50 +118,102 @@ Deno.serve(async (req) => {
     };
 
     const mapRightmove = (prop: any) => {
-      const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
-      // Remove user's location from fallback - only use scraped fields
-      const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city);
+      // Enhanced field extraction for both detail and list views
+      const address = prop.address?.displayAddress || 
+                     prop.propertyAddress || 
+                     prop.displayAddress ||
+                     prop.title ||
+                     'Unknown Address';
+      
+      const extractedCity = extractCityFromAddress(
+        address, 
+        prop.address?.town, 
+        prop.address?.city,
+        prop.location?.town,
+        prop.location?.city
+      );
+      
+      // Price handling - support multiple formats
+      const priceValue = prop.price?.amount || 
+                        prop.price || 
+                        prop.propertyPrice ||
+                        prop.displayPrice;
+      
+      // Image handling - prioritize high-quality images
+      const imageUrl = prop.propertyImages?.[0]?.url ||
+                      prop.propertyImages?.[0] || 
+                      prop.images?.[0]?.url ||
+                      prop.images?.[0] ||
+                      prop.mainImage?.url ||
+                      prop.mainImage ||
+                      null;
+      
+      // URL handling - support both formats
+      const listingUrl = prop.propertyUrl || 
+                        prop.url || 
+                        prop.detailUrl ||
+                        (prop.id ? `https://www.rightmove.co.uk/properties/${prop.id}` : null);
+      
       return {
         property_address: address,
-        postcode: prop.address?.postcode || null,
+        postcode: prop.address?.postcode || prop.postcode || null,
         city: extractedCity,
-        property_type: mapPropertyType(prop.propertySubType || prop.propertyType),
-        price: parsePrice(prop.price?.amount || prop.price),
-        estimated_rent: estimateRent(parsePrice(prop.price?.amount || prop.price)),
-        bedrooms: parseInt(prop.bedrooms) || null,
-        bathrooms: parseInt(prop.bathrooms) || null,
-        square_feet: prop.size?.max ? parseInt(prop.size.max) : null,
-        image_url: prop.propertyImages?.[0] || prop.images?.[0] || null,
-        listing_url: prop.propertyUrl || prop.url || null,
-        location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : null,
-        location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : null,
+        property_type: mapPropertyType(prop.propertySubType || prop.propertyType || prop.type),
+        price: parsePrice(priceValue),
+        estimated_rent: estimateRent(parsePrice(priceValue)),
+        bedrooms: parseInt(prop.bedrooms) || parseInt(prop.bedroom) || null,
+        bathrooms: parseInt(prop.bathrooms) || parseInt(prop.bathroom) || null,
+        square_feet: prop.size?.max ? parseInt(prop.size.max) : (prop.floorArea ? parseInt(prop.floorArea) : null),
+        image_url: imageUrl,
+        listing_url: listingUrl,
+        location_lat: prop.location?.latitude ? parseFloat(prop.location.latitude) : (prop.latitude ? parseFloat(prop.latitude) : null),
+        location_lng: prop.location?.longitude ? parseFloat(prop.location.longitude) : (prop.longitude ? parseFloat(prop.longitude) : null),
         source: 'apify-rightmove',
         is_active: true,
-        yield_percentage: calculateYield(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-        roi_percentage: calculateROI(parsePrice(prop.price?.amount || prop.price)),
-        cash_flow_monthly: calculateCashFlow(parsePrice(prop.price?.amount || prop.price), estimateRent(parsePrice(prop.price?.amount || prop.price))),
-        investment_score: calculateScore(parsePrice(prop.price?.amount || prop.price)),
+        yield_percentage: calculateYield(parsePrice(priceValue), estimateRent(parsePrice(priceValue))),
+        roi_percentage: calculateROI(parsePrice(priceValue)),
+        cash_flow_monthly: calculateCashFlow(parsePrice(priceValue), estimateRent(parsePrice(priceValue))),
+        investment_score: calculateScore(parsePrice(priceValue)),
       };
     };
 
     const mapZoopla = (prop: any) => {
-      const address = prop.address || prop.displayAddress || prop.title || 'Unknown Address';
-      // Remove user's location from fallback - only use scraped fields
-      const extractedCity = extractCityFromAddress(address, prop.city, prop.county);
+      // Enhanced field extraction
+      const address = prop.address || 
+                     prop.displayAddress || 
+                     prop.title || 
+                     'Unknown Address';
+      
+      const extractedCity = extractCityFromAddress(
+        address, 
+        prop.city, 
+        prop.county,
+        prop.location?.town
+      );
+      
+      // Image handling - support multiple formats
+      const imageUrl = prop.image?.url ||
+                      prop.image || 
+                      prop.images?.[0]?.url ||
+                      prop.images?.[0] ||
+                      prop.mainImage?.url ||
+                      prop.mainImage ||
+                      null;
+      
       return {
         property_address: address,
-        postcode: prop.postcode || null,
+        postcode: prop.postcode || prop.outcode || null,
         city: extractedCity,
-        property_type: mapPropertyType(prop.propertyType),
+        property_type: mapPropertyType(prop.propertyType || prop.type),
         price: parsePrice(prop.price),
         estimated_rent: estimateRent(parsePrice(prop.price)),
-        bedrooms: parseInt(prop.bedrooms) || null,
-        bathrooms: parseInt(prop.bathrooms) || null,
-        square_feet: null,
-        image_url: prop.image || prop.images?.[0] || null,
-        listing_url: prop.url || null,
-        location_lat: prop.latitude ? parseFloat(prop.latitude) : null,
-        location_lng: prop.longitude ? parseFloat(prop.longitude) : null,
+        bedrooms: parseInt(prop.bedrooms) || parseInt(prop.bedroom) || null,
+        bathrooms: parseInt(prop.bathrooms) || parseInt(prop.bathroom) || null,
+        square_feet: prop.floorArea ? parseInt(prop.floorArea) : null,
+        image_url: imageUrl,
+        listing_url: prop.url || prop.detailsUrl || null,
+        location_lat: prop.latitude ? parseFloat(prop.latitude) : (prop.location?.latitude ? parseFloat(prop.location.latitude) : null),
+        location_lng: prop.longitude ? parseFloat(prop.longitude) : (prop.location?.longitude ? parseFloat(prop.location.longitude) : null),
         source: 'apify-zoopla',
         is_active: true,
         yield_percentage: calculateYield(parsePrice(prop.price), estimateRent(parsePrice(prop.price))),
