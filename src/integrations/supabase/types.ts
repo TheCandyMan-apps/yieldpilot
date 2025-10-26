@@ -279,6 +279,7 @@ export type Database = {
           source: string | null
           square_feet: number | null
           updated_at: string | null
+          user_id: string | null
           yield_percentage: number | null
         }
         Insert: {
@@ -307,6 +308,7 @@ export type Database = {
           source?: string | null
           square_feet?: number | null
           updated_at?: string | null
+          user_id?: string | null
           yield_percentage?: number | null
         }
         Update: {
@@ -335,6 +337,7 @@ export type Database = {
           source?: string | null
           square_feet?: number | null
           updated_at?: string | null
+          user_id?: string | null
           yield_percentage?: number | null
         }
         Relationships: []

@@ -322,6 +322,42 @@ async function fetchDatasetItems(
   }
 }
 
+// Rate limiting
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string): { allowed: boolean; remaining: number; resetAt: number } {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute
+  const maxRequests = 10;
+  
+  const entry = rateLimitStore.get(key);
+  
+  if (!entry || entry.resetAt < now) {
+    const resetAt = now + windowMs;
+    rateLimitStore.set(key, { count: 1, resetAt });
+    return { allowed: true, remaining: maxRequests - 1, resetAt };
+  }
+  
+  if (entry.count < maxRequests) {
+    entry.count++;
+    return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+  }
+  
+  return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+}
+
+function getRateLimitKey(req: Request): string {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    return `user:${token.slice(0, 20)}`;
+  }
+  
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+  return `ip:${ip}`;
+}
+
 // Main handler
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -329,6 +365,33 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limiting check
+    const rateLimitKey = getRateLimitKey(req);
+    const rateLimit = checkRateLimit(rateLimitKey);
+    
+    if (!rateLimit.allowed) {
+      const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'rate_limit_exceeded',
+        details: {
+          message: 'Too many requests. Please try again later.',
+          retryAfter,
+          resetAt: new Date(rateLimit.resetAt).toISOString()
+        }
+      }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimit.resetAt).toISOString(),
+          'Retry-After': String(retryAfter)
+        }
+      });
+    }
+    
     const apifyApiKey = Deno.env.get('APIFY_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

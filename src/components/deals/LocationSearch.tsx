@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { analytics } from "@/lib/analytics";
 
 interface LocationSearchProps {
   defaultLocation?: string;
@@ -34,6 +35,7 @@ export const LocationSearch = ({
 
     setIsSearching(true);
     onSearchStart?.();
+    const startTime = Date.now();
 
     try {
       // Check authentication
@@ -56,6 +58,9 @@ export const LocationSearch = ({
         : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
       const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
 
+      analytics.ingestStart('rightmove', 50);
+      analytics.ingestStart('zoopla', 50);
+
       // Call unified ingestion function for both sites
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('ingest-property-url', {
@@ -75,9 +80,18 @@ export const LocationSearch = ({
         zooplaResult.value.data?.ok === true;
 
       if (rightmoveSuccess || zooplaSuccess) {
+        const duration = Date.now() - startTime;
         const sources = [];
-        if (rightmoveSuccess) sources.push('Rightmove');
-        if (zooplaSuccess) sources.push('Zoopla');
+        if (rightmoveSuccess) {
+          sources.push('Rightmove');
+          const itemCount = rightmoveResult.value.data?.itemCount || 0;
+          analytics.ingestSuccess('rightmove', itemCount, duration);
+        }
+        if (zooplaSuccess) {
+          sources.push('Zoopla');
+          const itemCount = zooplaResult.value.data?.itemCount || 0;
+          analytics.ingestSuccess('zoopla', itemCount, duration);
+        }
         
         toast({
           title: "Search Started",
@@ -103,10 +117,14 @@ export const LocationSearch = ({
         // Extract error details for better diagnostics
         const errors = [];
         if (rightmoveResult.status === 'fulfilled' && rightmoveResult.value.data?.ok === false) {
+          const error = rightmoveResult.value.data.error || 'unknown';
           errors.push(`Rightmove: ${rightmoveResult.value.data.details?.message || 'Unknown error'}`);
+          analytics.ingestFail('rightmove', error);
         }
         if (zooplaResult.status === 'fulfilled' && zooplaResult.value.data?.ok === false) {
+          const error = zooplaResult.value.data.error || 'unknown';
           errors.push(`Zoopla: ${zooplaResult.value.data.details?.message || 'Unknown error'}`);
+          analytics.ingestFail('zoopla', error);
         }
         throw new Error(errors.join('; ') || 'Both search attempts failed');
       }

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import * as Sentry from "@sentry/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -28,7 +29,27 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ErrorBoundary>
+      <Sentry.ErrorBoundary 
+        fallback={({ error, resetError }) => (
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <div className="max-w-md w-full space-y-4 text-center">
+              <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+              <p className="text-muted-foreground">
+                {error instanceof Error ? error.message : 'An unexpected error occurred'}
+              </p>
+              <div className="flex gap-4 justify-center">
+                <button onClick={resetError} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">
+                  Try again
+                </button>
+                <button onClick={() => window.location.href = '/'} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md">
+                  Go home
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        showDialog
+      >
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -53,7 +74,7 @@ const App = () => (
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </ErrorBoundary>
+      </Sentry.ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
 );
