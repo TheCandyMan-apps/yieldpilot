@@ -22,17 +22,29 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    const { datasetId, source, runId } = await req.json();
+    const raw = await req.json();
+    // Accept both custom payloadTemplate and Apify's default payload shape
+    let runId: string | undefined = raw.runId || raw.resource?.id || raw.payload?.resource?.id;
+    let source: string | undefined = raw.source || raw.resource?.userData?.source || raw.payload?.source;
+    const actorId: string | undefined = raw.actorId || raw.resource?.actorId || raw.payload?.resource?.actorId;
+    // Infer source from actorId if missing
+    if (!source && actorId) {
+      const aid = String(actorId).toLowerCase();
+      if (aid.includes('zoopla')) source = 'zoopla';
+      if (aid.includes('rightmove')) source = 'rightmove';
+    }
 
     if (!source) {
       throw new Error('source is required');
     }
 
-    // Resolve datasetId if missing or not interpolated
-    let effectiveDatasetId = datasetId as string | undefined;
+    // Resolve datasetId from multiple possible locations
+    let effectiveDatasetId: string | undefined = raw.datasetId || raw.resource?.defaultDatasetId || raw.payload?.resource?.defaultDatasetId;
+
+    // Resolve datasetId if missing or looks like an uninterpolated template
     if (!effectiveDatasetId || /\{\{.*\}\}/.test(effectiveDatasetId)) {
-      if (!runId) {
-        throw new Error('datasetId missing and runId not provided');
+      if (!runId || /\{\{.*\}\}/.test(runId)) {
+        throw new Error('datasetId missing and valid runId not provided');
       }
       console.log(`Webhook missing datasetId; polling run ${runId} for dataset...`);
       for (let i = 0; i < 40; i++) { // ~200s
