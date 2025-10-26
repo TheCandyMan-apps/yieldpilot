@@ -6,9 +6,10 @@ import { UnifiedSyncButton } from "@/components/deals/UnifiedSyncButton";
 import { AssumptionsDrawer } from "@/components/deals/AssumptionsDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Filter } from "lucide-react";
+import { Loader2, Filter, Bookmark, Eye, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface ListingMetric {
   listing_id: string;
@@ -37,10 +38,13 @@ const DealsV2 = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [watchlistedIds, setWatchlistedIds] = useState<Set<string>>(new Set());
+  const [pipelineStatus, setPipelineStatus] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [minYield, setMinYield] = useState<number>();
   const [maxPrice, setMaxPrice] = useState<number>();
+  const [pipelineFilter, setPipelineFilter] = useState<string | null>(null);
+  const [heroLayer, setHeroLayer] = useState(true); // Feature flag
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -61,7 +65,7 @@ const DealsV2 = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [listings, searchTerm, minYield, maxPrice]);
+  }, [listings, searchTerm, minYield, maxPrice, pipelineFilter]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -132,12 +136,17 @@ const DealsV2 = () => {
     try {
       const { data, error } = await supabase
         .from("watchlist")
-        .select("deal_id")
+        .select("deal_id, pipeline_status")
         .eq("user_id", userId);
 
       if (error) throw error;
 
       setWatchlistedIds(new Set(data.map((item) => item.deal_id)));
+      const statusMap: Record<string, string> = {};
+      data.forEach(item => {
+        statusMap[item.deal_id] = item.pipeline_status || "watching";
+      });
+      setPipelineStatus(statusMap);
     } catch (error: any) {
       console.error("Error fetching watchlist:", error);
     }
@@ -164,6 +173,14 @@ const DealsV2 = () => {
       filtered = filtered.filter((l) => {
         const yieldPct = l.listing_metrics?.[0]?.kpis?.gross_yield_pct;
         return yieldPct && yieldPct >= minYield;
+      });
+    }
+
+    // Pipeline filter
+    if (pipelineFilter) {
+      filtered = filtered.filter((l) => {
+        const status = pipelineStatus[l.id];
+        return status === pipelineFilter;
       });
     }
 
@@ -201,30 +218,67 @@ const DealsV2 = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Input
-            placeholder="Search by location or postcode..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            placeholder="Min Yield %"
-            value={minYield || ""}
-            onChange={(e) => setMinYield(e.target.value ? parseFloat(e.target.value) : undefined)}
-            className="w-full sm:w-32"
-          />
-          <Input
-            type="number"
-            placeholder="Max Price £"
-            value={maxPrice || ""}
-            onChange={(e) => setMaxPrice(e.target.value ? parseInt(e.target.value) : undefined)}
-            className="w-full sm:w-32"
-          />
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Input
+              placeholder="Search by location or postcode..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              type="number"
+              placeholder="Min Yield %"
+              value={minYield || ""}
+              onChange={(e) => setMinYield(e.target.value ? parseFloat(e.target.value) : undefined)}
+              className="w-full sm:w-32"
+            />
+            <Input
+              type="number"
+              placeholder="Max Price £"
+              value={maxPrice || ""}
+              onChange={(e) => setMaxPrice(e.target.value ? parseInt(e.target.value) : undefined)}
+              className="w-full sm:w-32"
+            />
+            <Button variant="outline" size="icon">
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Pipeline Tags Filter */}
+          <div className="flex gap-2 flex-wrap">
+            <Badge
+              variant={pipelineFilter === null ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setPipelineFilter(null)}
+            >
+              All Deals
+            </Badge>
+            <Badge
+              variant={pipelineFilter === "saved" ? "default" : "outline"}
+              className="cursor-pointer gap-1"
+              onClick={() => setPipelineFilter("saved")}
+            >
+              <Bookmark className="h-3 w-3" />
+              Saved
+            </Badge>
+            <Badge
+              variant={pipelineFilter === "watching" ? "default" : "outline"}
+              className="cursor-pointer gap-1"
+              onClick={() => setPipelineFilter("watching")}
+            >
+              <Eye className="h-3 w-3" />
+              Watching
+            </Badge>
+            <Badge
+              variant={pipelineFilter === "offer_made" ? "default" : "outline"}
+              className="cursor-pointer gap-1"
+              onClick={() => setPipelineFilter("offer_made")}
+            >
+              <Handshake className="h-3 w-3" />
+              Offer Made
+            </Badge>
+          </div>
         </div>
 
         {/* Results count */}
@@ -247,6 +301,8 @@ const DealsV2 = () => {
                 listing={listing}
                 isWatchlisted={watchlistedIds.has(listing.id)}
                 onWatchlistToggle={() => checkAuth()}
+                allListings={listings}
+                heroLayer={heroLayer}
               />
             ))}
           </div>

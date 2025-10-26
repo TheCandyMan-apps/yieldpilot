@@ -5,6 +5,10 @@ import { Heart, MapPin, Bed, Bath, Home, TrendingUp, ExternalLink } from "lucide
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScoreBadge } from "./ScoreBadge";
+import { SmartComps } from "./SmartComps";
+import { AreaRadar } from "./AreaRadar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 interface Listing {
   id: string;
@@ -30,14 +34,19 @@ interface DealCardV2Props {
   listing: Listing;
   isWatchlisted?: boolean;
   onWatchlistToggle?: (listingId: string) => void;
+  allListings?: any[];
+  heroLayer?: boolean;
 }
 
 export const DealCardV2 = ({ 
   listing, 
   isWatchlisted = false,
-  onWatchlistToggle 
+  onWatchlistToggle,
+  allListings = [],
+  heroLayer = false
 }: DealCardV2Props) => {
   const [trackingView, setTrackingView] = useState(false);
+  const [compsOpen, setCompsOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-GB", {
@@ -196,6 +205,46 @@ export const DealCardV2 = ({
               <TrendingUp className="h-3 w-3 mr-1" />
               £{Math.round(kpis.cashflow_monthly)}/mo
             </Badge>
+          </div>
+        )}
+
+        {/* Hero Layer Features */}
+        {heroLayer && (
+          <div className="space-y-3 pt-3 border-t">
+            {/* Area Radar */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Area Intel
+              </p>
+              <AreaRadar enrichment={enrichment} />
+            </div>
+
+            {/* Smart Comps - Collapsible */}
+            {allListings.length > 1 && (
+              <Collapsible open={compsOpen} onOpenChange={setCompsOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+                  >
+                    Smart Comps
+                    <ChevronDown className={`h-4 w-4 transition-transform ${compsOpen ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <SmartComps
+                    listing={{
+                      id: listing.id,
+                      price: listing.price,
+                      bedrooms: listing.bedrooms,
+                      postcode: listing.postcode
+                    }}
+                    allListings={allListings}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
         )}
 

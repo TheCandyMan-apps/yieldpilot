@@ -1023,6 +1023,7 @@ export type Database = {
           deal_id: string
           id: string
           notes: string | null
+          pipeline_status: string | null
           user_id: string
         }
         Insert: {
@@ -1030,6 +1031,7 @@ export type Database = {
           deal_id: string
           id?: string
           notes?: string | null
+          pipeline_status?: string | null
           user_id: string
         }
         Update: {
@@ -1037,6 +1039,7 @@ export type Database = {
           deal_id?: string
           id?: string
           notes?: string | null
+          pipeline_status?: string | null
           user_id?: string
         }
         Relationships: [
