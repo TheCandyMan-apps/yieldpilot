@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import * as Sentry from "@sentry/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const Alerts = lazy(() => import("./pages/Alerts"));
 const PortfolioNew = lazy(() => import("./pages/PortfolioNew"));
 const Community = lazy(() => import("./pages/Community"));
 const Billing = lazy(() => import("./pages/Billing"));
+const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,7 @@ const App = () => (
       >
         <Toaster />
         <Sonner />
+        <PWAUpdatePrompt />
         <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>}>
             <Routes>
@@ -69,6 +72,7 @@ const App = () => (
             <Route path="/portfolio" element={<PortfolioNew />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
