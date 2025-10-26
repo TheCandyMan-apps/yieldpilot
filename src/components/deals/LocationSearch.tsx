@@ -49,49 +49,66 @@ export const LocationSearch = ({
         return;
       }
 
-      // Trigger both Rightmove and Zoopla syncs in parallel
+      // Build URLs for both sites from location
+      const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
+      const zooplaUrl = isPostcode 
+        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale`
+        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
+      const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
+
+      // Call unified ingestion function for both sites
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('sync-apify-rightmove', {
-          body: { location: location.trim(), maxResults: 50 }
+        supabase.functions.invoke('ingest-property-url', {
+          body: { url: rightmoveUrl, maxResults: 50 }
         }),
-        supabase.functions.invoke('sync-apify-zoopla', {
-          body: { location: location.trim(), maxResults: 50 }
+        supabase.functions.invoke('ingest-property-url', {
+          body: { url: zooplaUrl, maxResults: 50 }
         })
       ]);
 
       console.log('Rightmove result:', rightmoveResult);
       console.log('Zoopla result:', zooplaResult);
 
-      const rightmoveData = rightmoveResult.status === 'fulfilled' ? rightmoveResult.value.data : null;
-      const zooplaData = zooplaResult.status === 'fulfilled' ? zooplaResult.value.data : null;
+      const rightmoveSuccess = rightmoveResult.status === 'fulfilled' && 
+        rightmoveResult.value.data?.ok === true;
+      const zooplaSuccess = zooplaResult.status === 'fulfilled' && 
+        zooplaResult.value.data?.ok === true;
 
-      let successCount = 0;
-      if (rightmoveResult.status === 'fulfilled' && !rightmoveResult.value.error) successCount++;
-      if (zooplaResult.status === 'fulfilled' && !zooplaResult.value.error) successCount++;
-
-      if (successCount > 0) {
+      if (rightmoveSuccess || zooplaSuccess) {
+        const sources = [];
+        if (rightmoveSuccess) sources.push('Rightmove');
+        if (zooplaSuccess) sources.push('Zoopla');
+        
         toast({
           title: "Search Started",
-          description: `Searching ${successCount} source${successCount > 1 ? 's' : ''} for properties in ${location}. This will take a moment...`,
+          description: `Searching ${sources.join(' and ')} for properties in ${location}. This will take a moment...`,
         });
         
         if (onSearchComplete) {
           onSearchComplete();
         }
         
-        // Build query params for sync progress page
+        // Navigate to sync progress page
+        const rightmoveRunId = rightmoveSuccess && rightmoveResult.status === 'fulfilled' 
+          ? rightmoveResult.value.data?.runId : null;
+        const zooplaRunId = zooplaSuccess && zooplaResult.status === 'fulfilled' 
+          ? zooplaResult.value.data?.runId : null;
+
         const params = new URLSearchParams({ location: location.trim() });
-        if (rightmoveData?.runUrl) params.append('rightmoveRun', rightmoveData.runUrl);
-        if (zooplaData?.runUrl) params.append('zooplaRun', zooplaData.runUrl);
+        if (rightmoveRunId) params.set('rightmove', rightmoveRunId);
+        if (zooplaRunId) params.set('zoopla', zooplaRunId);
         
-        // Navigate to sync progress page with run info
         navigate(`/sync-progress?${params.toString()}`);
       } else {
-        toast({
-          title: "Search failed",
-          description: "Failed to start property search. Please try again.",
-          variant: "destructive",
-        });
+        // Extract error details for better diagnostics
+        const errors = [];
+        if (rightmoveResult.status === 'fulfilled' && rightmoveResult.value.data?.ok === false) {
+          errors.push(`Rightmove: ${rightmoveResult.value.data.details?.message || 'Unknown error'}`);
+        }
+        if (zooplaResult.status === 'fulfilled' && zooplaResult.value.data?.ok === false) {
+          errors.push(`Zoopla: ${zooplaResult.value.data.details?.message || 'Unknown error'}`);
+        }
+        throw new Error(errors.join('; ') || 'Both search attempts failed');
       }
       
     } catch (error: any) {
@@ -103,7 +120,6 @@ export const LocationSearch = ({
       });
     } finally {
       setIsSearching(false);
-      onSearchComplete?.();
     }
   };
 

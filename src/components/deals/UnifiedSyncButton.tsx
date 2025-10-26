@@ -51,45 +51,68 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         return;
       }
 
+      // Build URLs for both sites from location
+      const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
+      const zooplaUrl = isPostcode 
+        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale`
+        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
+      const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
+
       toast({
         title: "Starting sync...",
-        description: `Starting Rightmove and Zoopla in ${location}. Results will appear shortly.`,
+        description: `Fetching properties in ${location} from both sources...`,
       });
 
-      // Kick off both sources in parallel
+      // Call unified ingestion function for both sites
       const [rightmoveResult, zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('sync-apify-rightmove', {
-          body: { location, maxResults }
+        supabase.functions.invoke('ingest-property-url', {
+          body: { url: rightmoveUrl, maxResults }
         }),
-        supabase.functions.invoke('sync-apify-zoopla', {
-          body: { location, maxResults }
+        supabase.functions.invoke('ingest-property-url', {
+          body: { url: zooplaUrl, maxResults }
         })
       ]);
 
-      const rightmoveResponse = rightmoveResult.status === 'fulfilled' ? rightmoveResult.value.data : null;
-      const zooplaResponse = zooplaResult.status === 'fulfilled' ? zooplaResult.value.data : null;
+      const rightmoveSuccess = rightmoveResult.status === 'fulfilled' && 
+        rightmoveResult.value.data?.ok === true;
+      const zooplaSuccess = zooplaResult.status === 'fulfilled' && 
+        zooplaResult.value.data?.ok === true;
 
-      if (!rightmoveResponse?.runId && !zooplaResponse?.runId) {
+      if (rightmoveSuccess || zooplaSuccess) {
+        const sources = [];
+        if (rightmoveSuccess) sources.push('Rightmove');
+        if (zooplaSuccess) sources.push('Zoopla');
+        
         toast({
-          title: "Sync Failed",
-          description: "Failed to start sync jobs. Please try again.",
-          variant: "destructive",
+          title: "Sync Started",
+          description: `Fetching properties from ${sources.join(' and ')}. This will take a moment...`,
         });
-        return;
+
+        setIsOpen(false);
+        onSyncComplete?.();
+
+        // Navigate to sync progress page
+        const rightmoveRunId = rightmoveSuccess && rightmoveResult.status === 'fulfilled' 
+          ? rightmoveResult.value.data?.runId : null;
+        const zooplaRunId = zooplaSuccess && zooplaResult.status === 'fulfilled' 
+          ? zooplaResult.value.data?.runId : null;
+
+        const params = new URLSearchParams({ location });
+        if (rightmoveRunId) params.set('rightmove', rightmoveRunId);
+        if (zooplaRunId) params.set('zoopla', zooplaRunId);
+        
+        navigate(`/sync-progress?${params.toString()}`);
+      } else {
+        // Extract error details for better diagnostics
+        const errors = [];
+        if (rightmoveResult.status === 'fulfilled' && rightmoveResult.value.data?.ok === false) {
+          errors.push(`Rightmove: ${rightmoveResult.value.data.details?.message || 'Unknown error'}`);
+        }
+        if (zooplaResult.status === 'fulfilled' && zooplaResult.value.data?.ok === false) {
+          errors.push(`Zoopla: ${zooplaResult.value.data.details?.message || 'Unknown error'}`);
+        }
+        throw new Error(errors.join('; ') || 'Both sync attempts failed');
       }
-
-      toast({
-        title: "Sync Started",
-        description: "Fetching properties from Rightmove and Zoopla. This will take a moment...",
-      });
-
-      // Build query params with run URLs
-      const params = new URLSearchParams({ location });
-      if (rightmoveResponse?.runUrl) params.append('rightmoveRun', rightmoveResponse.runUrl);
-      if (zooplaResponse?.runUrl) params.append('zooplaRun', zooplaResponse.runUrl);
-
-      setIsOpen(false);
-      navigate(`/sync-progress?${params.toString()}`);
     } catch (error) {
       toast({
         title: "Sync failed",
