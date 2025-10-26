@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const webhooksParam = btoa(JSON.stringify(webhooks));
 
-    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}&timeout=900&memory=1024`;
     
     const runResponse = await fetch(apifyRunUrl, {
       method: 'POST',
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         listUrls: [{ url: zooplaUrl }],
         fullPropertyDetails: false,
         monitoringMode: false,
-        maxItems: maxResults,
+        maxProperties: maxResults,
         proxy: {
           useApifyProxy: true,
           apifyProxyGroups: ['RESIDENTIAL'],

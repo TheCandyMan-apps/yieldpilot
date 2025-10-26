@@ -70,6 +70,7 @@ const ACTOR_CONFIG = {
       listUrls: [{ url: url.toString() }],
       fullPropertyDetails: fullDetails,
       monitoringMode: false,
+      maxProperties: maxResults,
       proxy: {
         useApifyProxy: true,
         apifyProxyGroups: ['RESIDENTIAL'],
@@ -93,7 +94,7 @@ async function startApifyRun(
   // First attempt with full details - different memory per actor
   let fullDetails = true;
   let memory = site === 'zoopla' ? 4096 : 256;
-  let timeout = 300;
+  let timeout = site === 'zoopla' ? 900 : 300;
   
   for (let attempt = 0; attempt < 2; attempt++) {
     const payload = config.buildPayload(url, maxResults, fullDetails);
