@@ -1,9 +1,160 @@
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, TrendingUp, Check, AlertCircle, Clipboard, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-property.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+const EXAMPLE_URLS = [
+  "https://www.zoopla.co.uk/for-sale/details/67891234/",
+  "https://www.rightmove.co.uk/properties/123456789",
+];
 
 const Hero = () => {
+  const [rawInput, setRawInput] = useState("");
+  const [debouncedInput, setDebouncedInput] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [validationState, setValidationState] = useState<{
+    isValid: boolean;
+    site?: "zoopla" | "rightmove";
+    message?: string;
+  }>({ isValid: false });
+  const [debugInfo, setDebugInfo] = useState<{
+    normalized?: string;
+    status?: number;
+    error?: string;
+  }>({});
+  
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const isDev = import.meta.env.DEV;
+
+  // Debounce input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedInput(rawInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [rawInput]);
+
+  // Validate URL
+  useEffect(() => {
+    if (!debouncedInput.trim()) {
+      setValidationState({ isValid: false });
+      setDebugInfo({});
+      return;
+    }
+
+    try {
+      const url = new URL(debouncedInput);
+      if (!["http:", "https:"].includes(url.protocol)) {
+        setValidationState({ isValid: false, message: "URL must use http or https" });
+        setDebugInfo({ normalized: debouncedInput });
+        return;
+      }
+
+      const hostname = url.hostname.toLowerCase();
+      if (hostname.includes("zoopla.co.uk")) {
+        setValidationState({ isValid: true, site: "zoopla", message: "Looks like Zoopla ✓" });
+        setDebugInfo({ normalized: url.toString() });
+      } else if (hostname.includes("rightmove.co.uk")) {
+        setValidationState({ isValid: true, site: "rightmove", message: "Looks like Rightmove ✓" });
+        setDebugInfo({ normalized: url.toString() });
+      } else {
+        setValidationState({ isValid: false, message: "Please paste a Zoopla or Rightmove URL" });
+        setDebugInfo({ normalized: url.toString() });
+      }
+    } catch {
+      setValidationState({ isValid: false, message: "Invalid URL format" });
+      setDebugInfo({ normalized: debouncedInput });
+    }
+  }, [debouncedInput]);
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setRawInput(text);
+      toast({ title: "Pasted from clipboard" });
+    } catch {
+      toast({ 
+        title: "Clipboard access denied", 
+        description: "Please paste manually or check browser permissions",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleUseExample = () => {
+    const randomExample = EXAMPLE_URLS[Math.floor(Math.random() * EXAMPLE_URLS.length)];
+    setRawInput(randomExample);
+    toast({ title: "Example URL loaded" });
+  };
+
+  const handleAnalyze = async () => {
+    if (!validationState.isValid || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    setDebugInfo((prev) => ({ ...prev, status: undefined, error: undefined }));
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to analyze properties",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("ingest-property-url", {
+        body: { url: debouncedInput },
+      });
+
+      if (error) throw error;
+
+      if (!data.ok) {
+        setDebugInfo((prev) => ({ 
+          ...prev, 
+          status: data.status || 500, 
+          error: data.error || "Unknown error" 
+        }));
+        throw new Error(data.details?.message || data.error || "Ingestion failed");
+      }
+
+      setDebugInfo((prev) => ({ ...prev, status: 200 }));
+      
+      toast({
+        title: "Analysis started",
+        description: `Processing ${data.items?.length || 0} properties from ${data.site}`,
+      });
+
+      // Navigate to sync progress or deals page
+      if (data.runId) {
+        navigate(`/sync-progress?${data.site}=${data.runId}`);
+      } else {
+        navigate("/deals");
+      }
+    } catch (err: any) {
+      console.error("Analysis error:", err);
+      setDebugInfo((prev) => ({ 
+        ...prev, 
+        status: err.status || 500, 
+        error: err.message 
+      }));
+      toast({
+        title: "Analysis failed",
+        description: err.message || "Failed to analyze property",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -33,15 +184,90 @@ const Hero = () => {
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed animate-fade-in-up [animation-delay:100ms]">
             AI-driven insights for smarter property investing. Stop wasting hours on spreadsheets and guesswork. Get instant ROI analysis, accurate yield projections, and cash flow forecasts in under 30 seconds.
           </p>
+
+          {/* URL Input Section */}
+          <div className="space-y-4 mb-8 animate-fade-in-up [animation-delay:150ms]">
+            <div className="relative">
+              <Input
+                type="url"
+                placeholder="Paste a Zoopla or Rightmove property URL..."
+                value={rawInput}
+                onChange={(e) => setRawInput(e.target.value)}
+                disabled={isAnalyzing}
+                className="h-14 pr-32 text-lg bg-background/95 backdrop-blur-sm border-2 focus-visible:ring-2 focus-visible:ring-primary"
+              />
+              <div className="absolute right-2 top-2 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handlePasteFromClipboard}
+                  disabled={isAnalyzing}
+                  title="Paste from clipboard"
+                >
+                  <Clipboard className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleUseExample}
+                  disabled={isAnalyzing}
+                  title="Use example URL"
+                >
+                  <Sparkles className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Validation Message */}
+            {debouncedInput && validationState.message && (
+              <div className={`flex items-center gap-2 text-sm ${validationState.isValid ? "text-green-600" : "text-amber-600"}`}>
+                {validationState.isValid ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                <span>{validationState.message}</span>
+              </div>
+            )}
+
+            {/* Analyze Button */}
+            <Button
+              size="lg"
+              onClick={handleAnalyze}
+              disabled={!validationState.isValid || isAnalyzing}
+              className="w-full sm:w-auto text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group disabled:opacity-50"
+            >
+              {isAnalyzing ? (
+                <>Analyzing...</>
+              ) : (
+                <>
+                  Analyze Property
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Dev Debug Strip */}
+          {isDev && (
+            <div className="mb-8 p-4 bg-muted/50 backdrop-blur-sm rounded-lg border border-border/50 text-xs font-mono space-y-1">
+              <div className="font-bold text-amber-600">🔧 DEV DEBUG</div>
+              <div><span className="text-muted-foreground">Input:</span> {rawInput || "(empty)"}</div>
+              <div><span className="text-muted-foreground">Normalized:</span> {debugInfo.normalized || "(pending)"}</div>
+              <div><span className="text-muted-foreground">Status:</span> {debugInfo.status || "(none)"}</div>
+              {debugInfo.error && <div className="text-destructive"><span className="text-muted-foreground">Error:</span> {debugInfo.error}</div>}
+            </div>
+          )}
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">
             <Link to="/dashboard">
               <Button 
                 size="lg" 
-                className="text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group"
+                variant="outline"
+                className="text-lg border-2 hover:bg-accent/50 backdrop-blur-sm"
               >
-                Start Analysis
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                Dashboard
+                <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
             <Link to="/deals">
