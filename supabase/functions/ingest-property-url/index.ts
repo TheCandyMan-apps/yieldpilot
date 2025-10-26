@@ -51,7 +51,7 @@ function detectSite(url: URL): 'zoopla' | 'rightmove' | null {
 // Actor configuration
 const ACTOR_CONFIG = {
   rightmove: {
-    actorId: 'yyyyuaYekB0HQkfoy',
+    actorId: 'dhrumil/rightmove-scraper',
     buildPayload: (url: URL, maxResults: number, fullDetails: boolean) => ({
       startUrls: [url.toString()],
       maxItems: maxResults,

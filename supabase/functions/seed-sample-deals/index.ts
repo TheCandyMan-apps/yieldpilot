@@ -78,7 +78,7 @@ serve(async (req) => {
       },
       {
         property_address: "12 Elm Terrace, Leeds LS6 2BQ",
-        property_type: "hmo",
+        property_type: "residential",
         price: 225000,
         estimated_rent: 2100,
         bedrooms: 5,

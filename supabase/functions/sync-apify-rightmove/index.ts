@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       throw new Error('Location parameter is required');
     }
 
-    const actorId = 'yyyyuaYekB0HQkfoy';
+    const actorId = 'dhrumil/rightmove-scraper';
     const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
     
     console.log('Rightmove URL:', rightmoveUrl);
