@@ -65,8 +65,8 @@ export const LocationSearch = ({
         : `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(slug)}/`;
 
       const rightmoveUrl = isPostcode
-        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0`
-        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
+        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0&searchType=SALE&channel=RES_BUY`
+        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}&searchType=SALE&channel=RES_BUY`;
 
       analytics.ingestStart('rightmove', 50);
       analytics.ingestStart('zoopla', 50);

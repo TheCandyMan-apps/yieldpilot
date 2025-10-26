@@ -53,7 +53,7 @@ const ACTOR_CONFIG = {
   rightmove: {
     actorId: 'dhrumil/rightmove-scraper',
     buildPayload: (url: URL, maxResults: number, fullDetails: boolean) => ({
-      startUrls: [{ url: url.toString() }],
+      startUrls: [url.toString()],
       maxItems: maxResults,
       proxy: {
         useApifyProxy: true,
