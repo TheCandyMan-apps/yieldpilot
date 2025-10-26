@@ -89,6 +89,7 @@ async function startApifyRun(
 ): Promise<{ runId: string; datasetId?: string } | IngestError> {
   const config = ACTOR_CONFIG[site];
   const actorId = config.actorId;
+  const formattedActorId = actorId.replace('/', '~');
   
   // First attempt with full details
   let fullDetails = true;
@@ -97,7 +98,7 @@ async function startApifyRun(
   
   for (let attempt = 0; attempt < 2; attempt++) {
     const payload = config.buildPayload(url, maxResults, fullDetails);
-    const runUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyApiKey}&waitForFinish=1&memory=${memory}&timeout=${timeout}`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&waitForFinish=1&memory=${memory}&timeout=${timeout}`;
     
     console.log(JSON.stringify({
       event: 'apify_start_attempt',
