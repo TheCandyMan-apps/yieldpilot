@@ -88,7 +88,7 @@ async function startApifyRun(
   apifyApiKey: string
 ): Promise<{ runId: string; datasetId?: string } | IngestError> {
   const config = ACTOR_CONFIG[site];
-  const actorId = site === 'zoopla' ? config.actorId.replace('/', '~') : config.actorId;
+  const actorId = config.actorId.replace('/', '~');
   
   // First attempt with full details
   let fullDetails = true;
@@ -487,13 +487,24 @@ Deno.serve(async (req) => {
       datasetId = pollResult.datasetId;
     }
     
-    // Fetch items
+    // Fetch items (soft-success if empty; we'll import in background)
     const itemsResult = await fetchDatasetItems(datasetId, apifyApiKey);
+    let items: any[] = [];
     if ('error' in itemsResult) {
-      return new Response(JSON.stringify(itemsResult), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      if (itemsResult.error === 'no_items') {
+        console.log(JSON.stringify({
+          event: 'dataset_empty_soft_success',
+          datasetId
+        }));
+        // Proceed with empty items; background import will populate
+      } else {
+        return new Response(JSON.stringify(itemsResult), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } else {
+      items = itemsResult;
     }
     
     // Success response
@@ -502,8 +513,8 @@ Deno.serve(async (req) => {
       site,
       runId,
       datasetId,
-      items: itemsResult,
-      itemCount: itemsResult.length
+      items,
+      itemCount: items.length
     };
     
     console.log(JSON.stringify({
@@ -511,7 +522,7 @@ Deno.serve(async (req) => {
       site,
       runId,
       datasetId,
-      itemCount: itemsResult.length
+      itemCount: items.length
     }));
     
     // Trigger background import
