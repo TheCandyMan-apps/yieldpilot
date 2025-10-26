@@ -56,7 +56,10 @@ export const LocationSearch = ({
       const zooplaUrl = isPostcode 
         ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale`
         : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
-      const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
+      const normalizedOutcode = location.replace(/\s+/g, '').toUpperCase();
+      const rightmoveUrl = isPostcode
+        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0`
+        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
 
       analytics.ingestStart('rightmove', 50);
       analytics.ingestStart('zoopla', 50);

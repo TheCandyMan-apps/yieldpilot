@@ -29,8 +29,11 @@ Deno.serve(async (req) => {
     }
 
     const actorId = 'dhrumil~rightmove-scraper';
-    const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
-    
+    const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location);
+    const normalizedOutcode = location.replace(/\s+/g, '').toUpperCase();
+    const rightmoveUrl = isPostcode
+      ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0`
+      : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
     console.log('Rightmove URL:', rightmoveUrl);
 
     const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
