@@ -92,7 +92,7 @@ async function startApifyRun(
   
   // First attempt with full details
   let fullDetails = true;
-  let memory = 2048;
+  let memory = 4096;
   let timeout = 300;
   
   for (let attempt = 0; attempt < 2; attempt++) {
