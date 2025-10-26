@@ -68,7 +68,6 @@ const ACTOR_CONFIG = {
     actorId: 'dhrumil/zoopla-scraper',
     buildPayload: (url: URL, maxResults: number, fullDetails: boolean) => ({
       listUrls: [{ url: url.toString() }],
-      maxItems: maxResults,
       fullPropertyDetails: fullDetails,
       monitoringMode: false,
       proxy: {
