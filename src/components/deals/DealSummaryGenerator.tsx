@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Download, Loader2, Share2 } from "lucide-react";
+import { FileText, Download, Loader2, Share2, RefreshCw, AlertCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 interface Deal {
   id: string;
@@ -24,6 +23,7 @@ interface Deal {
 interface DealSummaryGeneratorProps {
   deal: Deal;
   trigger?: React.ReactNode;
+  assumptions?: any;
 }
 
 interface Summary {
@@ -37,14 +37,43 @@ interface SummaryResponse {
   source: "ai" | "heuristic" | "heuristic_fallback";
 }
 
-const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
+// Generate hash from assumptions for regeneration detection
+function hashAssumptions(assumptions: any): string {
+  if (!assumptions) return "default";
+  const str = JSON.stringify(assumptions, Object.keys(assumptions).sort());
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+const DealSummaryGenerator = ({ deal, trigger, assumptions }: DealSummaryGeneratorProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [source, setSource] = useState<string>("");
+  const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [pdfError, setPdfError] = useState<string>("");
+  const [currentAssumptionsHash, setCurrentAssumptionsHash] = useState<string>("");
+  const [savedAssumptionsHash, setSavedAssumptionsHash] = useState<string>("");
+
+  useEffect(() => {
+    if (assumptions) {
+      setCurrentAssumptionsHash(hashAssumptions(assumptions));
+    }
+  }, [assumptions]);
+
+  const needsRegeneration = savedAssumptionsHash && 
+    currentAssumptionsHash && 
+    savedAssumptionsHash !== currentAssumptionsHash;
 
   const generateSummary = async () => {
     setLoading(true);
+    setPdfError("");
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -62,14 +91,14 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
             price: deal.price,
             rent: deal.estimated_rent,
             grossYield: deal.yield_percentage,
-            netYield: deal.yield_percentage, // Adjust if separate net yield is available
+            netYield: deal.yield_percentage,
             roi: deal.roi_percentage,
             cashFlow: deal.cash_flow_monthly,
-            dscr: 1.0, // Placeholder - adjust if available
-            rentSource: "estimated", // Adjust based on actual source
-            epc: "unknown", // Adjust if available
-            crime: "unknown", // Adjust if available
-            flood: "unknown", // Adjust if available
+            dscr: 1.0,
+            rentSource: "estimated",
+            epc: "unknown",
+            crime: "unknown",
+            flood: "unknown",
           },
         },
       });
@@ -78,6 +107,9 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
 
       setSummary(data.summary);
       setSource(data.source);
+      
+      const assumptionsHash = hashAssumptions(assumptions);
+      setSavedAssumptionsHash(assumptionsHash);
       
       // Save to database
       await supabase.from("deal_summaries").insert({
@@ -93,6 +125,7 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
           cashFlow: deal.cash_flow_monthly || 0,
           investmentScore: deal.investment_score || "C",
         },
+        assumptions_hash: assumptionsHash,
       });
 
       toast.success(
@@ -107,148 +140,48 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
     }
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!summary) return;
     
+    setPdfLoading(true);
+    setPdfError("");
+    
     try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      let yPos = 20;
+      const { data, error } = await supabase.functions.invoke("generate-report-pdf", {
+        body: {
+          deal: {
+            address: deal.property_address,
+            price: deal.price,
+            rent: deal.estimated_rent,
+            grossYield: deal.yield_percentage,
+            netYield: deal.yield_percentage,
+            roi: deal.roi_percentage,
+            cashFlow: deal.cash_flow_monthly,
+            city: deal.city,
+          },
+          summary,
+          assumptions: assumptions || {},
+        },
+      });
 
-      // Header
-      doc.setFillColor(59, 130, 246);
-      doc.rect(0, 0, pageWidth, 40, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
-      doc.setFont(undefined, 'bold');
-      doc.text("INVESTMENT DEAL ANALYSIS", pageWidth / 2, 20, { align: 'center' });
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'normal');
-      doc.text(new Date().toLocaleDateString(), pageWidth / 2, 30, { align: 'center' });
-      
-      yPos = 50;
-      
-      // Property Details Section
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Property Details", 14, yPos);
-      yPos += 10;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(deal.property_address, 14, yPos);
-      yPos += 5;
-      
-      if (deal.city) {
-        doc.text(`Location: ${deal.city}`, 14, yPos);
-        yPos += 5;
-      }
-      
-      if (deal.property_type) {
-        doc.text(`Type: ${deal.property_type}`, 14, yPos);
-        yPos += 10;
+      if (error) throw error;
+
+      if (data.success && data.url) {
+        setPdfUrl(data.url);
+        setSavedAssumptionsHash(data.assumptionsHash);
+        
+        // Open PDF in new tab
+        window.open(data.url, "_blank");
+        toast.success("PDF generated successfully");
       } else {
-        yPos += 5;
+        throw new Error(data.error || "Failed to generate PDF");
       }
-
-      // Key Metrics Table
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Key Financial Metrics", 14, yPos);
-      yPos += 5;
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Metric', 'Value']],
-        body: [
-          ['Property Price', formatCurrency(deal.price)],
-          ['Estimated Monthly Rent', formatCurrency(deal.estimated_rent)],
-          ['Annual Yield', `${(deal.yield_percentage || 0).toFixed(2)}%`],
-          ['ROI', `${(deal.roi_percentage || 0).toFixed(2)}%`],
-          ['Monthly Cash Flow', formatCurrency(deal.cash_flow_monthly)],
-          ['Investment Score', deal.investment_score || "N/A"],
-        ],
-        theme: 'striped',
-        headStyles: { fillColor: [59, 130, 246], fontSize: 11, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 10 },
-        columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 70 },
-          1: { cellWidth: 'auto' }
-        }
-      });
-      
-      yPos = (doc as any).lastAutoTable.finalY + 15;
-
-      // Drivers Section
-      if (yPos > pageHeight - 60) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Investment Drivers", 14, yPos);
-      yPos += 8;
-      
-      doc.setFillColor(219, 234, 254);
-      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
-      yPos += 5;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      summary.drivers.forEach((driver, i) => {
-        const bullet = `${i + 1}. ${driver}`;
-        const lines = doc.splitTextToSize(bullet, pageWidth - 28);
-        doc.text(lines, 14, yPos);
-        yPos += (lines.length * 5) + 3;
-      });
-      yPos += 5;
-
-      // Risks Section
-      if (yPos > pageHeight - 50) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Investment Risks", 14, yPos);
-      yPos += 8;
-      
-      doc.setFillColor(255, 237, 213);
-      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
-      yPos += 5;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      summary.risks.forEach((risk, i) => {
-        const bullet = `${i + 1}. ${risk}`;
-        const lines = doc.splitTextToSize(bullet, pageWidth - 28);
-        doc.text(lines, 14, yPos);
-        yPos += (lines.length * 5) + 3;
-      });
-
-      // Footer
-      const totalPages = doc.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(
-          `YieldPilot Investment Analysis | Generated: ${new Date().toLocaleString()} | Page ${i} of ${totalPages}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: 'center' }
-        );
-      }
-
-      doc.save(`investment-analysis-${deal.id}.pdf`);
-      toast.success("PDF report generated successfully");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF report: " + (error instanceof Error ? error.message : "Unknown error"));
+    } catch (error: any) {
+      console.error("PDF generation error:", error);
+      setPdfError(error.message || "Failed to generate PDF");
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -383,10 +316,62 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
 
               {/* Actions */}
               <DialogFooter className="flex gap-2">
-                <Button variant="outline" onClick={downloadPDF}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export PDF
-                </Button>
+                {pdfError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="ml-2">
+                      {pdfError}
+                      <div className="flex gap-2 mt-2">
+                        <Button variant="outline" size="sm" onClick={downloadPDF}>
+                          Try Again
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href="mailto:support@yieldpilot.app?subject=PDF Generation Error">
+                            <Mail className="h-3 w-3 mr-1" />
+                            Contact Support
+                          </a>
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {needsRegeneration && pdfUrl && (
+                  <Button 
+                    variant="outline" 
+                    onClick={downloadPDF}
+                    disabled={pdfLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${pdfLoading ? 'animate-spin' : ''}`} />
+                    Regenerate PDF (Assumptions Changed)
+                  </Button>
+                )}
+                
+                {pdfUrl && !needsRegeneration ? (
+                  <Button variant="outline" onClick={() => window.open(pdfUrl, "_blank")}>
+                    <Download className="h-4 w-4 mr-2" />
+                    View PDF
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    onClick={downloadPDF} 
+                    disabled={pdfLoading}
+                  >
+                    {pdfLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export PDF
+                      </>
+                    )}
+                  </Button>
+                )}
+                
                 <Button variant="outline">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share

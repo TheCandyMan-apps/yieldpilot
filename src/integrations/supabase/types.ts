@@ -198,8 +198,10 @@ export type Database = {
       }
       deal_summaries: {
         Row: {
+          assumptions_hash: string | null
           created_at: string | null
           deal_id: string | null
+          generated_at: string | null
           id: string
           key_metrics: Json | null
           pdf_url: string | null
@@ -211,8 +213,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assumptions_hash?: string | null
           created_at?: string | null
           deal_id?: string | null
+          generated_at?: string | null
           id?: string
           key_metrics?: Json | null
           pdf_url?: string | null
@@ -224,8 +228,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assumptions_hash?: string | null
           created_at?: string | null
           deal_id?: string | null
+          generated_at?: string | null
           id?: string
           key_metrics?: Json | null
           pdf_url?: string | null
