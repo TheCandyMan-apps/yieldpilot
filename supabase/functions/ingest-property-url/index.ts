@@ -472,18 +472,15 @@ Deno.serve(async (req) => {
     
     const { runId, datasetId: initialDatasetId } = startResult;
     
-    // Poll for dataset if not immediately available
-    let datasetId = initialDatasetId;
-    if (!datasetId) {
-      const pollResult = await pollForDataset(runId, apifyApiKey);
-      if ('error' in pollResult) {
-        return new Response(JSON.stringify(pollResult), {
-          status: 504,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      datasetId = pollResult.datasetId;
+    // Always wait for the run to complete before fetching items
+    const pollResult = await pollForDataset(runId, apifyApiKey);
+    if ('error' in pollResult) {
+      return new Response(JSON.stringify(pollResult), {
+        status: 504,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
+    const datasetId = pollResult.datasetId;
     
     // Fetch items (soft-success if empty; we'll import in background)
     const itemsResult = await fetchDatasetItems(datasetId, apifyApiKey);
