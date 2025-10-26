@@ -85,11 +85,25 @@ async function startApifyRun(
   site: 'zoopla' | 'rightmove',
   url: URL,
   maxResults: number,
-  apifyApiKey: string
+  apifyApiKey: string,
+  supabaseUrl: string
 ): Promise<{ runId: string; datasetId?: string } | IngestError> {
   const config = ACTOR_CONFIG[site];
   const actorId = config.actorId;
   const formattedActorId = actorId.replace('/', '~');
+  
+  // Prepare webhook to import when the run succeeds
+  const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
+  const webhooks = [{
+    eventTypes: ["ACTOR.RUN.SUCCEEDED"],
+    requestUrl: webhookUrl,
+    payloadTemplate: JSON.stringify({
+      datasetId: "{{resource.defaultDatasetId}}",
+      source: site,
+      runId: "{{resource.id}}"
+    })
+  }];
+  const webhooksParam = btoa(JSON.stringify(webhooks));
   
   // First attempt with full details - different memory per actor
   let fullDetails = true;
@@ -98,7 +112,7 @@ async function startApifyRun(
   
   for (let attempt = 0; attempt < 2; attempt++) {
     const payload = config.buildPayload(url, maxResults, fullDetails);
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&memory=${memory}&timeout=${timeout}`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(webhooksParam)}`;
     
     console.log(JSON.stringify({
       event: 'apify_start_attempt',
@@ -465,7 +479,7 @@ Deno.serve(async (req) => {
     }));
     
     // Start Apify run with retry
-    const startResult = await startApifyRun(site, normalizedUrl, maxResults, apifyApiKey);
+    const startResult = await startApifyRun(site, normalizedUrl, maxResults, apifyApiKey, supabaseUrl);
     if ('error' in startResult) {
       return new Response(JSON.stringify(startResult), {
         status: startResult.details.status === 402 ? 402 : startResult.details.status === 429 ? 429 : 502,
@@ -475,72 +489,23 @@ Deno.serve(async (req) => {
     
     const { runId, datasetId: initialDatasetId } = startResult;
     
-    // Always wait for the run to complete before fetching items
-    const pollResult = await pollForDataset(runId, apifyApiKey);
-    if ('error' in pollResult) {
-      return new Response(JSON.stringify(pollResult), {
-        status: 504,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    const datasetId = pollResult.datasetId;
-    
-    // Fetch items (soft-success if empty; we'll import in background)
-    const itemsResult = await fetchDatasetItems(datasetId, apifyApiKey);
-    let items: any[] = [];
-    if ('error' in itemsResult) {
-      if (itemsResult.error === 'no_items') {
-        console.log(JSON.stringify({
-          event: 'dataset_empty_soft_success',
-          datasetId
-        }));
-        // Proceed with empty items; background import will populate
-      } else {
-        return new Response(JSON.stringify(itemsResult), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-    } else {
-      items = itemsResult;
-    }
-    
-    // Success response
+    // Return immediately; importing will be handled by webhook when the run succeeds
     const success: IngestSuccess = {
       ok: true,
       site,
       runId,
-      datasetId,
-      items,
-      itemCount: items.length
+      datasetId: initialDatasetId || '',
+      items: [],
+      itemCount: 0
     };
     
     console.log(JSON.stringify({
       event: 'ingest_complete',
       site,
       runId,
-      datasetId,
-      itemCount: items.length
+      datasetId: initialDatasetId || null,
+      itemCount: 0
     }));
-    
-    // Trigger background import
-    try {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      fetch(`${supabaseUrl}/functions/v1/apify-import`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          runId,
-          datasetId,
-          source: site,
-          location: normalizedUrl.searchParams.get('searchLocation') || normalizedUrl.searchParams.get('q') || ''
-        })
-      }).catch(() => {});
-    } catch (_) {}
     
     return new Response(JSON.stringify(success), {
       status: 200,
