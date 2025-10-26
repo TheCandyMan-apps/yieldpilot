@@ -470,6 +470,98 @@ export type Database = {
           },
         ]
       }
+      listing_metrics: {
+        Row: {
+          assumptions: Json | null
+          created_at: string | null
+          drivers: string[] | null
+          enrichment: Json | null
+          id: string
+          kpis: Json | null
+          listing_id: string
+          risks: string[] | null
+          score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assumptions?: Json | null
+          created_at?: string | null
+          drivers?: string[] | null
+          enrichment?: Json | null
+          id?: string
+          kpis?: Json | null
+          listing_id: string
+          risks?: string[] | null
+          score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assumptions?: Json | null
+          created_at?: string | null
+          drivers?: string[] | null
+          enrichment?: Json | null
+          id?: string
+          kpis?: Json | null
+          listing_id?: string
+          risks?: string[] | null
+          score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_metrics_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          listing_url: string | null
+          price: number
+          property_address: string
+          property_type: string | null
+          source: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          listing_url?: string | null
+          price: number
+          property_address: string
+          property_type?: string | null
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          listing_url?: string | null
+          price?: number
+          property_address?: string
+          property_type?: string | null
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       market_insights: {
         Row: {
           avg_price: number | null
@@ -700,6 +792,7 @@ export type Database = {
         Row: {
           analyses_count: number | null
           created_at: string | null
+          default_assumptions: Json | null
           full_name: string | null
           id: string
           subscription_tier: string | null
@@ -708,6 +801,7 @@ export type Database = {
         Insert: {
           analyses_count?: number | null
           created_at?: string | null
+          default_assumptions?: Json | null
           full_name?: string | null
           id: string
           subscription_tier?: string | null
@@ -716,6 +810,7 @@ export type Database = {
         Update: {
           analyses_count?: number | null
           created_at?: string | null
+          default_assumptions?: Json | null
           full_name?: string | null
           id?: string
           subscription_tier?: string | null
