@@ -53,7 +53,7 @@ const ACTOR_CONFIG = {
   rightmove: {
     actorId: 'dhrumil/rightmove-scraper',
     buildPayload: (url: URL, maxResults: number, fullDetails: boolean) => ({
-      startUrls: [url.toString()],
+      startUrls: [{ url: url.toString() }],
       maxItems: maxResults,
       proxy: {
         useApifyProxy: true,
@@ -95,7 +95,7 @@ async function startApifyRun(
   
   for (let attempt = 0; attempt < 2; attempt++) {
     const payload = config.buildPayload(url, maxResults, fullDetails);
-    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&waitForFinish=1&memory=${memory}&timeout=${timeout}`;
+    const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&memory=${memory}&timeout=${timeout}`;
     
     console.log(JSON.stringify({
       event: 'apify_start_attempt',
@@ -197,7 +197,7 @@ async function startApifyRun(
 async function pollForDataset(
   runId: string,
   apifyApiKey: string,
-  maxSeconds: number = 120
+  maxSeconds: number = 600
 ): Promise<{ datasetId: string; status: string } | IngestError> {
   const startTime = Date.now();
   const maxTime = maxSeconds * 1000;
