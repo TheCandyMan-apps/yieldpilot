@@ -27,22 +27,21 @@ interface DealSummaryGeneratorProps {
 }
 
 interface Summary {
-  title: string;
-  summary: string;
-  risk_rating: string;
-  recommendation: string;
-  key_metrics: {
-    yield: number;
-    roi: number;
-    cashFlow: number;
-    investmentScore: string;
-  };
+  drivers: string[];
+  risks: string[];
+}
+
+interface SummaryResponse {
+  success: boolean;
+  summary: Summary;
+  source: "ai" | "heuristic" | "heuristic_fallback";
 }
 
 const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [source, setSource] = useState<string>("");
 
   const generateSummary = async () => {
     setLoading(true);
@@ -55,19 +54,22 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
         return;
       }
 
-      // Call edge function to generate AI summary
+      // Call edge function to generate AI summary with KPI data
       const { data, error } = await supabase.functions.invoke("generate-deal-summary", {
         body: {
           deal: {
             address: deal.property_address,
             price: deal.price,
             rent: deal.estimated_rent,
-            yield: deal.yield_percentage,
+            grossYield: deal.yield_percentage,
+            netYield: deal.yield_percentage, // Adjust if separate net yield is available
             roi: deal.roi_percentage,
             cashFlow: deal.cash_flow_monthly,
-            score: deal.investment_score,
-            city: deal.city,
-            type: deal.property_type,
+            dscr: 1.0, // Placeholder - adjust if available
+            rentSource: "estimated", // Adjust based on actual source
+            epc: "unknown", // Adjust if available
+            crime: "unknown", // Adjust if available
+            flood: "unknown", // Adjust if available
           },
         },
       });
@@ -75,19 +77,29 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       if (error) throw error;
 
       setSummary(data.summary);
+      setSource(data.source);
       
       // Save to database
       await supabase.from("deal_summaries").insert({
         deal_id: deal.id,
         user_id: user.id,
-        title: data.summary.title,
-        summary: data.summary.summary,
-        risk_rating: data.summary.risk_rating,
-        recommendation: data.summary.recommendation,
-        key_metrics: data.summary.key_metrics,
+        title: `Investment Analysis: ${deal.property_address}`,
+        summary: `Drivers: ${data.summary.drivers.join(", ")} | Risks: ${data.summary.risks.join(", ")}`,
+        risk_rating: data.summary.risks.length > 0 ? data.summary.risks[0] : "Standard risks",
+        recommendation: data.summary.drivers.length > 0 ? data.summary.drivers[0] : "Review opportunity",
+        key_metrics: {
+          yield: deal.yield_percentage || 0,
+          roi: deal.roi_percentage || 0,
+          cashFlow: deal.cash_flow_monthly || 0,
+          investmentScore: deal.investment_score || "C",
+        },
       });
 
-      toast.success("Summary generated successfully");
+      toast.success(
+        data.source === "ai" 
+          ? "AI summary generated successfully" 
+          : "Summary generated (heuristic fallback)"
+      );
     } catch (error: any) {
       toast.error("Error generating summary: " + error.message);
     } finally {
@@ -105,7 +117,7 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       let yPos = 20;
 
       // Header
-      doc.setFillColor(59, 130, 246); // Blue
+      doc.setFillColor(59, 130, 246);
       doc.rect(0, 0, pageWidth, 40, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(24);
@@ -123,11 +135,6 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       doc.setFont(undefined, 'bold');
       doc.text("Property Details", 14, yPos);
       yPos += 10;
-      
-      doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
-      doc.text(summary.title, 14, yPos);
-      yPos += 7;
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
@@ -158,10 +165,10 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
         body: [
           ['Property Price', formatCurrency(deal.price)],
           ['Estimated Monthly Rent', formatCurrency(deal.estimated_rent)],
-          ['Annual Yield', `${summary.key_metrics.yield.toFixed(2)}%`],
-          ['ROI', `${summary.key_metrics.roi.toFixed(2)}%`],
+          ['Annual Yield', `${(deal.yield_percentage || 0).toFixed(2)}%`],
+          ['ROI', `${(deal.roi_percentage || 0).toFixed(2)}%`],
           ['Monthly Cash Flow', formatCurrency(deal.cash_flow_monthly)],
-          ['Investment Score', summary.key_metrics.investmentScore],
+          ['Investment Score', deal.investment_score || "N/A"],
         ],
         theme: 'striped',
         headStyles: { fillColor: [59, 130, 246], fontSize: 11, fontStyle: 'bold' },
@@ -174,41 +181,7 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       
       yPos = (doc as any).lastAutoTable.finalY + 15;
 
-      // Visual Metrics Bar Chart
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Performance Indicators", 14, yPos);
-      yPos += 10;
-      
-      const drawMetricBar = (label: string, value: number, maxValue: number, color: [number, number, number], y: number) => {
-        const barWidth = 120;
-        const barHeight = 8;
-        const labelWidth = 60;
-        
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.text(label, 14, y);
-        
-        // Background bar
-        doc.setFillColor(240, 240, 240);
-        doc.rect(14 + labelWidth, y - 5, barWidth, barHeight, 'F');
-        
-        // Value bar
-        const fillWidth = (value / maxValue) * barWidth;
-        doc.setFillColor(...color);
-        doc.rect(14 + labelWidth, y - 5, fillWidth, barHeight, 'F');
-        
-        // Value text
-        doc.setFont(undefined, 'bold');
-        doc.text(`${value.toFixed(1)}%`, 14 + labelWidth + barWidth + 5, y);
-      };
-      
-      drawMetricBar('Yield', summary.key_metrics.yield, 15, [34, 197, 94], yPos);
-      yPos += 12;
-      drawMetricBar('ROI', summary.key_metrics.roi, 25, [59, 130, 246], yPos);
-      yPos += 20;
-
-      // Investment Summary Section
+      // Drivers Section
       if (yPos > pageHeight - 60) {
         doc.addPage();
         yPos = 20;
@@ -216,16 +189,24 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       
       doc.setFontSize(16);
       doc.setFont(undefined, 'bold');
-      doc.text("Investment Summary", 14, yPos);
+      doc.text("Investment Drivers", 14, yPos);
       yPos += 8;
+      
+      doc.setFillColor(219, 234, 254);
+      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
+      yPos += 5;
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      const summaryLines = doc.splitTextToSize(summary.summary, pageWidth - 28);
-      doc.text(summaryLines, 14, yPos);
-      yPos += (summaryLines.length * 5) + 10;
+      summary.drivers.forEach((driver, i) => {
+        const bullet = `${i + 1}. ${driver}`;
+        const lines = doc.splitTextToSize(bullet, pageWidth - 28);
+        doc.text(lines, 14, yPos);
+        yPos += (lines.length * 5) + 3;
+      });
+      yPos += 5;
 
-      // Risk Assessment Section
+      // Risks Section
       if (yPos > pageHeight - 50) {
         doc.addPage();
         yPos = 20;
@@ -233,39 +214,21 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
       
       doc.setFontSize(16);
       doc.setFont(undefined, 'bold');
-      doc.text("Risk Assessment", 14, yPos);
+      doc.text("Investment Risks", 14, yPos);
       yPos += 8;
       
-      doc.setFillColor(255, 237, 213); // Light orange
+      doc.setFillColor(255, 237, 213);
       doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
       yPos += 5;
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      const riskLines = doc.splitTextToSize(summary.risk_rating, pageWidth - 28);
-      doc.text(riskLines, 14, yPos);
-      yPos += (riskLines.length * 5) + 10;
-
-      // Recommendation Section
-      if (yPos > pageHeight - 50) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text("Recommendation", 14, yPos);
-      yPos += 8;
-      
-      doc.setFillColor(219, 234, 254); // Light blue
-      doc.rect(14, yPos - 3, pageWidth - 28, 2, 'F');
-      yPos += 5;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      const recommendationLines = doc.splitTextToSize(summary.recommendation, pageWidth - 28);
-      doc.text(recommendationLines, 14, yPos);
-      yPos += (recommendationLines.length * 5) + 15;
+      summary.risks.forEach((risk, i) => {
+        const bullet = `${i + 1}. ${risk}`;
+        const lines = doc.splitTextToSize(bullet, pageWidth - 28);
+        doc.text(lines, 14, yPos);
+        yPos += (lines.length * 5) + 3;
+      });
 
       // Footer
       const totalPages = doc.getNumberOfPages();
@@ -281,7 +244,6 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
         );
       }
 
-      // Save the PDF
       doc.save(`investment-analysis-${deal.id}.pdf`);
       toast.success("PDF report generated successfully");
     } catch (error) {
@@ -342,10 +304,15 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Title */}
+              {/* Header */}
               <div>
-                <h2 className="text-2xl font-bold mb-2">{summary.title}</h2>
+                <h2 className="text-2xl font-bold mb-2">Investment Analysis</h2>
                 <p className="text-sm text-muted-foreground">{deal.property_address}</p>
+                {source && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Source: {source === "ai" ? "AI-Generated" : "Heuristic Analysis"}
+                  </p>
+                )}
               </div>
 
               {/* Key Metrics */}
@@ -360,7 +327,7 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground mb-1">Yield</p>
                     <p className="text-xl font-bold text-green-600">
-                      {summary.key_metrics.yield.toFixed(2)}%
+                      {(deal.yield_percentage || 0).toFixed(2)}%
                     </p>
                   </CardContent>
                 </Card>
@@ -368,36 +335,48 @@ const DealSummaryGenerator = ({ deal, trigger }: DealSummaryGeneratorProps) => {
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground mb-1">ROI</p>
                     <p className="text-xl font-bold text-blue-600">
-                      {summary.key_metrics.roi.toFixed(2)}%
+                      {(deal.roi_percentage || 0).toFixed(2)}%
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground mb-1">Score</p>
-                    <p className="text-xl font-bold">{summary.key_metrics.investmentScore}</p>
+                    <p className="text-xl font-bold">{deal.investment_score || "N/A"}</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Summary */}
-              <div>
-                <h3 className="font-semibold mb-2">Investment Summary</h3>
-                <p className="text-sm leading-relaxed">{summary.summary}</p>
-              </div>
-
-              {/* Risk & Recommendation */}
+              {/* Drivers & Risks */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
-                  <CardContent className="pt-6">
-                    <h4 className="font-semibold mb-2">Risk Rating</h4>
-                    <p className="text-sm">{summary.risk_rating}</p>
-                  </CardContent>
-                </Card>
                 <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                   <CardContent className="pt-6">
-                    <h4 className="font-semibold mb-2">Recommendation</h4>
-                    <p className="text-sm">{summary.recommendation}</p>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <span className="text-blue-600">✓</span> Investment Drivers
+                    </h4>
+                    <ul className="space-y-2">
+                      {summary.drivers.map((driver, i) => (
+                        <li key={i} className="text-sm flex gap-2">
+                          <span className="text-blue-600 font-bold">{i + 1}.</span>
+                          <span>{driver}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
+                  <CardContent className="pt-6">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <span className="text-orange-600">⚠</span> Investment Risks
+                    </h4>
+                    <ul className="space-y-2">
+                      {summary.risks.map((risk, i) => (
+                        <li key={i} className="text-sm flex gap-2">
+                          <span className="text-orange-600 font-bold">{i + 1}.</span>
+                          <span>{risk}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               </div>

@@ -7,6 +7,48 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Schema validation
+interface DealSummarySchema {
+  drivers: string[];
+  risks: string[];
+}
+
+function validateSchema(data: any): data is DealSummarySchema {
+  if (!data || typeof data !== "object") return false;
+  if (!Array.isArray(data.drivers) || !Array.isArray(data.risks)) return false;
+  if (data.drivers.length > 3 || data.risks.length > 3) return false;
+  if (!data.drivers.every((d: any) => typeof d === "string" && d.length <= 100)) return false;
+  if (!data.risks.every((r: any) => typeof r === "string" && r.length <= 100)) return false;
+  return true;
+}
+
+// Heuristic fallback (non-AI)
+function generateHeuristicSummary(deal: any): DealSummarySchema {
+  const drivers: string[] = [];
+  const risks: string[] = [];
+
+  // Drivers
+  if (deal.netYield >= 7) drivers.push(`Strong ${deal.netYield.toFixed(1)}% net yield`);
+  if (deal.cashFlow >= 200) drivers.push(`Positive £${Math.round(deal.cashFlow)}/mo cashflow`);
+  if (deal.dscr >= 1.25) drivers.push(`Healthy DSCR ${deal.dscr?.toFixed(2) || "N/A"}`);
+  if (drivers.length === 0) drivers.push("Stable rental income potential");
+
+  // Risks
+  if (deal.netYield < 5) risks.push("Low yield (<5%)");
+  if (deal.cashFlow < 0) risks.push("Negative monthly cashflow");
+  if (!deal.epc || deal.epc === "unknown") {
+    risks.push("EPC: unknown (treat as upgrade risk)");
+  } else if (["E", "F", "G"].includes(deal.epc)) {
+    risks.push(`EPC ${deal.epc} - upgrade required`);
+  }
+  if (risks.length === 0) risks.push("Standard market risks apply");
+
+  return {
+    drivers: drivers.slice(0, 3),
+    risks: risks.slice(0, 3),
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,34 +64,51 @@ serve(async (req) => {
 
     console.log("Generating deal summary for:", deal.address);
 
-    const prompt = `Generate a professional investment summary for this property deal. Return ONLY valid JSON with no markdown or additional text.
+    // Prepare structured inputs with guardrails
+    const inputs = {
+      address: deal.address || "Address not provided",
+      price: deal.price || 0,
+      rent: deal.rent || "unknown",
+      grossYield: deal.grossYield || "unknown",
+      netYield: deal.netYield || "unknown",
+      roi: deal.roi || "unknown",
+      cashFlow: deal.cashFlow || "unknown",
+      dscr: deal.dscr || "unknown",
+      rentSource: deal.rentSource || "estimated (treat as indicative)",
+      epc: deal.epc || "unknown (treat as upgrade risk)",
+      crime: deal.crime || "unknown",
+      flood: deal.flood || "unknown",
+    };
 
-Property Details:
-- Address: ${deal.address}
-- Price: £${deal.price}
-- Monthly Rent: £${deal.rent || "N/A"}
-- Yield: ${deal.yield || "N/A"}%
-- ROI: ${deal.roi || "N/A"}%
-- Monthly Cash Flow: £${deal.cashFlow || "N/A"}
-- Investment Score: ${deal.score || "N/A"}
-- City: ${deal.city || "N/A"}
-- Type: ${deal.type || "residential"}
+    const prompt = `You are an experienced UK property investment analyst. Generate a crisp, actionable summary.
 
-Generate a JSON response with these exact fields:
+**Inputs:**
+- Address: ${inputs.address}
+- Price: £${inputs.price}
+- Monthly Rent: £${inputs.rent} (source: ${inputs.rentSource})
+- Gross Yield: ${inputs.grossYield}%
+- Net Yield: ${inputs.netYield}%
+- ROI: ${inputs.roi}%
+- Monthly Cashflow: £${inputs.cashFlow}
+- DSCR: ${inputs.dscr}
+- EPC: ${inputs.epc}
+- Crime: ${inputs.crime}
+- Flood: ${inputs.flood}
+
+**Task:**
+Identify exactly 3 DRIVERS (positive factors) and 3 RISKS (concerns).
+- Each must be 1 line max (~10-15 words)
+- Investor-friendly, direct tone
+- No disclaimers like "not financial advice" - focus on facts
+- If data is missing (e.g., EPC: unknown), include it as a risk with wording like "EPC: unknown (treat as upgrade risk)"
+
+**Output format (JSON only, no markdown):**
 {
-  "title": "<catchy 8-12 word title emphasizing investment potential>",
-  "summary": "<professional 200-word analysis covering: property strengths, market position, rental potential, financial metrics, growth prospects, and key considerations>",
-  "risk_rating": "<Low/Medium/High with 1-sentence explanation>",
-  "recommendation": "<Strong Buy/Buy/Hold/Avoid with clear reasoning>",
-  "key_metrics": {
-    "yield": <number>,
-    "roi": <number>,
-    "cashFlow": <number>,
-    "investmentScore": "<A-E>"
-  }
+  "drivers": ["<driver 1>", "<driver 2>", "<driver 3>"],
+  "risks": ["<risk 1>", "<risk 2>", "<risk 3>"]
 }
 
-Return ONLY the JSON object, no markdown formatting.`;
+Return ONLY the JSON object.`;
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -65,14 +124,13 @@ Return ONLY the JSON object, no markdown formatting.`;
             {
               role: "system",
               content:
-                "You are a professional property investment analyst. Return only valid JSON objects with no markdown or additional formatting.",
+                "You are a UK property investment analyst. Return only valid JSON with drivers and risks arrays. No markdown, no extra text.",
             },
             {
               role: "user",
               content: prompt,
             },
           ],
-          temperature: 0.7,
         }),
       }
     );
@@ -80,7 +138,15 @@ Return ONLY the JSON object, no markdown formatting.`;
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      // Fall back to heuristic summary on AI failure
+      console.log("Falling back to heuristic summary");
+      const heuristicSummary = generateHeuristicSummary(deal);
+      return new Response(
+        JSON.stringify({ success: true, summary: heuristicSummary, source: "heuristic" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -90,48 +156,66 @@ Return ONLY the JSON object, no markdown formatting.`;
 
     let summary;
     try {
+      // Extract JSON from response
       const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        summary = JSON.parse(jsonMatch[0]);
-      } else {
+      if (!jsonMatch) {
         throw new Error("No JSON found in response");
       }
+      
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      // Validate schema
+      if (!validateSchema(parsed)) {
+        console.error("Schema validation failed:", parsed);
+        throw new Error("Invalid schema");
+      }
+      
+      summary = parsed;
+      console.log("AI summary validated:", summary);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", aiContent);
-      // Fallback summary
-      summary = {
-        title: `Investment Opportunity: ${deal.address}`,
-        summary: `This property presents a ${deal.yield > 6 ? "strong" : "moderate"} investment opportunity with a yield of ${deal.yield}% and ROI of ${deal.roi}%. Located in ${deal.city}, the property offers ${deal.cashFlow > 0 ? "positive" : "neutral"} monthly cash flow of £${deal.cashFlow}. The investment score of ${deal.score} reflects the overall quality of this deal based on financial metrics and market conditions. Consider this property for ${deal.yield > 7 ? "immediate investment" : "further due diligence"}.`,
-        risk_rating: deal.yield > 8 ? "Low - Strong fundamentals and good returns" : deal.yield > 5 ? "Medium - Decent returns with standard market risks" : "High - Lower returns, thorough analysis recommended",
-        recommendation: deal.score === "A" || deal.score === "B" ? "Buy - Good investment opportunity" : deal.score === "C" ? "Hold - Requires further analysis" : "Review - Consider alternatives",
-        key_metrics: {
-          yield: deal.yield || 0,
-          roi: deal.roi || 0,
-          cashFlow: deal.cashFlow || 0,
-          investmentScore: deal.score || "C",
-        },
-      };
+      console.error("Failed to parse/validate AI response:", aiContent, parseError);
+      // Fallback to heuristic summary
+      console.log("Falling back to heuristic summary");
+      summary = generateHeuristicSummary(deal);
+      
+      return new Response(
+        JSON.stringify({ success: true, summary, source: "heuristic" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    console.log("Generated summary:", summary);
-
     return new Response(
-      JSON.stringify({ success: true, summary }),
+      JSON.stringify({ success: true, summary, source: "ai" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
     console.error("Error in generate-deal-summary function:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    
+    // Final fallback to heuristic summary on any error
+    try {
+      const { deal } = await req.json();
+      const heuristicSummary = generateHeuristicSummary(deal);
+      return new Response(
+        JSON.stringify({ success: true, summary: heuristicSummary, source: "heuristic_fallback" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } catch {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
   }
 });
