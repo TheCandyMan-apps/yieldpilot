@@ -90,9 +90,9 @@ async function startApifyRun(
   const actorId = config.actorId;
   const formattedActorId = actorId.replace('/', '~');
   
-  // First attempt with full details
+  // First attempt with full details - different memory per actor
   let fullDetails = true;
-  let memory = 4096;
+  let memory = site === 'zoopla' ? 4096 : 256;
   let timeout = 300;
   
   for (let attempt = 0; attempt < 2; attempt++) {
