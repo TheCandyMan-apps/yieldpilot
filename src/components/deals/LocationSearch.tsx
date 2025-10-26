@@ -61,12 +61,12 @@ export const LocationSearch = ({
         .replace(/\s+/g, '-');
 
       const zooplaUrl = isPostcode 
-        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(normalizedOutcode.toLowerCase())}/`
-        : `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(slug)}/`;
+        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(normalizedOutcode)}/?search_source=for-sale&radius=0`
+        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location.trim())}&search_source=for-sale&radius=0`;
 
       const rightmoveUrl = isPostcode
         ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0&searchType=SALE&channel=RES_BUY`
-        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}&searchType=SALE&channel=RES_BUY`;
+        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location.trim())}&searchType=SALE&channel=RES_BUY`;
 
       analytics.ingestStart('rightmove', 50);
       analytics.ingestStart('zoopla', 50);
@@ -119,8 +119,8 @@ export const LocationSearch = ({
           ? zooplaResult.value.data?.runId : null;
 
         const params = new URLSearchParams({ location: location.trim() });
-        if (rightmoveRunId) params.set('rightmove', rightmoveRunId);
-        if (zooplaRunId) params.set('zoopla', zooplaRunId);
+        if (rightmoveRunId) params.set('rightmoveRun', `https://console.apify.com/view/runs/${rightmoveRunId}`);
+        if (zooplaRunId) params.set('zooplaRun', `https://console.apify.com/view/runs/${zooplaRunId}`);
         
         navigate(`/sync-progress?${params.toString()}`);
       } else {
