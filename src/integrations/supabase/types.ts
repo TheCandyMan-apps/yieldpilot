@@ -104,6 +104,35 @@ export type Database = {
         }
         Relationships: []
       }
+      alerts_log: {
+        Row: {
+          executed_at: string | null
+          id: string
+          matches_found: number | null
+          search_id: string | null
+        }
+        Insert: {
+          executed_at?: string | null
+          id?: string
+          matches_found?: number | null
+          search_id?: string | null
+        }
+        Update: {
+          executed_at?: string | null
+          id?: string
+          matches_found?: number | null
+          search_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_log_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "saved_searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       area_analytics: {
         Row: {
           avg_price_current: number | null
@@ -342,6 +371,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       finance_products: {
         Row: {
           created_at: string | null
@@ -538,9 +594,11 @@ export type Database = {
           created_at: string | null
           drivers: string[] | null
           enrichment: Json | null
+          factors: Json | null
           id: string
           kpis: Json | null
           listing_id: string
+          rank_score: number | null
           risks: string[] | null
           score: number | null
           updated_at: string | null
@@ -550,9 +608,11 @@ export type Database = {
           created_at?: string | null
           drivers?: string[] | null
           enrichment?: Json | null
+          factors?: Json | null
           id?: string
           kpis?: Json | null
           listing_id: string
+          rank_score?: number | null
           risks?: string[] | null
           score?: number | null
           updated_at?: string | null
@@ -562,9 +622,11 @@ export type Database = {
           created_at?: string | null
           drivers?: string[] | null
           enrichment?: Json | null
+          factors?: Json | null
           id?: string
           kpis?: Json | null
           listing_id?: string
+          rank_score?: number | null
           risks?: string[] | null
           score?: number | null
           updated_at?: string | null
@@ -668,6 +730,65 @@ export type Database = {
           id?: string
           postcode_prefix?: string | null
           sample_size?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      org_members: {
+        Row: {
+          id: string
+          invited_at: string | null
+          joined_at: string | null
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orgs: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -1056,6 +1177,84 @@ export type Database = {
           },
         ]
       }
+      saved_searches: {
+        Row: {
+          created_at: string | null
+          criteria: Json
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          criteria?: Json
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           accepted_at: string | null
@@ -1096,6 +1295,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_counters: {
+        Row: {
+          created_at: string | null
+          exports_used: number | null
+          id: string
+          ingests_used: number | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exports_used?: number | null
+          id?: string
+          ingests_used?: number | null
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exports_used?: number | null
+          id?: string
+          ingests_used?: number | null
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
