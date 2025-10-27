@@ -14,3 +14,21 @@ verify_jwt = false
 
 [functions.generate-report-pdf]
 verify_jwt = true
+
+[functions.billing-webhooks]
+verify_jwt = false
+
+[functions.ranker-recalculate]
+verify_jwt = false
+
+[functions.search-runner]
+verify_jwt = false
+
+[functions.export-pack]
+verify_jwt = true
+
+[functions.queue-ingest]
+verify_jwt = false
+
+[functions.worker-ingest]
+verify_jwt = false
