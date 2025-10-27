@@ -72,15 +72,15 @@ export const LocationSearch = ({
       analytics.ingestStart('rightmove', 50);
       analytics.ingestStart('zoopla', 50);
 
-      // Call unified ingestion function for both sites
-      const [rightmoveResult, zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('ingest-property-url', {
-          body: { url: rightmoveUrl, maxResults: 50, userId }
-        }),
+      // Temporarily only call Zoopla (Rightmove actor has issues)
+      const [zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('ingest-property-url', {
           body: { url: zooplaUrl, maxResults: 50, userId }
         })
       ]);
+      
+      // Simulate Rightmove being skipped
+      const rightmoveResult = { status: 'fulfilled', value: { data: null } } as any;
 
       console.log('Rightmove result:', rightmoveResult);
       console.log('Zoopla result:', zooplaResult);

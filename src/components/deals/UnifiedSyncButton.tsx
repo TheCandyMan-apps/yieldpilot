@@ -64,15 +64,15 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         description: `Fetching properties in ${location} from both sources...`,
       });
 
-      // Call unified ingestion function for both sites
-      const [rightmoveResult, zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('ingest-property-url', {
-          body: { url: rightmoveUrl, maxResults, userId }
-        }),
+      // Temporarily only call Zoopla (Rightmove actor has issues)
+      const [zooplaResult] = await Promise.allSettled([
         supabase.functions.invoke('ingest-property-url', {
           body: { url: zooplaUrl, maxResults, userId }
         })
       ]);
+      
+      // Simulate Rightmove being skipped
+      const rightmoveResult = { status: 'fulfilled', value: { data: null } } as any;
 
       const rightmoveSuccess = rightmoveResult.status === 'fulfilled' && 
         rightmoveResult.value.data?.ok === true;

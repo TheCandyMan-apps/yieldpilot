@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
     }
 
     const { runId, datasetId, source, location, userId } = await req.json();
+    console.log('📦 Import request:', { runId, datasetId, source, location, userId });
     if (!runId || !source) throw new Error('runId and source are required');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -232,10 +233,15 @@ Deno.serve(async (req) => {
     }
 
     const dealsWithUser = userId ? validDeals.map((d: any) => ({ ...d, user_id: userId })) : validDeals;
+    console.log(`✅ Inserting ${dealsWithUser.length} deals${userId ? ` for user ${userId}` : ''}`);
 
     const { error } = await supabase.from('deals_feed').insert(dealsWithUser);
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Database insert error:', error);
+      throw error;
+    }
 
+    console.log(`🎉 Successfully imported ${validDeals.length} deals from ${source}`);
     return new Response(JSON.stringify({ imported: validDeals.length, source }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     console.error('apify-import error', e);
