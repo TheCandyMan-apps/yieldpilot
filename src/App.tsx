@@ -27,9 +27,8 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Install = lazy(() => import("./pages/Install"));
 const ApifyDebug = lazy(() => import("./pages/ApifyDebug"));
 const AdminJobs = lazy(() => import("./pages/AdminJobs"));
-// Temporarily disabled until Supabase types regenerate
-// const SavedSearches = lazy(() => import("./pages/SavedSearches"));
-// const Organizations = lazy(() => import("./pages/Organizations"));
+const SavedSearches = lazy(() => import("./pages/SavedSearches"));
+const Organizations = lazy(() => import("./pages/Organizations"));
 
 const queryClient = new QueryClient();
 
@@ -80,9 +79,8 @@ const App = () => (
             <Route path="/install" element={<Install />} />
             <Route path="/debug/apify" element={<ApifyDebug />} />
             <Route path="/admin/jobs" element={<AdminJobs />} />
-            {/* Temporarily disabled until Supabase types regenerate */}
-            {/* <Route path="/saved-searches" element={<SavedSearches />} /> */}
-            {/* <Route path="/organizations" element={<Organizations />} /> */}
+            <Route path="/saved-searches" element={<SavedSearches />} />
+            <Route path="/organizations" element={<Organizations />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

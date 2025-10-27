@@ -1408,6 +1408,15 @@ export type Database = {
         Returns: boolean
       }
       increment: { Args: { row_id: string; x: number }; Returns: undefined }
+      increment_usage_counter: {
+        Args: {
+          p_field: string
+          p_period_end: string
+          p_period_start: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       analysis_status: "pending" | "completed" | "failed"
