@@ -24,17 +24,26 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Poll Apify until the run succeeds (even if datasetId is already known)
+    // Skip polling if datasetId is provided (run already complete)
     let effectiveDatasetId: string | undefined = datasetId;
-    for (let i = 0; i < 40; i++) { // ~200s
-      const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
-        headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
-      });
-      const statusJson = await statusRes.json();
-      const status = statusJson.data?.status;
-      effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
-      if (status === 'SUCCEEDED') break;
-      await new Promise((r) => setTimeout(r, 5000));
+    if (!datasetId) {
+      console.log(`⏳ Polling for run ${runId} completion...`);
+      for (let i = 0; i < 20; i++) { // Reduced to 100s max
+        const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
+          headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
+        });
+        const statusJson = await statusRes.json();
+        const status = statusJson.data?.status;
+        effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;
+        console.log(`📊 Poll ${i + 1}/20: status=${status}, datasetId=${effectiveDatasetId}`);
+        if (status === 'SUCCEEDED') break;
+        if (status === 'FAILED' || status === 'ABORTED') {
+          throw new Error(`Run ${status.toLowerCase()}`);
+        }
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    } else {
+      console.log(`✅ Using provided datasetId: ${datasetId}`);
     }
 
     if (!effectiveDatasetId) {
@@ -42,11 +51,16 @@ Deno.serve(async (req) => {
     }
 
     // Fetch dataset items
+    console.log(`📥 Fetching dataset ${effectiveDatasetId}...`);
     const dsRes = await fetch(`https://api.apify.com/v2/datasets/${effectiveDatasetId}/items?format=json`, {
       headers: { Authorization: `Bearer ${APIFY_API_KEY}` },
     });
-    if (!dsRes.ok) throw new Error('Failed to fetch dataset items');
+    if (!dsRes.ok) {
+      console.error(`❌ Failed to fetch dataset: ${dsRes.status} ${dsRes.statusText}`);
+      throw new Error(`Failed to fetch dataset items: ${dsRes.status}`);
+    }
     const items: any[] = await dsRes.json();
+    console.log(`📦 Fetched ${items.length} items from dataset`);
 
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ imported: 0, message: 'No items in dataset' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
