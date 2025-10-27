@@ -153,61 +153,101 @@ const Hero = () => {
         return;
       }
 
-      // Step 1: Starting actor
-      setProgressStep("Starting actor...");
-      toast({ title: "🚀 Starting actor...", description: "Initiating property scraper" });
+      // Queue the ingestion job
+      setProgressStep("Queueing...");
+      toast({ title: "📥 Queueing job...", description: "Adding to ingestion queue" });
 
-      const { data, error } = await supabase.functions.invoke("ingest-property-url", {
-        body: { url: normalizedPreview || debouncedInput, userId: user.id },
+      const { data, error } = await supabase.functions.invoke("queue-ingest", {
+        body: { url: normalizedPreview || debouncedInput },
       });
 
       if (error) throw error;
 
       if (!data.ok) {
+        const errorMessages: Record<string, string> = {
+          unsupported_site: 'Only Zoopla or Rightmove links supported.',
+          invalid_url: 'Please enter a valid URL.',
+        };
+        throw new Error(errorMessages[data.error] || data.error || 'Failed to queue job');
+      }
+
+      const jobId = data.jobId;
+      setDiagnostics({ requestId: jobId });
+
+      // Poll job status
+      setProgressStep("Queued...");
+      toast({ title: "⏱️ Job queued", description: "Waiting for processing" });
+
+      let attempts = 0;
+      const maxAttempts = 40; // 2 minutes at 3s intervals
+      const pollInterval = setInterval(async () => {
+        attempts++;
+
+        if (attempts > maxAttempts) {
+          clearInterval(pollInterval);
+          toast({
+            title: "Timeout",
+            description: "Job is taking longer than expected. Check /admin/jobs for status.",
+            variant: "destructive",
+          });
+          setIsAnalyzing(false);
+          setProgressStep("");
+          return;
+        }
+
+        const { data: jobData, error: jobError } = await supabase
+          .from('ingest_jobs')
+          .select('*')
+          .eq('id', jobId)
+          .single();
+
+        if (jobError) {
+          console.error('Job fetch error:', jobError);
+          return;
+        }
+
         setDiagnostics({
-          requestId: data.requestId,
-          runId: data.runId,
-          datasetId: data.datasetId,
+          requestId: jobId,
+          runId: jobData.run_id,
+          datasetId: jobData.dataset_id,
         });
-        throw data;
-      }
 
-      // Save diagnostics
-      setDiagnostics({
-        requestId: data.requestId,
-        runId: data.runId,
-        datasetId: data.datasetId,
-      });
+        if (jobData.status === 'running') {
+          setProgressStep("Running actor...");
+          toast({ title: "🚀 Processing...", description: "Scraping properties" });
+        } else if (jobData.status === 'succeeded') {
+          clearInterval(pollInterval);
+          setProgressStep("Complete!");
+          toast({
+            title: "✅ Success",
+            description: `Properties imported from ${jobData.site}`,
+          });
 
-      // Step 2: Polling dataset
-      setProgressStep("Fetching items...");
-      toast({ title: "📦 Fetching items...", description: `Processing ${data.site} properties` });
-
-      // Step 3: Success
-      setProgressStep("Complete!");
-      toast({
-        title: "✅ Analysis complete",
-        description: `Found ${data.itemCount || 0} properties from ${data.site}`,
-      });
-
-      // Navigate to sync progress or deals page
-      if (data.runId) {
-        navigate(`/sync-progress?${data.site}=${data.runId}`);
-      } else {
-        navigate("/deals");
-      }
+          setTimeout(() => {
+            navigate('/deals');
+          }, 1500);
+        } else if (jobData.status === 'failed') {
+          clearInterval(pollInterval);
+          const errorMsg = typeof jobData.error === 'object' && jobData.error !== null && 'message' in jobData.error 
+            ? String(jobData.error.message) 
+            : 'Ingestion failed';
+          throw new Error(errorMsg);
+        } else if (jobData.status === 'no_items') {
+          clearInterval(pollInterval);
+          throw new Error('No properties found. Try a different URL.');
+        }
+      }, 3000);
     } catch (err: any) {
       console.error("Analysis error:", err);
       const errorMessage = getErrorMessage(err);
       
       toast({
-        title: "❌ Analysis failed",
+        title: "❌ Failed",
         description: errorMessage,
         variant: "destructive",
       });
 
       setProgressStep("");
-    } finally {
       setIsAnalyzing(false);
     }
   };

@@ -1,18 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
-Allow: /deals
-Allow: /insights
-Allow: /area-insights
-Disallow: /dashboard
-Disallow: /auth
-Disallow: /simulator
-Disallow: /portfolio
-Disallow: /billing
-Disallow: /investor-profile
-Disallow: /alerts
-Disallow: /community
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /dashboard/
+Disallow: /billing/
 
-Sitemap: https://yieldpilot.lovable.app/sitemap.xml
-
-# Crawl-delay for respectful crawling
-Crawl-delay: 1
+Sitemap: https://yieldpilot.com/sitemap.xml

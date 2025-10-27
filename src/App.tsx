@@ -26,6 +26,7 @@ const Community = lazy(() => import("./pages/Community"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Install = lazy(() => import("./pages/Install"));
 const ApifyDebug = lazy(() => import("./pages/ApifyDebug"));
+const AdminJobs = lazy(() => import("./pages/AdminJobs"));
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/billing" element={<Billing />} />
             <Route path="/install" element={<Install />} />
             <Route path="/debug/apify" element={<ApifyDebug />} />
+            <Route path="/admin/jobs" element={<AdminJobs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

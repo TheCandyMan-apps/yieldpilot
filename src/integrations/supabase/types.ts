@@ -387,6 +387,59 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dataset_id: string | null
+          error: Json | null
+          id: string
+          input_url: string
+          listing_id: string | null
+          normalized_url: string
+          run_id: string | null
+          site: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          error?: Json | null
+          id?: string
+          input_url: string
+          listing_id?: string | null
+          normalized_url: string
+          run_id?: string | null
+          site: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          error?: Json | null
+          id?: string
+          input_url?: string
+          listing_id?: string | null
+          normalized_url?: string
+          run_id?: string | null
+          site?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_jobs_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investor_profiles: {
         Row: {
           created_at: string | null
@@ -923,6 +976,30 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          id: string
+          key: string
+          updated_at: string | null
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          key: string
+          updated_at?: string | null
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          key?: string
+          updated_at?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
       renovation_estimates: {
         Row: {
           condition_score: number | null
@@ -1020,6 +1097,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       watchlist: {
         Row: {
           created_at: string | null
@@ -1070,10 +1168,18 @@ export type Database = {
           deal_id: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment: { Args: { row_id: string; x: number }; Returns: undefined }
     }
     Enums: {
       analysis_status: "pending" | "completed" | "failed"
+      app_role: "admin" | "user"
       investment_score: "A" | "B" | "C" | "D" | "E"
       property_type: "residential" | "commercial" | "mixed_use" | "land"
       team_role: "owner" | "editor" | "viewer"
@@ -1205,6 +1311,7 @@ export const Constants = {
   public: {
     Enums: {
       analysis_status: ["pending", "completed", "failed"],
+      app_role: ["admin", "user"],
       investment_score: ["A", "B", "C", "D", "E"],
       property_type: ["residential", "commercial", "mixed_use", "land"],
       team_role: ["owner", "editor", "viewer"],
