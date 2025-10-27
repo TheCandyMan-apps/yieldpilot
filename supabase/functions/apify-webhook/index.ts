@@ -22,34 +22,32 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    const raw = await req.json();
-    console.log('📥 Webhook payload received:', JSON.stringify(raw, null, 2));
-    // Accept both custom payloadTemplate and Apify's default payload shape
-    let runId: string | undefined = raw.runId || raw.resource?.id || raw.payload?.resource?.id;
-    let source: string | undefined = raw.source || raw.resource?.userData?.source || raw.payload?.source;
-    const actorId: string | undefined = raw.actorId || raw.resource?.actorId || raw.payload?.resource?.actorId;
-    // Infer source from actorId if missing
-    if (!source && actorId) {
-      const aid = String(actorId).toLowerCase();
-      if (aid.includes('zoopla')) source = 'zoopla';
-      if (aid.includes('rightmove')) source = 'rightmove';
-    }
+    // Extract source and location from query params
+    const url = new URL(req.url);
+    const source = url.searchParams.get('source');
+    const location = url.searchParams.get('location');
+    const userId = url.searchParams.get('userId');
+
+    console.log(`📥 Webhook called: source=${source}, location=${location}, userId=${userId}`);
 
     if (!source) {
-      throw new Error('source is required');
+      throw new Error('source query parameter is required');
     }
 
-    // Resolve datasetId from multiple possible locations
-    let effectiveDatasetId: string | undefined = raw.datasetId || raw.resource?.defaultDatasetId || raw.payload?.resource?.defaultDatasetId;
+    const raw = await req.json();
+    console.log('📥 Webhook payload received:', JSON.stringify(raw, null, 2));
+    
+    // Extract runId and datasetId from Apify's native webhook payload
+    const runId: string | undefined = raw.resource?.id || raw.id;
+    let effectiveDatasetId: string | undefined = raw.resource?.defaultDatasetId || raw.defaultDatasetId;
 
-    // Resolve datasetId if missing or looks like an uninterpolated template
-    if (!effectiveDatasetId || /\{\{.*\}\}/.test(effectiveDatasetId)) {
-      if (!runId || /\{\{.*\}\}/.test(runId)) {
-        throw new Error('datasetId missing and valid runId not provided');
-      }
+    // Poll for dataset if not immediately available
+    if (!effectiveDatasetId && runId) {
       console.log(`Webhook missing datasetId; polling run ${runId} for dataset...`);
-      for (let i = 0; i < 40; i++) { // ~200s
-        const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: { Authorization: `Bearer ${APIFY_API_KEY}` } });
+      for (let i = 0; i < 20; i++) { // ~100s max
+        const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { 
+          headers: { Authorization: `Bearer ${APIFY_API_KEY}` } 
+        });
         const statusJson = await statusRes.json();
         const status = statusJson.data?.status;
         effectiveDatasetId = statusJson.data?.defaultDatasetId || effectiveDatasetId;

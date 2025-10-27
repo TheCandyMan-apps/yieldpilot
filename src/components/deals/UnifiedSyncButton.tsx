@@ -52,32 +52,25 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
       }
       const userId = session.user.id;
 
-      // Build URLs for both sites from location
-      const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
-      const zooplaUrl = isPostcode 
-        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(location)}/?search_source=for-sale`
-        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location)}&search_source=for-sale`;
-      const rightmoveUrl = `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
-
       toast({
         title: "Starting sync...",
         description: `Fetching properties in ${location} from both sources...`,
       });
 
-      // Temporarily only call Zoopla (Rightmove actor has issues)
-      const [zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('ingest-property-url', {
-          body: { url: zooplaUrl, maxResults, userId }
+      // Call both sync functions
+      const [rightmoveResult, zooplaResult] = await Promise.allSettled([
+        supabase.functions.invoke('sync-apify-rightmove', {
+          body: { location, maxResults, userId }
+        }),
+        supabase.functions.invoke('sync-apify-zoopla', {
+          body: { location, maxResults, userId }
         })
       ]);
-      
-      // Simulate Rightmove being skipped
-      const rightmoveResult = { status: 'fulfilled', value: { data: null } } as any;
 
       const rightmoveSuccess = rightmoveResult.status === 'fulfilled' && 
-        rightmoveResult.value.data?.ok === true;
+        !rightmoveResult.value.error && rightmoveResult.value.data?.runId;
       const zooplaSuccess = zooplaResult.status === 'fulfilled' && 
-        zooplaResult.value.data?.ok === true;
+        !zooplaResult.value.error && zooplaResult.value.data?.runId;
 
       if (rightmoveSuccess || zooplaSuccess) {
         const sources = [];
@@ -104,13 +97,18 @@ export const UnifiedSyncButton = ({ onSyncComplete }: UnifiedSyncButtonProps) =>
         
         navigate(`/sync-progress?${params.toString()}`);
       } else {
-        // Extract error details for better diagnostics
         const errors = [];
-        if (rightmoveResult.status === 'fulfilled' && rightmoveResult.value.data?.ok === false) {
-          errors.push(`Rightmove: ${rightmoveResult.value.data.details?.message || 'Unknown error'}`);
+        if (rightmoveResult.status === 'rejected' || rightmoveResult.value.error) {
+          const msg = rightmoveResult.status === 'rejected' 
+            ? rightmoveResult.reason?.message 
+            : rightmoveResult.value.error?.message;
+          errors.push(`Rightmove: ${msg || 'Unknown error'}`);
         }
-        if (zooplaResult.status === 'fulfilled' && zooplaResult.value.data?.ok === false) {
-          errors.push(`Zoopla: ${zooplaResult.value.data.details?.message || 'Unknown error'}`);
+        if (zooplaResult.status === 'rejected' || zooplaResult.value.error) {
+          const msg = zooplaResult.status === 'rejected' 
+            ? zooplaResult.reason?.message 
+            : zooplaResult.value.error?.message;
+          errors.push(`Zoopla: ${msg || 'Unknown error'}`);
         }
         throw new Error(errors.join('; ') || 'Both sync attempts failed');
       }

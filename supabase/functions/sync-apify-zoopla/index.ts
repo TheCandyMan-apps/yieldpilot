@@ -39,19 +39,13 @@ Deno.serve(async (req) => {
     
     console.log('Zoopla listUrl:', zooplaUrl);
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=zoopla&location=${encodeURIComponent(location)}&userId=${userId || ''}`;
     console.log('Webhook URL:', webhookUrl);
 
     // Construct webhook configuration
     const webhooks = [{
       eventTypes: ["ACTOR.RUN.SUCCEEDED"],
-      requestUrl: webhookUrl,
-      payloadTemplate: JSON.stringify({
-        datasetId: "{{resource.defaultDatasetId}}",
-        source: "zoopla",
-        runId: "{{resource.id}}",
-        location: location
-      })
+      requestUrl: webhookUrl
     }];
 
     const webhooksParam = btoa(JSON.stringify(webhooks));

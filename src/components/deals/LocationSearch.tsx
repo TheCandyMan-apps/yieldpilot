@@ -52,56 +52,37 @@ export const LocationSearch = ({
       }
       const userId = user.id;
 
-      // Build URLs for both sites from location
-      const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d?[A-Z]{0,2}$/i.test(location.trim());
-      const normalizedOutcode = location.replace(/\s+/g, '').toUpperCase();
-      const slug = location
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-');
-
-      const zooplaUrl = isPostcode 
-        ? `https://www.zoopla.co.uk/for-sale/property/${encodeURIComponent(normalizedOutcode)}/?search_source=for-sale&radius=0`
-        : `https://www.zoopla.co.uk/for-sale/property/?q=${encodeURIComponent(location.trim())}&search_source=for-sale&radius=0`;
-
-      const rightmoveUrl = isPostcode
-        ? `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E${encodeURIComponent(normalizedOutcode)}&radius=0.0&searchType=SALE&channel=RES_BUY`
-        : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location.trim())}&searchType=SALE&channel=RES_BUY`;
-
       analytics.ingestStart('rightmove', 50);
       analytics.ingestStart('zoopla', 50);
 
-      // Temporarily only call Zoopla (Rightmove actor has issues)
-      const [zooplaResult] = await Promise.allSettled([
-        supabase.functions.invoke('ingest-property-url', {
-          body: { url: zooplaUrl, maxResults: 50, userId }
+      // Call both sync functions
+      const [rightmoveResult, zooplaResult] = await Promise.allSettled([
+        supabase.functions.invoke('sync-apify-rightmove', {
+          body: { location: location.trim(), maxResults: 50, userId }
+        }),
+        supabase.functions.invoke('sync-apify-zoopla', {
+          body: { location: location.trim(), maxResults: 50, userId }
         })
       ]);
-      
-      // Simulate Rightmove being skipped
-      const rightmoveResult = { status: 'fulfilled', value: { data: null } } as any;
 
       console.log('Rightmove result:', rightmoveResult);
       console.log('Zoopla result:', zooplaResult);
 
       const rightmoveSuccess = rightmoveResult.status === 'fulfilled' && 
-        rightmoveResult.value.data?.ok === true;
+        !rightmoveResult.value.error && rightmoveResult.value.data?.runId;
       const zooplaSuccess = zooplaResult.status === 'fulfilled' && 
-        zooplaResult.value.data?.ok === true;
+        !zooplaResult.value.error && zooplaResult.value.data?.runId;
 
       if (rightmoveSuccess || zooplaSuccess) {
         const duration = Date.now() - startTime;
         const sources = [];
         if (rightmoveSuccess) {
           sources.push('Rightmove');
-          const itemCount = rightmoveResult.value.data?.itemCount || 0;
-          analytics.ingestSuccess('rightmove', itemCount, duration);
+          analytics.ingestSuccess('rightmove', 50, duration);
         }
         if (zooplaSuccess) {
           sources.push('Zoopla');
-          const itemCount = zooplaResult.value.data?.itemCount || 0;
-          analytics.ingestSuccess('zoopla', itemCount, duration);
+          analytics.ingestSuccess('zoopla', 50, duration);
         }
         
         toast({
@@ -125,17 +106,20 @@ export const LocationSearch = ({
         
         navigate(`/sync-progress?${params.toString()}`);
       } else {
-        // Extract error details for better diagnostics
         const errors = [];
-        if (rightmoveResult.status === 'fulfilled' && rightmoveResult.value.data?.ok === false) {
-          const error = rightmoveResult.value.data.error || 'unknown';
-          errors.push(`Rightmove: ${rightmoveResult.value.data.details?.message || 'Unknown error'}`);
-          analytics.ingestFail('rightmove', error);
+        if (rightmoveResult.status === 'rejected' || rightmoveResult.value.error) {
+          const msg = rightmoveResult.status === 'rejected' 
+            ? rightmoveResult.reason?.message 
+            : rightmoveResult.value.error?.message;
+          errors.push(`Rightmove: ${msg || 'Unknown error'}`);
+          analytics.ingestFail('rightmove', msg || 'unknown');
         }
-        if (zooplaResult.status === 'fulfilled' && zooplaResult.value.data?.ok === false) {
-          const error = zooplaResult.value.data.error || 'unknown';
-          errors.push(`Zoopla: ${zooplaResult.value.data.details?.message || 'Unknown error'}`);
-          analytics.ingestFail('zoopla', error);
+        if (zooplaResult.status === 'rejected' || zooplaResult.value.error) {
+          const msg = zooplaResult.status === 'rejected' 
+            ? zooplaResult.reason?.message 
+            : zooplaResult.value.error?.message;
+          errors.push(`Zoopla: ${msg || 'Unknown error'}`);
+          analytics.ingestFail('zoopla', msg || 'unknown');
         }
         throw new Error(errors.join('; ') || 'Both search attempts failed');
       }

@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const { location, maxResults = 50 } = await req.json();
+    const { location, maxResults = 50, userId } = await req.json();
     
     console.log('Starting Rightmove sync for location:', location);
 
@@ -37,24 +37,18 @@ Deno.serve(async (req) => {
       : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
     console.log('Rightmove URL:', rightmoveUrl);
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=rightmove&location=${encodeURIComponent(location)}&userId=${userId || ''}`;
     console.log('Webhook URL:', webhookUrl);
 
     // Construct webhook configuration
     const webhooks = [{
       eventTypes: ["ACTOR.RUN.SUCCEEDED"],
-      requestUrl: webhookUrl,
-      payloadTemplate: JSON.stringify({
-        datasetId: "{{resource.defaultDatasetId}}",
-        source: "rightmove",
-        runId: "{{resource.id}}",
-        location: location
-      })
+      requestUrl: webhookUrl
     }];
 
     const webhooksParam = btoa(JSON.stringify(webhooks));
 
-    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}`;
+    const apifyRunUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?webhooks=${encodeURIComponent(webhooksParam)}&timeout=900&memory=4096`;
     
     const runResponse = await fetch(apifyRunUrl, {
       method: 'POST',
@@ -64,7 +58,7 @@ Deno.serve(async (req) => {
       },
         body: JSON.stringify({
           listUrls: [{ url: rightmoveUrl }],
-          fullPropertyDetails: false,
+          fullPropertyDetails: true,
           monitoringMode: false,
           maxProperties: maxResults,
           proxy: {
@@ -105,7 +99,7 @@ Deno.serve(async (req) => {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({ runId, datasetId, source: 'rightmove', location })
+        body: JSON.stringify({ runId, source: 'rightmove', location, userId })
       }).catch(() => {});
     } catch (_) {}
 
