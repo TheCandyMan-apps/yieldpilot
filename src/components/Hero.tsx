@@ -7,6 +7,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { checkUsageLimit } from "@/lib/planLimits";
+import { Badge } from "@/components/ui/badge";
 
 const EXAMPLE_URLS = {
   zoopla: "https://www.zoopla.co.uk/for-sale/details/67891234/",
@@ -29,6 +31,7 @@ const Hero = () => {
     site?: "zoopla" | "rightmove";
     message?: string;
   }>({ isValid: false });
+  const [usageLimit, setUsageLimit] = useState<{ allowed: boolean; used: number; limit: number } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -78,6 +81,23 @@ const Hero = () => {
       setNormalizedPreview("");
     }
   }, [debouncedInput]);
+
+  // Check usage limits on mount
+  useEffect(() => {
+    checkUsageLimits();
+  }, []);
+
+  const checkUsageLimits = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const result = await checkUsageLimit(user.id, "ingests");
+        setUsageLimit(result);
+      }
+    } catch (error) {
+      console.error("Error checking usage limits:", error);
+    }
+  };
 
   const handlePasteFromClipboard = async () => {
     try {
@@ -137,6 +157,17 @@ const Hero = () => {
 
   const handleAnalyze = async () => {
     if (!validationState.isValid || isAnalyzing) return;
+
+    // Check usage limits
+    if (usageLimit && !usageLimit.allowed) {
+      toast({
+        title: "Usage limit reached",
+        description: `You've used ${usageLimit.used} of ${usageLimit.limit} property imports this month. Upgrade your plan to continue.`,
+        variant: "destructive",
+      });
+      navigate("/billing");
+      return;
+    }
 
     setIsAnalyzing(true);
     setDiagnostics({});
@@ -281,6 +312,14 @@ const Hero = () => {
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed animate-fade-in-up [animation-delay:100ms]">
             AI-driven insights for smarter property investing. Stop wasting hours on spreadsheets and guesswork. Get instant ROI analysis, accurate yield projections, and cash flow forecasts in under 30 seconds.
           </p>
+          
+          {usageLimit && (
+            <Badge variant={usageLimit.allowed ? "outline" : "destructive"} className="mb-4">
+              {usageLimit.limit === -1 
+                ? "Unlimited imports" 
+                : `${usageLimit.used}/${usageLimit.limit} imports used this month`}
+            </Badge>
+          )}
 
           {/* URL Input Section */}
           <div className="space-y-4 mb-8 animate-fade-in-up [animation-delay:150ms]">

@@ -32,6 +32,7 @@ const Billing = () => {
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [usageStats, setUsageStats] = useState<{ ingests_used: number; exports_used: number } | null>(null);
 
   const checkSubscription = async () => {
     try {
@@ -43,6 +44,22 @@ const Billing = () => {
       if (data) {
         setSubscriptionTier(data.subscription_tier || "free");
         setSubscriptionEnd(data.subscription_end);
+      }
+
+      // Fetch usage stats
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const now = new Date();
+        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const { data: usage } = await supabase
+          .from("usage_counters")
+          .select("ingests_used, exports_used")
+          .eq("user_id", user.id)
+          .gte("period_start", periodStart.toISOString())
+          .maybeSingle();
+        
+        setUsageStats(usage || { ingests_used: 0, exports_used: 0 });
       }
     } catch (error: any) {
       console.error("Error checking subscription:", error);
@@ -172,10 +189,15 @@ const Billing = () => {
                     Renews on {new Date(subscriptionEnd).toLocaleDateString()}
                   </p>
                 )}
-                {subscriptionTier === "free" && (
-                  <p className="text-sm text-muted-foreground">
-                    3 of 5 analyses used this month
-                  </p>
+                {usageStats && (
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      Property imports: {usageStats.ingests_used} / {subscriptionTier === "free" ? "5" : subscriptionTier === "pro" ? "50" : "Unlimited"} this month
+                    </p>
+                    <p>
+                      Exports: {usageStats.exports_used} / {subscriptionTier === "free" ? "2" : subscriptionTier === "pro" ? "20" : "Unlimited"} this month
+                    </p>
+                  </div>
                 )}
               </div>
               {subscriptionTier !== "free" ? (

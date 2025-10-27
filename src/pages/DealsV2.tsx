@@ -10,6 +10,7 @@ import { Loader2, Filter, Bookmark, Eye, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ExportButton } from "@/components/ExportButton";
 
 interface ListingMetric {
   listing_id: string;
@@ -212,6 +213,10 @@ const DealsV2 = () => {
             <AssumptionsDrawer 
               assumptions={globalAssumptions} 
               onUpdate={setGlobalAssumptions}
+            />
+            <ExportButton 
+              listingIds={filteredListings.map(l => l.id)}
+              variant="outline"
             />
             <UnifiedSyncButton onSyncComplete={fetchListings} />
           </div>

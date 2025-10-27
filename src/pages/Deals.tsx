@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Lock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExportButton } from "@/components/ExportButton";
 
 interface Deal {
   id: string;
@@ -350,11 +351,17 @@ const Deals = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Deal Feed</h1>
-          <p className="text-muted-foreground mt-1">
-            AI-analyzed investment opportunities
-          </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Deal Feed</h1>
+            <p className="text-muted-foreground mt-1">
+              AI-analyzed investment opportunities
+            </p>
+          </div>
+          <ExportButton 
+            listingIds={filteredDeals.map(d => d.id)}
+            variant="outline"
+          />
         </div>
 
         {/* Location Search */}
