@@ -14,6 +14,8 @@ interface IngestRequest {
 interface IngestSuccess {
   ok: true;
   site: 'zoopla' | 'rightmove';
+  url: string;
+  requestId: string;
   runId: string;
   datasetId: string;
   items: any[];
@@ -23,6 +25,11 @@ interface IngestSuccess {
 interface IngestError {
   ok: false;
   error: 'missing_url' | 'unsupported_site' | 'apify_start_failed' | 'no_dataset' | 'no_items' | 'polling_timeout' | 'server_error';
+  requestId?: string;
+  site?: string;
+  url?: string;
+  runId?: string;
+  datasetId?: string;
   details: Record<string, any>;
 }
 
@@ -31,11 +38,16 @@ type IngestResponse = IngestSuccess | IngestError;
 // URL normalization and validation
 function normalizeUrl(rawUrl: string): URL | null {
   try {
-    const url = new URL(rawUrl.trim());
-    if (!['http:', 'https:'].includes(url.protocol)) {
+    let url = rawUrl.trim();
+    // Auto-prefix https:// if starts with www.
+    if (url.startsWith('www.')) {
+      url = 'https://' + url;
+    }
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
       return null;
     }
-    return url;
+    return parsed;
   } catch {
     return null;
   }
@@ -81,13 +93,14 @@ const ACTOR_CONFIG = {
   }
 };
 
-// Start Apify run with retry logic
+// Start Apify run with Stage 1 / Stage 2 retry logic
 async function startApifyRun(
   site: 'zoopla' | 'rightmove',
   url: URL,
   maxResults: number,
   apifyApiKey: string,
-  supabaseUrl: string
+  supabaseUrl: string,
+  requestId: string
 ): Promise<{ runId: string; datasetId?: string } | IngestError> {
   const config = ACTOR_CONFIG[site];
   const actorId = config.actorId;
@@ -100,24 +113,27 @@ async function startApifyRun(
   }];
   const webhooksParam = btoa(JSON.stringify(webhooks));
 
+  // Stage 1: Full details with appropriate memory
+  // Stage 2: Basic mode with reduced resources (if Stage 1 fails with quota/memory)
+  const stages = [
+    { fullDetails: true, memory: 512, timeout: 120 },
+    { fullDetails: false, memory: 512, timeout: 120 }
+  ];
   
-  // First attempt with full details - different memory per actor
-  let fullDetails = true;
-  let memory = site === 'zoopla' ? 4096 : 256;
-  let timeout = site === 'zoopla' ? 900 : 300;
-  
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let stage = 0; stage < stages.length; stage++) {
+    const { fullDetails, memory, timeout } = stages[stage];
     const payload = config.buildPayload(url, maxResults, fullDetails);
     const runUrl = `https://api.apify.com/v2/acts/${formattedActorId}/runs?token=${apifyApiKey}&memory=${memory}&timeout=${timeout}&webhooks=${encodeURIComponent(webhooksParam)}`;
     
     console.log(JSON.stringify({
       event: 'apify_start_attempt',
-      attempt: attempt + 1,
+      requestId,
+      stage: stage + 1,
       site,
       fullDetails,
       memory,
       timeout,
-      payload
+      url: url.toString()
     }));
     
     try {
@@ -135,9 +151,10 @@ async function startApifyRun(
       if (response.ok && responseData.data?.id) {
         console.log(JSON.stringify({
           event: 'apify_start_success',
+          requestId,
           runId: responseData.data.id,
           datasetId: responseData.data.defaultDatasetId,
-          attempt: attempt + 1
+          stage: stage + 1
         }));
         
         return {
@@ -146,33 +163,33 @@ async function startApifyRun(
         };
       }
       
-      // Check if we should retry with reduced settings
+      // Stage 1 failed with quota/memory/rate error → try Stage 2
       const status = response.status;
-      if ((status === 402 || status === 429) && attempt === 0) {
+      if ((status === 402 || status === 429) && stage === 0) {
         console.log(JSON.stringify({
-          event: 'apify_quota_error_retry',
+          event: 'apify_stage1_failed_retrying',
+          requestId,
           status,
-          responseData,
-          nextAttempt: 'reduced_settings'
+          nextStage: 'basic_mode'
         }));
-        
-        // Retry with reduced settings
-        fullDetails = false;
-        memory = 512;
-        timeout = 120;
         continue;
       }
       
-      // Failed and no retry available
+      // No more retries available
       console.error(JSON.stringify({
         event: 'apify_start_failed',
+        requestId,
         status,
-        responseData
+        stage: stage + 1,
+        response: responseData
       }));
       
       return {
         ok: false,
         error: 'apify_start_failed',
+        requestId,
+        site,
+        url: url.toString(),
         details: {
           status,
           message: responseData.error?.message || 'Failed to start Apify run',
@@ -183,14 +200,18 @@ async function startApifyRun(
     } catch (error) {
       console.error(JSON.stringify({
         event: 'apify_start_exception',
-        attempt: attempt + 1,
+        requestId,
+        stage: stage + 1,
         error: error instanceof Error ? error.message : String(error)
       }));
       
-      if (attempt === 1) {
+      if (stage === 1) {
         return {
           ok: false,
           error: 'apify_start_failed',
+          requestId,
+          site,
+          url: url.toString(),
           details: {
             message: error instanceof Error ? error.message : 'Network error'
           }
@@ -202,7 +223,10 @@ async function startApifyRun(
   return {
     ok: false,
     error: 'apify_start_failed',
-    details: { message: 'All retry attempts exhausted' }
+    requestId,
+    site,
+    url: url.toString(),
+    details: { message: 'All stages exhausted' }
   };
 }
 
@@ -466,16 +490,18 @@ Deno.serve(async (req) => {
     }
     
     const maxResults = body.maxResults || 50;
+    const requestId = crypto.randomUUID();
     
     console.log(JSON.stringify({
       event: 'ingest_start',
+      requestId,
       site,
       url: normalizedUrl.toString(),
       maxResults
     }));
     
-    // Start Apify run with retry
-    const startResult = await startApifyRun(site, normalizedUrl, maxResults, apifyApiKey, supabaseUrl);
+    // Start Apify run with Stage 1/Stage 2 retry
+    const startResult = await startApifyRun(site, normalizedUrl, maxResults, apifyApiKey, supabaseUrl, requestId);
     if ('error' in startResult) {
       return new Response(JSON.stringify(startResult), {
         status: startResult.details.status === 402 ? 402 : startResult.details.status === 429 ? 429 : 502,
@@ -485,7 +511,29 @@ Deno.serve(async (req) => {
     
     const { runId, datasetId: initialDatasetId } = startResult;
     
-    // Fire importer in background so user doesn't wait on webhook
+    // Poll for completion and fetch items (up to 10 for preview)
+    let items: any[] = [];
+    let datasetId = initialDatasetId;
+    
+    if (initialDatasetId) {
+      // We have a dataset ID, try to fetch items immediately
+      const itemsResult = await fetchDatasetItems(initialDatasetId, apifyApiKey);
+      if (!('error' in itemsResult)) {
+        items = itemsResult.slice(0, 10); // Return first 10 as preview
+      }
+    } else {
+      // Poll for dataset to be created
+      const pollResult = await pollForDataset(runId, apifyApiKey, 120);
+      if (!('error' in pollResult)) {
+        datasetId = pollResult.datasetId;
+        const itemsResult = await fetchDatasetItems(pollResult.datasetId, apifyApiKey);
+        if (!('error' in itemsResult)) {
+          items = itemsResult.slice(0, 10);
+        }
+      }
+    }
+    
+    // Fire importer in background so full dataset is processed
     try {
       fetch(`${supabaseUrl}/functions/v1/apify-import`, {
         method: 'POST',
@@ -494,26 +542,29 @@ Deno.serve(async (req) => {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({ runId, datasetId: initialDatasetId, source: site, location: null, userId: body.userId })
+        body: JSON.stringify({ runId, datasetId, source: site, location: null, userId: body.userId })
       }).catch(() => {});
     } catch (_) {}
     
-    // Return immediately; importing will also be handled by webhook if configured
+    // Return success with diagnostics
     const success: IngestSuccess = {
       ok: true,
       site,
+      url: normalizedUrl.toString(),
+      requestId,
       runId,
-      datasetId: initialDatasetId || '',
-      items: [],
-      itemCount: 0
+      datasetId: datasetId || '',
+      items,
+      itemCount: items.length
     };
     
     console.log(JSON.stringify({
       event: 'ingest_complete',
+      requestId,
       site,
       runId,
-      datasetId: initialDatasetId || null,
-      itemCount: 0
+      datasetId,
+      itemCount: items.length
     }));
     
     return new Response(JSON.stringify(success), {
@@ -522,8 +573,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    const requestId = crypto.randomUUID();
     console.error(JSON.stringify({
       event: 'ingest_exception',
+      requestId,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     }));
@@ -531,6 +584,7 @@ Deno.serve(async (req) => {
     const errorResponse: IngestError = {
       ok: false,
       error: 'server_error',
+      requestId,
       details: {
         message: error instanceof Error ? error.message : 'Unknown error'
       }
