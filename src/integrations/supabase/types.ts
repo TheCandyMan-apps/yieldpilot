@@ -742,49 +742,82 @@ export type Database = {
       }
       investor_profiles: {
         Row: {
+          aum_range: string | null
+          badges: Json | null
+          bio: string | null
           created_at: string | null
+          display_name: string | null
           id: string
           investment_strategy: string | null
           location_preferences: Json | null
           max_budget: number | null
           min_bedrooms: number | null
+          min_yield_target: number | null
+          preferred_regions: Json | null
           preferred_yield_max: number | null
           preferred_yield_min: number | null
           property_types: Json | null
           refurb_comfort: string | null
+          reputation_score: number | null
           risk_tolerance: string | null
+          successful_exits: number | null
+          total_deals: number | null
           updated_at: string | null
           user_id: string
+          verified: boolean | null
+          visibility: string | null
         }
         Insert: {
+          aum_range?: string | null
+          badges?: Json | null
+          bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           investment_strategy?: string | null
           location_preferences?: Json | null
           max_budget?: number | null
           min_bedrooms?: number | null
+          min_yield_target?: number | null
+          preferred_regions?: Json | null
           preferred_yield_max?: number | null
           preferred_yield_min?: number | null
           property_types?: Json | null
           refurb_comfort?: string | null
+          reputation_score?: number | null
           risk_tolerance?: string | null
+          successful_exits?: number | null
+          total_deals?: number | null
           updated_at?: string | null
           user_id: string
+          verified?: boolean | null
+          visibility?: string | null
         }
         Update: {
+          aum_range?: string | null
+          badges?: Json | null
+          bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           investment_strategy?: string | null
           location_preferences?: Json | null
           max_budget?: number | null
           min_bedrooms?: number | null
+          min_yield_target?: number | null
+          preferred_regions?: Json | null
           preferred_yield_max?: number | null
           preferred_yield_min?: number | null
           property_types?: Json | null
           refurb_comfort?: string | null
+          reputation_score?: number | null
           risk_tolerance?: string | null
+          successful_exits?: number | null
+          total_deals?: number | null
           updated_at?: string | null
           user_id?: string
+          verified?: boolean | null
+          visibility?: string | null
         }
         Relationships: []
       }

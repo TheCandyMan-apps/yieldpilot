@@ -10,10 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface InvestorProfile {
   id: string;
+  user_id: string;
   display_name: string | null;
   bio: string | null;
   aum_range: string | null;
-  investment_strategy: any;
+  investment_strategy: string | null;
   preferred_regions: any;
   min_yield_target: number | null;
   verified: boolean | null;
@@ -21,6 +22,9 @@ interface InvestorProfile {
   badges: any;
   total_deals: number | null;
   successful_exits: number | null;
+  visibility: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function InvestorNetwork() {
