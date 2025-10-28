@@ -6,11 +6,18 @@ import { UnifiedSyncButton } from "@/components/deals/UnifiedSyncButton";
 import { AssumptionsDrawer } from "@/components/deals/AssumptionsDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Filter, Bookmark, Eye, Handshake } from "lucide-react";
+import { Loader2, Filter, Bookmark, Eye, Handshake, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ExportButton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ListingMetric {
   listing_id: string;
@@ -44,6 +51,8 @@ const DealsV2 = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [minYield, setMinYield] = useState<number>();
   const [maxPrice, setMaxPrice] = useState<number>();
+  const [minScore, setMinScore] = useState<number>();
+  const [sortBy, setSortBy] = useState<"score" | "price" | "yield">("score");
   const [pipelineFilter, setPipelineFilter] = useState<string | null>(null);
   const [heroLayer, setHeroLayer] = useState(true); // Feature flag
   const { toast } = useToast();
@@ -66,7 +75,7 @@ const DealsV2 = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [listings, searchTerm, minYield, maxPrice, pipelineFilter]);
+  }, [listings, searchTerm, minYield, maxPrice, minScore, sortBy, pipelineFilter]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -177,6 +186,13 @@ const DealsV2 = () => {
       });
     }
 
+    if (minScore) {
+      filtered = filtered.filter((l) => {
+        const score = l.listing_metrics?.[0]?.score || 0;
+        return score >= minScore;
+      });
+    }
+
     // Pipeline filter
     if (pipelineFilter) {
       filtered = filtered.filter((l) => {
@@ -184,6 +200,22 @@ const DealsV2 = () => {
         return status === pipelineFilter;
       });
     }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortBy === "score") {
+        const scoreA = a.listing_metrics?.[0]?.score || 0;
+        const scoreB = b.listing_metrics?.[0]?.score || 0;
+        return scoreB - scoreA; // Descending
+      } else if (sortBy === "price") {
+        return a.price - b.price; // Ascending
+      } else if (sortBy === "yield") {
+        const yieldA = a.listing_metrics?.[0]?.kpis?.gross_yield_pct || 0;
+        const yieldB = b.listing_metrics?.[0]?.kpis?.gross_yield_pct || 0;
+        return yieldB - yieldA; // Descending
+      }
+      return 0;
+    });
 
     setFilteredListings(filtered);
   };
@@ -231,12 +263,34 @@ const DealsV2 = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="score">
+                  <span className="flex items-center gap-2">
+                    <ArrowUpDown className="h-3 w-3" />
+                    Best Score
+                  </span>
+                </SelectItem>
+                <SelectItem value="yield">Highest Yield</SelectItem>
+                <SelectItem value="price">Lowest Price</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              placeholder="Min Score"
+              value={minScore || ""}
+              onChange={(e) => setMinScore(e.target.value ? parseFloat(e.target.value) : undefined)}
+              className="w-full sm:w-28"
+            />
             <Input
               type="number"
               placeholder="Min Yield %"
               value={minYield || ""}
               onChange={(e) => setMinYield(e.target.value ? parseFloat(e.target.value) : undefined)}
-              className="w-full sm:w-32"
+              className="w-full sm:w-28"
             />
             <Input
               type="number"
@@ -245,9 +299,6 @@ const DealsV2 = () => {
               onChange={(e) => setMaxPrice(e.target.value ? parseInt(e.target.value) : undefined)}
               className="w-full sm:w-32"
             />
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Pipeline Tags Filter */}
