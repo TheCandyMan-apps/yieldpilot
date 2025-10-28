@@ -57,6 +57,9 @@ verify_jwt = false
 [functions.update-mortgage-rates]
 verify_jwt = false
 
+[functions.health]
+verify_jwt = false
+
 [functions.api-v2-deals]
 verify_jwt = false
 

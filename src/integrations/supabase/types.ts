@@ -169,6 +169,36 @@ export type Database = {
         }
         Relationships: []
       }
+      app_logs: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          request_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+          request_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          request_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       area_analytics: {
         Row: {
           avg_price_current: number | null
@@ -609,6 +639,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_events: {
+        Row: {
+          created_at: string
+          dataset_id: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          input_url: string
+          items_count: number | null
+          metadata: Json | null
+          provider: string
+          request_id: string | null
+          run_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dataset_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          input_url: string
+          items_count?: number | null
+          metadata?: Json | null
+          provider: string
+          request_id?: string | null
+          run_id?: string | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dataset_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          input_url?: string
+          items_count?: number | null
+          metadata?: Json | null
+          provider?: string
+          request_id?: string | null
+          run_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ingest_jobs: {
         Row: {
           created_at: string
@@ -831,6 +909,8 @@ export type Database = {
           address_town: string | null
           bathrooms: number | null
           bedrooms: number | null
+          city: string | null
+          country_code: string | null
           created_at: string | null
           currency: string | null
           id: string
@@ -855,6 +935,8 @@ export type Database = {
           address_town?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          city?: string | null
+          country_code?: string | null
           created_at?: string | null
           currency?: string | null
           id?: string
@@ -879,6 +961,8 @@ export type Database = {
           address_town?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          city?: string | null
+          country_code?: string | null
           created_at?: string | null
           currency?: string | null
           id?: string

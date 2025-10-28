@@ -3,8 +3,10 @@ import { zooplaAdapter } from './adapters/zoopla-uk';
 import { rightmoveAdapter } from './adapters/rightmove-uk';
 import { realtorAdapter } from './adapters/realtor-us';
 import { zillowAdapter } from './adapters/zillow-us';
+import { redfinAdapter } from './adapters/redfin-us';
 import { immobilienScoutAdapter } from './adapters/immobilien-de';
 import { selogerAdapter } from './adapters/seloger-fr';
+import { idealistaAdapter } from './adapters/idealista-es';
 
 // Global Source Registry
 const adapters: SourceAdapter[] = [
@@ -12,8 +14,10 @@ const adapters: SourceAdapter[] = [
   rightmoveAdapter,
   realtorAdapter,
   zillowAdapter,
+  redfinAdapter,
   immobilienScoutAdapter,
   selogerAdapter,
+  idealistaAdapter,
 ];
 
 export function getAdapterForUrl(url: string): SourceAdapter | null {
