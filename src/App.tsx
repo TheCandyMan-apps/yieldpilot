@@ -32,10 +32,12 @@ const ApifyDebug = lazy(() => import("./pages/ApifyDebug"));
 const AdminJobs = lazy(() => import("./pages/AdminJobs"));
 const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const Organizations = lazy(() => import("./pages/Organizations"));
+const ApiKeys = lazy(() => import("./pages/ApiKeys"));
 const Benchmarks = lazy(() => import("./pages/Benchmarks"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const InvestorNetwork = lazy(() => import("./pages/InvestorNetwork"));
 const OffMarket = lazy(() => import("./pages/OffMarket"));
+const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 
 const queryClient = new QueryClient();
 
@@ -95,6 +97,8 @@ const App = () => (
             <Route path="/admin/jobs" element={<AdminJobs />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
             <Route path="/organizations" element={<Organizations />} />
+            <Route path="/api-keys" element={<ApiKeys />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

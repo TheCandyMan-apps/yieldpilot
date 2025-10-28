@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, BellOff, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
+import { SearchBuilder } from "@/components/searches/SearchBuilder";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface SavedSearch {
   id: string;
@@ -154,10 +156,22 @@ export default function SavedSearches() {
               Manage your saved searches and alerts
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Search
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Search
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create New Search</DialogTitle>
+              </DialogHeader>
+              <SearchBuilder onSave={() => {
+                loadSearches();
+              }} />
+            </DialogContent>
+          </Dialog>
         </div>
 
         {searches.length === 0 ? (
