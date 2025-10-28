@@ -3,6 +3,9 @@ project_id = "rgckrmuuathxrpohacds"
 [functions.analyze-deal]
 verify_jwt = false
 
+[functions.calculate-deal]
+verify_jwt = false
+
 [functions.check-saved-searches]
 verify_jwt = false
 
