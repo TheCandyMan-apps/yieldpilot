@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Search, FolderOpen, User } from 'lucide-react';
+import { Home, Search, Users, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function MobileNav() {
   const navItems = [
     { to: '/', icon: Home, label: 'Home' },
     { to: '/deals-v2', icon: Search, label: 'Deals' },
-    { to: '/portfolio', icon: FolderOpen, label: 'Portfolio' },
-    { to: '/dashboard', icon: User, label: 'Account' },
+    { to: '/network', icon: Users, label: 'Network' },
+    { to: '/leaderboard', icon: Trophy, label: 'Leaders' },
   ];
 
   return (

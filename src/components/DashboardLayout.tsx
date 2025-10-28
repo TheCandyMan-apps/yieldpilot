@@ -14,7 +14,9 @@ import {
   User,
   Bell,
   MapPin,
-  Brain
+  Brain,
+  Trophy,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,11 +36,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Deal Feed", href: "/deals", icon: TrendingUp },
     { name: "Area Heatmap", href: "/area-insights", icon: MapPin },
+    { name: "Benchmarks", href: "/benchmarks", icon: Target },
     { name: "Portfolio", href: "/portfolio", icon: Briefcase },
     { name: "Simulator", href: "/simulator", icon: Calculator },
     { name: "Insights", href: "/insights", icon: BarChart3 },
     { name: "Alerts", href: "/alerts", icon: Bell },
     { name: "Your Profile", href: "/investor-profile", icon: Brain },
+    { name: "Investor Network", href: "/network", icon: Users },
+    { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { name: "Community", href: "/community", icon: Users },
     { name: "Billing", href: "/billing", icon: CreditCard },
   ];

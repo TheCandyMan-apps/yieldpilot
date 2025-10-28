@@ -23,11 +23,17 @@ const Header = () => {
           <a href="#features" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
             Features
           </a>
+          <Link to="/benchmarks" className="text-sm font-medium hover:text-primary transition-colors">
+            Benchmarks
+          </Link>
+          <Link to="/network" className="text-sm font-medium hover:text-primary transition-colors">
+            Network
+          </Link>
+          <Link to="/leaderboard" className="text-sm font-medium hover:text-primary transition-colors">
+            Leaderboard
+          </Link>
           <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
             Pricing
-          </a>
-          <a href="#about" className="text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
-            About
           </a>
         </div>
 
