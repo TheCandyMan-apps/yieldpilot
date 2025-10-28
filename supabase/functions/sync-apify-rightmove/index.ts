@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       : `https://www.rightmove.co.uk/property-for-sale/find.html?searchLocation=${encodeURIComponent(location)}`;
     console.log('Rightmove URL:', rightmoveUrl);
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=rightmove&location=${encodeURIComponent(location)}&userId=${userId || ''}`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=rightmove&location=${encodeURIComponent(location)}&userId=${userId || ''}&apikey=${encodeURIComponent(supabaseKey)}`;
     console.log('Webhook URL:', webhookUrl);
 
     // Construct webhook configuration

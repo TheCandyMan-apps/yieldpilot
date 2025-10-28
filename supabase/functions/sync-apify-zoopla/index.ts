@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     
     console.log('Zoopla listUrl:', zooplaUrl);
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=zoopla&location=${encodeURIComponent(location)}&userId=${userId || ''}`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?source=zoopla&location=${encodeURIComponent(location)}&userId=${userId || ''}&apikey=${encodeURIComponent(supabaseKey)}`;
     console.log('Webhook URL:', webhookUrl);
 
     // Construct webhook configuration

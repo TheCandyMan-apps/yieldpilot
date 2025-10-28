@@ -106,7 +106,8 @@ async function startApifyRun(
   const actorId = config.actorId;
   const formattedActorId = actorId.replace('/', '~');
   
-  const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook`;
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const webhookUrl = `${supabaseUrl}/functions/v1/apify-webhook?apikey=${encodeURIComponent(supabaseAnonKey)}`;
   const webhooks = [{
     eventTypes: ["ACTOR.RUN.SUCCEEDED"],
     requestUrl: webhookUrl,
