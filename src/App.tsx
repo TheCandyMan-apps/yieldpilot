@@ -7,6 +7,7 @@ import { lazy, Suspense } from "react";
 import * as Sentry from "@sentry/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { MobileNav } from "@/components/MobileNav";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +23,8 @@ const AreaInsights = lazy(() => import("./pages/AreaInsights"));
 const InvestorProfile = lazy(() => import("./pages/InvestorProfile"));
 const Alerts = lazy(() => import("./pages/Alerts"));
 const PortfolioNew = lazy(() => import("./pages/PortfolioNew"));
+const PortfolioDetail = lazy(() => import("./pages/PortfolioDetail"));
+const DealDetail = lazy(() => import("./pages/DealDetail"));
 const Community = lazy(() => import("./pages/Community"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Install = lazy(() => import("./pages/Install"));
@@ -61,6 +64,7 @@ const App = () => (
         <PWAUpdatePrompt />
         <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>}>
+            <MobileNav />
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -74,6 +78,8 @@ const App = () => (
             <Route path="/investor-profile" element={<InvestorProfile />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/portfolio" element={<PortfolioNew />} />
+            <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+            <Route path="/deal/:id" element={<DealDetail />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/install" element={<Install />} />

@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.worker-ingest]
 verify_jwt = false
+
+[functions.copilot]
+verify_jwt = true
+
+[functions.scenario-runner]
+verify_jwt = true

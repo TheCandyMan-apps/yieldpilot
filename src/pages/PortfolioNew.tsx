@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, TrendingUp, TrendingDown, DollarSign, Home, Users, BarChart3, Eye } from "lucide-react";
+import { Plus, Home } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PortfolioCard } from "@/components/portfolio/PortfolioCard";
+import { calculatePortfolioSummary } from "@/lib/portfolioCalculations";
 
 interface Portfolio {
   id: string;
@@ -21,20 +22,15 @@ interface Portfolio {
   created_at: string;
 }
 
-interface PortfolioPerformance {
-  date: string;
-  total_value: number;
-  monthly_income?: number;
-  monthly_expenses?: number;
-  health_score?: number;
+interface PortfolioWithSummary {
+  portfolio: Portfolio;
+  summary: any;
 }
 
 const PortfolioNew = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
-  const [performance, setPerformance] = useState<PortfolioPerformance[]>([]);
+  const [portfolios, setPortfolios] = useState<PortfolioWithSummary[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newPortfolio, setNewPortfolio] = useState({
     name: "",
@@ -63,32 +59,41 @@ const PortfolioNew = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPortfolios(data || []);
-      
-      if (data && data.length > 0) {
-        setSelectedPortfolio(data[0]);
-        fetchPerformance(data[0].id);
-      }
+
+      // Fetch deals for each portfolio to calculate summaries
+      const portfoliosWithSummaries = await Promise.all(
+        (data || []).map(async (portfolio) => {
+          const { data: itemsData } = await supabase
+            .from("portfolio_items")
+            .select(`
+              listing_id,
+              listings (
+                id,
+                property_address,
+                price,
+                listing_metrics (
+                  kpis,
+                  assumptions
+                )
+              )
+            `)
+            .eq("portfolio_id", portfolio.id);
+
+          const deals = itemsData?.map(item => ({
+            ...item.listings,
+            listing_metrics: item.listings.listing_metrics?.[0],
+          })) || [];
+
+          const summary = calculatePortfolioSummary(deals);
+          return { portfolio, summary };
+        })
+      );
+
+      setPortfolios(portfoliosWithSummaries);
     } catch (error: any) {
       toast.error("Error loading portfolios: " + error.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchPerformance = async (portfolioId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("portfolio_performance")
-        .select("*")
-        .eq("portfolio_id", portfolioId)
-        .order("date", { ascending: false })
-        .limit(30);
-
-      if (error) throw error;
-      setPerformance(data || []);
-    } catch (error: any) {
-      console.error("Error loading performance:", error);
     }
   };
 
@@ -118,28 +123,6 @@ const PortfolioNew = () => {
     }
   };
 
-  const calculateHealthScore = () => {
-    if (!performance || performance.length === 0) return null;
-    const latest = performance[0];
-    return latest.health_score || 75; // Default score if not calculated
-  };
-
-  const calculateTrend = () => {
-    if (performance.length < 2) return 0;
-    const latest = performance[0].total_value;
-    const previous = performance[1].total_value;
-    return ((latest - previous) / previous) * 100;
-  };
-
-  const formatCurrency = (value?: number) => {
-    if (!value) return "£0";
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: "GBP",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -150,12 +133,9 @@ const PortfolioNew = () => {
     );
   }
 
-  const healthScore = calculateHealthScore();
-  const trend = calculateTrend();
-
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-20 md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -223,153 +203,11 @@ const PortfolioNew = () => {
             </CardContent>
           </Card>
         ) : (
-          <>
-            {/* Portfolio Selector */}
-            {portfolios.length > 1 && (
-              <Tabs
-                value={selectedPortfolio?.id}
-                onValueChange={(id) => {
-                  const portfolio = portfolios.find((p) => p.id === id);
-                  if (portfolio) {
-                    setSelectedPortfolio(portfolio);
-                    fetchPerformance(portfolio.id);
-                  }
-                }}
-              >
-                <TabsList>
-                  {portfolios.map((portfolio) => (
-                    <TabsTrigger key={portfolio.id} value={portfolio.id}>
-                      {portfolio.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            )}
-
-            {/* Portfolio Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(selectedPortfolio?.total_value)}
-                  </div>
-                  {trend !== 0 && (
-                    <p className={`text-xs flex items-center mt-1 ${trend > 0 ? "text-green-600" : "text-red-600"}`}>
-                      {trend > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                      {Math.abs(trend).toFixed(2)}% vs last period
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">ROI</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    {selectedPortfolio?.total_roi?.toFixed(2) || "0.00"}%
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Return on investment
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Health Score</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {healthScore ? `${healthScore}/100` : "N/A"}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Portfolio health
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Properties</CardTitle>
-                  <Home className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total properties
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Performance Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Over Time</CardTitle>
-                <CardDescription>Track your portfolio value and income</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {performance.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No performance data yet</p>
-                    <p className="text-sm mt-2">Add properties to your portfolio to see trends</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {performance.slice(0, 5).map((perf) => (
-                      <div key={perf.date} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div>
-                          <p className="font-medium">{new Date(perf.date).toLocaleDateString()}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {perf.health_score && `Health: ${perf.health_score}/100`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{formatCurrency(perf.total_value)}</p>
-                          {perf.monthly_income && (
-                            <p className="text-sm text-green-600">+{formatCurrency(perf.monthly_income)}/mo</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Team Members Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      <Users className="h-5 w-5 mr-2" />
-                      Team Members
-                    </CardTitle>
-                    <CardDescription>Collaborate with your team</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invite
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-sm">
-                  Team collaboration features available on Pro plan and above
-                </p>
-              </CardContent>
-            </Card>
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {portfolios.map(({ portfolio, summary }) => (
+              <PortfolioCard key={portfolio.id} portfolio={portfolio} summary={summary} />
+            ))}
+          </div>
         )}
       </div>
     </DashboardLayout>
