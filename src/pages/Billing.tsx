@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { UsageProgress } from "@/components/UsageProgress";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
+import { SubscriptionTier } from "@/lib/subscriptionHelpers";
 
 const SUBSCRIPTION_TIERS = {
   pro: {
@@ -177,48 +180,65 @@ const Billing = () => {
           </p>
         </div>
 
-        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold">
-                  Current Plan: {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}
-                </p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-blue-200 dark:border-blue-800">
+            <CardContent className="py-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
+                    <div className="flex items-center gap-2">
+                      <SubscriptionBadge tier={subscriptionTier as SubscriptionTier} />
+                    </div>
+                  </div>
+                  {subscriptionTier !== "free" ? (
+                    <Button 
+                      onClick={handleManageSubscription} 
+                      disabled={loading || checkingStatus}
+                      variant="outline"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Manage"
+                      )}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => handleUpgrade(SUBSCRIPTION_TIERS.pro.priceId)} disabled={loading}>
+                      Upgrade
+                    </Button>
+                  )}
+                </div>
                 {subscriptionEnd && (
                   <p className="text-sm text-muted-foreground">
                     Renews on {new Date(subscriptionEnd).toLocaleDateString()}
                   </p>
                 )}
-                {usageStats && (
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>
-                      Property imports: {usageStats.ingests_used} / {subscriptionTier === "free" ? "5" : subscriptionTier === "pro" ? "50" : "Unlimited"} this month
-                    </p>
-                    <p>
-                      Exports: {usageStats.exports_used} / {subscriptionTier === "free" ? "2" : subscriptionTier === "pro" ? "20" : "Unlimited"} this month
-                    </p>
-                  </div>
-                )}
               </div>
-              {subscriptionTier !== "free" ? (
-                <Button 
-                  onClick={handleManageSubscription} 
-                  disabled={loading || checkingStatus}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Manage Subscription"
-                  )}
-                </Button>
-              ) : (
-                <Button onClick={() => handleUpgrade(SUBSCRIPTION_TIERS.pro.priceId)} disabled={loading}>
-                  Upgrade Now
-                </Button>
-              )}
+            </CardContent>
+          </Card>
+
+          {usageStats && (
+            <UsageProgress
+              ingestsUsed={usageStats.ingests_used}
+              ingestsLimit={
+                subscriptionTier === "free" ? 5 :
+                subscriptionTier === "starter" ? 50 :
+                subscriptionTier === "pro" ? 500 : -1
+              }
+              exportsUsed={usageStats.exports_used}
+              exportsLimit={
+                subscriptionTier === "free" ? 2 :
+                subscriptionTier === "starter" ? 20 :
+                subscriptionTier === "pro" ? 200 : -1
+              }
+            />
+          )}
+        </div>
+
+        <Card className="bg-muted/50">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
             </div>
           </CardContent>
         </Card>
