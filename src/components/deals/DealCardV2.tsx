@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, MapPin, Bed, Bath, Home, TrendingUp, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ScoreBadge } from "./ScoreBadge";
 import { SmartComps } from "./SmartComps";
@@ -45,6 +46,7 @@ export const DealCardV2 = ({
   allListings = [],
   heroLayer = false
 }: DealCardV2Props) => {
+  const navigate = useNavigate();
   const [trackingView, setTrackingView] = useState(false);
   const [compsOpen, setCompsOpen] = useState(false);
 
@@ -254,7 +256,10 @@ export const DealCardV2 = ({
             variant="outline" 
             className="flex-1" 
             size="sm"
-            onClick={handleViewDeal}
+            onClick={() => {
+              handleViewDeal();
+              navigate(`/deal/${listing.id}`);
+            }}
           >
             View Analysis
           </Button>

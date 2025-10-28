@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,11 @@ const DealDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <Helmet>
+        <title>{listing.property_address} - Deal Analysis | YieldPilot</title>
+        <meta name="description" content={`Comprehensive UK property investment analysis for ${listing.property_address}. AI-powered insights, compliance checks, CapEx planning, and financial projections.`} />
+      </Helmet>
+      <div className="space-y-6 pb-20 md:pb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/deals-v2")}>
             <ArrowLeft className="h-5 w-5" />

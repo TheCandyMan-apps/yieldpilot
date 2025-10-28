@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,11 @@ const PortfolioDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <Helmet>
+        <title>{portfolio.name} - Portfolio Analytics | YieldPilot</title>
+        <meta name="description" content={`Portfolio analytics and scenario modeling for ${portfolio.name}. Track performance, run what-if scenarios, and optimize your UK property investment returns.`} />
+      </Helmet>
+      <div className="space-y-6 pb-20 md:pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/portfolio")}>
