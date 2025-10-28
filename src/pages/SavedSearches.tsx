@@ -15,6 +15,7 @@ interface SavedSearch {
   is_active: boolean;
   last_run_at: string | null;
   created_at: string;
+  match_count?: number;
 }
 
 export default function SavedSearches() {
@@ -28,13 +29,47 @@ export default function SavedSearches() {
 
   async function loadSearches() {
     try {
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get saved searches
+      const { data: searchesData, error: searchError } = await supabase
         .from("saved_searches")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false});
 
-      if (error) throw error;
-      setSearches(data || []);
+      if (searchError) throw searchError;
+
+      // Get match counts for each search
+      const searchesWithCounts = await Promise.all(
+        (searchesData || []).map(async (search) => {
+          // Find corresponding alert
+          const { data: alert } = await supabase
+            .from("alerts")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("name", search.name)
+            .maybeSingle();
+
+          if (alert) {
+            // Count unread matches
+            const { count } = await supabase
+              .from("alert_matches")
+              .select("*", { count: "exact", head: true })
+              .eq("alert_id", alert.id)
+              .eq("is_read", false);
+
+            return {
+              ...search,
+              match_count: count || 0,
+            };
+          }
+
+          return { ...search, match_count: 0 };
+        })
+      );
+
+      setSearches(searchesWithCounts);
     } catch (error: any) {
       toast({
         title: "Error loading searches",
@@ -141,7 +176,14 @@ export default function SavedSearches() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <CardTitle className="text-xl">{search.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-xl">{search.name}</CardTitle>
+                        {search.match_count! > 0 && (
+                          <Badge variant="default">
+                            {search.match_count} new
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={search.is_active ? "default" : "secondary"}>
                           {search.is_active ? "Active" : "Paused"}
