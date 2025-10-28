@@ -190,6 +190,115 @@ export type Database = {
         }
         Relationships: []
       }
+      capex_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          lines: Json
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lines?: Json
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lines?: Json
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_checks: {
+        Row: {
+          action_required: string | null
+          check_type: string
+          checked_at: string | null
+          id: string
+          listing_id: string
+          message: string | null
+          metadata: Json | null
+          severity: string | null
+          status: string
+        }
+        Insert: {
+          action_required?: string | null
+          check_type: string
+          checked_at?: string | null
+          id?: string
+          listing_id: string
+          message?: string | null
+          metadata?: Json | null
+          severity?: string | null
+          status: string
+        }
+        Update: {
+          action_required?: string | null
+          check_type?: string
+          checked_at?: string | null
+          id?: string
+          listing_id?: string
+          message?: string | null
+          metadata?: Json | null
+          severity?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_checks_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_conversations: {
+        Row: {
+          context_hash: string | null
+          created_at: string | null
+          id: string
+          listing_id: string | null
+          messages: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          context_hash?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          messages?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          context_hash?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          messages?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_interactions: {
         Row: {
           created_at: string | null
@@ -591,6 +700,9 @@ export type Database = {
       listing_metrics: {
         Row: {
           assumptions: Json | null
+          capex_annual_reserve: number | null
+          capex_breakdown: Json | null
+          capex_total: number | null
           created_at: string | null
           drivers: string[] | null
           enrichment: Json | null
@@ -605,6 +717,9 @@ export type Database = {
         }
         Insert: {
           assumptions?: Json | null
+          capex_annual_reserve?: number | null
+          capex_breakdown?: Json | null
+          capex_total?: number | null
           created_at?: string | null
           drivers?: string[] | null
           enrichment?: Json | null
@@ -619,6 +734,9 @@ export type Database = {
         }
         Update: {
           assumptions?: Json | null
+          capex_annual_reserve?: number | null
+          capex_breakdown?: Json | null
+          capex_total?: number | null
           created_at?: string | null
           drivers?: string[] | null
           enrichment?: Json | null
@@ -855,6 +973,42 @@ export type Database = {
           },
         ]
       }
+      portfolio_items: {
+        Row: {
+          added_at: string | null
+          id: string
+          listing_id: string
+          portfolio_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          id?: string
+          listing_id: string
+          portfolio_id: string
+        }
+        Update: {
+          added_at?: string | null
+          id?: string
+          listing_id?: string
+          portfolio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_items_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_performance: {
         Row: {
           created_at: string | null
@@ -944,6 +1098,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          org_id: string | null
           total_roi: number | null
           total_value: number | null
           updated_at: string | null
@@ -954,6 +1109,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          org_id?: string | null
           total_roi?: number | null
           total_value?: number | null
           updated_at?: string | null
@@ -964,12 +1120,21 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          org_id?: string | null
           total_roi?: number | null
           total_value?: number | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1212,6 +1377,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      scenario_runs: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          parameters: Json
+          portfolio_id: string
+          results: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          parameters: Json
+          portfolio_id: string
+          results: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          parameters?: Json
+          portfolio_id?: string
+          results?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_runs_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
