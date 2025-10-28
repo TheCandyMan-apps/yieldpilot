@@ -12,6 +12,8 @@ import { ArrowLeft, MapPin, Bed, Bath, Home, TrendingUp, DollarSign } from "luci
 import { CopilotPanel } from "@/components/copilot/CopilotPanel";
 import { CapexBuilder } from "@/components/capex/CapexBuilder";
 import { ComplianceTab } from "@/components/compliance/ComplianceTab";
+import { ForecastPanel } from "@/components/deals/ForecastPanel";
+import { DocumentUpload } from "@/components/deals/DocumentUpload";
 import { formatCurrency, formatPercentage } from "@/lib/portfolioCalculations";
 
 const DealDetail = () => {
@@ -229,7 +231,9 @@ const DealDetail = () => {
             <Tabs defaultValue="overview">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="forecast">Forecast</TabsTrigger>
                 <TabsTrigger value="capex">CapEx</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="compliance">Compliance</TabsTrigger>
               </TabsList>
 
@@ -293,6 +297,10 @@ const DealDetail = () => {
                 )}
               </TabsContent>
 
+              <TabsContent value="forecast">
+                <ForecastPanel listingId={listing.id} />
+              </TabsContent>
+
               <TabsContent value="capex">
                 <CapexBuilder
                   currentKPIs={metrics?.kpis}
@@ -300,6 +308,10 @@ const DealDetail = () => {
                   propertyPrice={listing.price}
                   onApplyCapex={handleApplyCapex}
                 />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <DocumentUpload listingId={listing.id} />
               </TabsContent>
 
               <TabsContent value="compliance">

@@ -32,6 +32,7 @@ const ApifyDebug = lazy(() => import("./pages/ApifyDebug"));
 const AdminJobs = lazy(() => import("./pages/AdminJobs"));
 const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const Organizations = lazy(() => import("./pages/Organizations"));
+const Benchmarks = lazy(() => import("./pages/Benchmarks"));
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/portfolio" element={<PortfolioNew />} />
             <Route path="/portfolio/:id" element={<PortfolioDetail />} />
             <Route path="/deal/:id" element={<DealDetail />} />
+            <Route path="/benchmarks" element={<Benchmarks />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/install" element={<Install />} />
