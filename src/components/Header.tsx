@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Menu } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { RegionSelector } from "@/components/RegionSelector";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,6 +33,7 @@ const Header = () => {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-4">
+          <RegionSelector />
           <Link to="/auth">
             <Button variant="ghost">Sign In</Button>
           </Link>

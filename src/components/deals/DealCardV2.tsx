@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScoreBadge } from "./ScoreBadge";
 import { SmartComps } from "./SmartComps";
 import { AreaRadar } from "./AreaRadar";
+import { MultiCurrencyPrice } from "./MultiCurrencyPrice";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
@@ -158,7 +159,11 @@ export const DealCardV2 = ({
         {/* Price & Rent */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-lg font-bold">{formatCurrency(listing.price)}</p>
+            <MultiCurrencyPrice 
+              amount={listing.price}
+              sourceCurrency="GBP"
+              className="text-lg font-bold"
+            />
             {rentEstimate && (
               <p className="text-xs text-muted-foreground">
                 £{rentEstimate.toLocaleString()}/mo rent

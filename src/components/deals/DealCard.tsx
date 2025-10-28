@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import DealSummaryGenerator from "./DealSummaryGenerator";
+import { MultiCurrencyPrice } from "./MultiCurrencyPrice";
 
 interface DealCardProps {
   deal: {
@@ -153,7 +154,11 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
         </div>
 
         <div className="flex items-center justify-between mb-3">
-          <span className="text-2xl font-bold">{formatCurrency(deal.price)}</span>
+          <MultiCurrencyPrice 
+            amount={deal.price} 
+            sourceCurrency="GBP" 
+            className="text-2xl font-bold"
+          />
           {deal.estimated_rent && (
             <span className="text-sm text-muted-foreground">
               £{deal.estimated_rent}/mo rent
