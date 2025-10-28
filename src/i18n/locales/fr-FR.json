@@ -1,0 +1,67 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "settings": "Paramètres"
+  },
+  "regions": {
+    "UK": "Royaume-Uni",
+    "US": "États-Unis",
+    "DE": "Allemagne",
+    "FR": "France",
+    "ES": "Espagne"
+  },
+  "currency": {
+    "GBP": "Livre sterling",
+    "USD": "Dollar américain",
+    "EUR": "Euro"
+  },
+  "deals": {
+    "title": "Offres",
+    "smartFeed": "Fil d'offres intelligent",
+    "viewAnalysis": "Voir l'analyse",
+    "addToPortfolio": "Ajouter au portfolio",
+    "watchlist": "Liste de surveillance",
+    "filters": "Filtres",
+    "sortBy": "Trier par",
+    "region": "Région",
+    "priceRange": "Fourchette de prix",
+    "yieldRange": "Fourchette de rendement",
+    "propertyType": "Type de propriété"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "analytics": "Analytique",
+    "properties": "Propriétés",
+    "performance": "Performance",
+    "totalValue": "Valeur totale",
+    "monthlyIncome": "Revenu mensuel",
+    "netYield": "Rendement net",
+    "healthScore": "Score de santé"
+  },
+  "compliance": {
+    "title": "Conformité",
+    "status": "Statut",
+    "checks": "Vérifications",
+    "passed": "Réussi",
+    "failed": "Échoué",
+    "warning": "Avertissement"
+  },
+  "copilot": {
+    "title": "Copilote IA",
+    "askQuestion": "Posez une question...",
+    "analyzing": "Analyse...",
+    "suggestions": "Suggestions"
+  }
+}

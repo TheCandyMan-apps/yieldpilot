@@ -1,0 +1,67 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "search": "Suchen",
+    "filter": "Filter",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "settings": "Einstellungen"
+  },
+  "regions": {
+    "UK": "Vereinigtes Königreich",
+    "US": "Vereinigte Staaten",
+    "DE": "Deutschland",
+    "FR": "Frankreich",
+    "ES": "Spanien"
+  },
+  "currency": {
+    "GBP": "Britisches Pfund",
+    "USD": "US-Dollar",
+    "EUR": "Euro"
+  },
+  "deals": {
+    "title": "Angebote",
+    "smartFeed": "Smart Deal Feed",
+    "viewAnalysis": "Analyse anzeigen",
+    "addToPortfolio": "Zum Portfolio hinzufügen",
+    "watchlist": "Beobachtungsliste",
+    "filters": "Filter",
+    "sortBy": "Sortieren nach",
+    "region": "Region",
+    "priceRange": "Preisspanne",
+    "yieldRange": "Renditebereich",
+    "propertyType": "Immobilientyp"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "analytics": "Analytik",
+    "properties": "Immobilien",
+    "performance": "Leistung",
+    "totalValue": "Gesamtwert",
+    "monthlyIncome": "Monatliches Einkommen",
+    "netYield": "Nettorendite",
+    "healthScore": "Gesundheitswert"
+  },
+  "compliance": {
+    "title": "Compliance",
+    "status": "Status",
+    "checks": "Prüfungen",
+    "passed": "Bestanden",
+    "failed": "Fehlgeschlagen",
+    "warning": "Warnung"
+  },
+  "copilot": {
+    "title": "KI-Copilot",
+    "askQuestion": "Stellen Sie eine Frage...",
+    "analyzing": "Analysieren...",
+    "suggestions": "Vorschläge"
+  }
+}

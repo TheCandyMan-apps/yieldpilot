@@ -133,6 +133,42 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          key: string
+          last_used_at: string | null
+          name: string | null
+          rate_limit: number | null
+          scopes: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key: string
+          last_used_at?: string | null
+          name?: string | null
+          rate_limit?: number | null
+          scopes?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key?: string
+          last_used_at?: string | null
+          name?: string | null
+          rate_limit?: number | null
+          scopes?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       area_analytics: {
         Row: {
           avg_price_current: number | null
@@ -552,6 +588,27 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          base: string
+          fetched_at: string | null
+          rate: number
+          target: string
+        }
+        Insert: {
+          base: string
+          fetched_at?: string | null
+          rate: number
+          target: string
+        }
+        Update: {
+          base?: string
+          fetched_at?: string | null
+          rate?: number
+          target?: string
+        }
+        Relationships: []
+      }
       ingest_jobs: {
         Row: {
           created_at: string
@@ -707,9 +764,12 @@ export type Database = {
           drivers: string[] | null
           enrichment: Json | null
           factors: Json | null
+          fx_rate: number | null
+          gross_yield_pct: number | null
           id: string
           kpis: Json | null
           listing_id: string
+          net_yield_pct: number | null
           rank_score: number | null
           risks: string[] | null
           score: number | null
@@ -724,9 +784,12 @@ export type Database = {
           drivers?: string[] | null
           enrichment?: Json | null
           factors?: Json | null
+          fx_rate?: number | null
+          gross_yield_pct?: number | null
           id?: string
           kpis?: Json | null
           listing_id: string
+          net_yield_pct?: number | null
           rank_score?: number | null
           risks?: string[] | null
           score?: number | null
@@ -741,9 +804,12 @@ export type Database = {
           drivers?: string[] | null
           enrichment?: Json | null
           factors?: Json | null
+          fx_rate?: number | null
+          gross_yield_pct?: number | null
           id?: string
           kpis?: Json | null
           listing_id?: string
+          net_yield_pct?: number | null
           rank_score?: number | null
           risks?: string[] | null
           score?: number | null
@@ -761,44 +827,74 @@ export type Database = {
       }
       listings: {
         Row: {
+          address_line1: string | null
+          address_town: string | null
           bathrooms: number | null
           bedrooms: number | null
           created_at: string | null
+          currency: string | null
           id: string
           image_url: string | null
+          images: Json | null
+          is_active: boolean | null
           listing_url: string | null
+          location_lat: number | null
+          location_lng: number | null
+          postcode: string | null
           price: number
           property_address: string
           property_type: string | null
+          region: string | null
           source: string | null
+          source_refs: Json | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_town?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string | null
+          currency?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
           listing_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          postcode?: string | null
           price: number
           property_address: string
           property_type?: string | null
+          region?: string | null
           source?: string | null
+          source_refs?: Json | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_town?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string | null
+          currency?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
+          is_active?: boolean | null
           listing_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          postcode?: string | null
           price?: number
           property_address?: string
           property_type?: string | null
+          region?: string | null
           source?: string | null
+          source_refs?: Json | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -848,6 +944,48 @@ export type Database = {
           id?: string
           postcode_prefix?: string | null
           sample_size?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mortgage_rates: {
+        Row: {
+          created_at: string | null
+          fees: Json | null
+          id: string
+          interest_rate: number
+          is_active: boolean | null
+          lender: string | null
+          ltv_max: number | null
+          product_type: string | null
+          region: string
+          term_years: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          interest_rate: number
+          is_active?: boolean | null
+          lender?: string | null
+          ltv_max?: number | null
+          product_type?: string | null
+          region: string
+          term_years?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          interest_rate?: number
+          is_active?: boolean | null
+          lender?: string | null
+          ltv_max?: number | null
+          product_type?: string | null
+          region?: string
+          term_years?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1283,6 +1421,51 @@ export type Database = {
           key?: string
           updated_at?: string | null
           window_start?: string
+        }
+        Relationships: []
+      }
+      regional_parameters: {
+        Row: {
+          closing_costs_pct: number | null
+          created_at: string | null
+          currency: string
+          id: string
+          insurance_pct: number | null
+          locale: string | null
+          maintenance_pct: number | null
+          mortgage_interest_deductible: boolean | null
+          property_tax_pct: number | null
+          region: string
+          stamp_duty_rates: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          closing_costs_pct?: number | null
+          created_at?: string | null
+          currency: string
+          id?: string
+          insurance_pct?: number | null
+          locale?: string | null
+          maintenance_pct?: number | null
+          mortgage_interest_deductible?: boolean | null
+          property_tax_pct?: number | null
+          region: string
+          stamp_duty_rates?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          closing_costs_pct?: number | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          insurance_pct?: number | null
+          locale?: string | null
+          maintenance_pct?: number | null
+          mortgage_interest_deductible?: boolean | null
+          property_tax_pct?: number | null
+          region?: string
+          stamp_duty_rates?: Json | null
+          updated_at?: string | null
         }
         Relationships: []
       }

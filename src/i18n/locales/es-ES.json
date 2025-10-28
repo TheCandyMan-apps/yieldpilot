@@ -1,0 +1,67 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "settings": "Configuración"
+  },
+  "regions": {
+    "UK": "Reino Unido",
+    "US": "Estados Unidos",
+    "DE": "Alemania",
+    "FR": "Francia",
+    "ES": "España"
+  },
+  "currency": {
+    "GBP": "Libra esterlina",
+    "USD": "Dólar estadounidense",
+    "EUR": "Euro"
+  },
+  "deals": {
+    "title": "Ofertas",
+    "smartFeed": "Fuente de ofertas inteligente",
+    "viewAnalysis": "Ver análisis",
+    "addToPortfolio": "Añadir al portafolio",
+    "watchlist": "Lista de seguimiento",
+    "filters": "Filtros",
+    "sortBy": "Ordenar por",
+    "region": "Región",
+    "priceRange": "Rango de precios",
+    "yieldRange": "Rango de rendimiento",
+    "propertyType": "Tipo de propiedad"
+  },
+  "portfolio": {
+    "title": "Portafolio",
+    "analytics": "Analítica",
+    "properties": "Propiedades",
+    "performance": "Rendimiento",
+    "totalValue": "Valor total",
+    "monthlyIncome": "Ingreso mensual",
+    "netYield": "Rendimiento neto",
+    "healthScore": "Puntuación de salud"
+  },
+  "compliance": {
+    "title": "Cumplimiento",
+    "status": "Estado",
+    "checks": "Verificaciones",
+    "passed": "Aprobado",
+    "failed": "Fallido",
+    "warning": "Advertencia"
+  },
+  "copilot": {
+    "title": "Copiloto IA",
+    "askQuestion": "Haz una pregunta...",
+    "analyzing": "Analizando...",
+    "suggestions": "Sugerencias"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "settings": "Settings"
+  },
+  "regions": {
+    "UK": "United Kingdom",
+    "US": "United States",
+    "DE": "Germany",
+    "FR": "France",
+    "ES": "Spain"
+  },
+  "currency": {
+    "GBP": "British Pound",
+    "USD": "US Dollar",
+    "EUR": "Euro"
+  },
+  "deals": {
+    "title": "Deals",
+    "smartFeed": "Smart Deal Feed",
+    "viewAnalysis": "View Analysis",
+    "addToPortfolio": "Add to Portfolio",
+    "watchlist": "Watchlist",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "region": "Region",
+    "priceRange": "Price Range",
+    "yieldRange": "Yield Range",
+    "propertyType": "Property Type"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "analytics": "Analytics",
+    "properties": "Properties",
+    "performance": "Performance",
+    "totalValue": "Total Value",
+    "monthlyIncome": "Monthly Income",
+    "netYield": "Net Yield",
+    "healthScore": "Health Score"
+  },
+  "compliance": {
+    "title": "Compliance",
+    "status": "Status",
+    "checks": "Checks",
+    "passed": "Passed",
+    "failed": "Failed",
+    "warning": "Warning"
+  },
+  "copilot": {
+    "title": "AI Copilot",
+    "askQuestion": "Ask a question...",
+    "analyzing": "Analyzing...",
+    "suggestions": "Suggestions"
+  }
+}
