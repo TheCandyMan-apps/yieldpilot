@@ -34,6 +34,8 @@ const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const Organizations = lazy(() => import("./pages/Organizations"));
 const Benchmarks = lazy(() => import("./pages/Benchmarks"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const InvestorNetwork = lazy(() => import("./pages/InvestorNetwork"));
+const OffMarket = lazy(() => import("./pages/OffMarket"));
 
 const queryClient = new QueryClient();
 
@@ -84,6 +86,8 @@ const App = () => (
             <Route path="/deal/:id" element={<DealDetail />} />
             <Route path="/benchmarks" element={<Benchmarks />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/network" element={<InvestorNetwork />} />
+            <Route path="/offmarket" element={<OffMarket />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/install" element={<Install />} />

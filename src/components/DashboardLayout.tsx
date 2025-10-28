@@ -37,6 +37,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Deal Feed", href: "/deals", icon: TrendingUp },
     { name: "Area Heatmap", href: "/area-insights", icon: MapPin },
     { name: "Benchmarks", href: "/benchmarks", icon: Target },
+    { name: "Off-Market", href: "/offmarket", icon: TrendingUp },
     { name: "Portfolio", href: "/portfolio", icon: Briefcase },
     { name: "Simulator", href: "/simulator", icon: Calculator },
     { name: "Insights", href: "/insights", icon: BarChart3 },
