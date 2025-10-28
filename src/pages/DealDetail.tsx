@@ -14,7 +14,9 @@ import { CapexBuilder } from "@/components/capex/CapexBuilder";
 import { ComplianceTab } from "@/components/compliance/ComplianceTab";
 import { ForecastPanel } from "@/components/deals/ForecastPanel";
 import { DocumentUpload } from "@/components/deals/DocumentUpload";
+import { DealSyndicate } from "@/components/deals/DealSyndicate";
 import { formatCurrency, formatPercentage } from "@/lib/portfolioCalculations";
+import { trackActivity } from "@/lib/activity";
 
 const DealDetail = () => {
   const { id } = useParams();
@@ -25,6 +27,7 @@ const DealDetail = () => {
   useEffect(() => {
     if (id) {
       checkAuth();
+      trackActivity('deal_analyzed', { listing_id: id });
     }
   }, [id]);
 
@@ -165,11 +168,18 @@ const DealDetail = () => {
               )}
             </div>
           </div>
-          {metrics?.score && (
-            <Badge variant="secondary" className="text-lg py-2 px-4">
-              Score: {metrics.score}/100
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {metrics?.score && (
+              <Badge variant="secondary" className="text-lg py-2 px-4">
+                Score: {metrics.score}/100
+              </Badge>
+            )}
+            <DealSyndicate
+              dealId={listing.id}
+              dealAddress={listing.property_address}
+              dealPrice={listing.price}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

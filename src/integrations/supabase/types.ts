@@ -456,6 +456,44 @@ export type Database = {
           },
         ]
       }
+      deal_syndicates: {
+        Row: {
+          created_at: string | null
+          deal_id: string | null
+          id: string
+          lead_investor_id: string
+          status: string
+          total_equity: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          lead_investor_id: string
+          status: string
+          total_equity?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          lead_investor_id?: string
+          status?: string
+          total_equity?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_syndicates_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals_feed: {
         Row: {
           ai_recommendation: string | null
@@ -1758,6 +1796,47 @@ export type Database = {
         }
         Relationships: []
       }
+      syndicate_members: {
+        Row: {
+          confirmed_at: string | null
+          equity_percentage: number
+          id: string
+          investor_id: string | null
+          invite_email: string | null
+          invited_at: string | null
+          status: string
+          syndicate_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          equity_percentage: number
+          id?: string
+          investor_id?: string | null
+          invite_email?: string | null
+          invited_at?: string | null
+          status: string
+          syndicate_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          equity_percentage?: number
+          id?: string
+          investor_id?: string | null
+          invite_email?: string | null
+          invited_at?: string | null
+          status?: string
+          syndicate_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndicate_members_syndicate_id_fkey"
+            columns: ["syndicate_id"]
+            isOneToOne: false
+            referencedRelation: "deal_syndicates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
@@ -1828,6 +1907,30 @@ export type Database = {
           period_end?: string
           period_start?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_activity: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
           user_id?: string
         }
         Relationships: []
