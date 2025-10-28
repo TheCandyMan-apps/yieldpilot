@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,10 @@ interface InvestorProfile {
   max_budget: number | null;
   min_bedrooms: number;
   investment_strategy: string;
+  display_name: string | null;
+  bio: string | null;
+  visibility: string;
+  aum_range: string | null;
 }
 
 const InvestorProfile = () => {
@@ -37,7 +42,11 @@ const InvestorProfile = () => {
     refurb_comfort: "light",
     max_budget: null,
     min_bedrooms: 1,
-    investment_strategy: "buy_to_let"
+    investment_strategy: "buy_to_let",
+    display_name: null,
+    bio: null,
+    visibility: "private",
+    aum_range: null
   });
 
   useEffect(() => {
@@ -73,7 +82,11 @@ const InvestorProfile = () => {
           refurb_comfort: data.refurb_comfort || "light",
           max_budget: data.max_budget,
           min_bedrooms: data.min_bedrooms || 1,
-          investment_strategy: data.investment_strategy || "buy_to_let"
+          investment_strategy: data.investment_strategy || "buy_to_let",
+          display_name: data.display_name,
+          bio: data.bio,
+          visibility: data.visibility || "private",
+          aum_range: data.aum_range
         });
       }
     } catch (error) {
@@ -144,6 +157,62 @@ const InvestorProfile = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Profile Info */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Public Profile</CardTitle>
+              <CardDescription>This information will be visible to other investors if you choose to make your profile public</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Display Name</Label>
+                  <Input
+                    placeholder="Your name or alias"
+                    value={profile.display_name || ""}
+                    onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Profile Visibility</Label>
+                  <Select value={profile.visibility} onValueChange={(val) => setProfile({ ...profile, visibility: val })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private">Private - Only visible to you</SelectItem>
+                      <SelectItem value="public">Public - Visible to all investors</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Bio</Label>
+                <Textarea
+                  placeholder="Tell others about your investment experience..."
+                  value={profile.bio || ""}
+                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                  className="min-h-[80px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Assets Under Management Range</Label>
+                <Select value={profile.aum_range || ""} onValueChange={(val) => setProfile({ ...profile, aum_range: val })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select range..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="under_100k">Under £100k</SelectItem>
+                    <SelectItem value="100k_500k">£100k - £500k</SelectItem>
+                    <SelectItem value="500k_1m">£500k - £1M</SelectItem>
+                    <SelectItem value="1m_5m">£1M - £5M</SelectItem>
+                    <SelectItem value="5m_plus">£5M+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Yield Preferences */}
           <Card>
             <CardHeader>

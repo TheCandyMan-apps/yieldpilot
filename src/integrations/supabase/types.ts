@@ -283,6 +283,42 @@ export type Database = {
         }
         Relationships: []
       }
+      community_discussions: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          reply_count: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          reply_count?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          reply_count?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
       compliance_checks: {
         Row: {
           action_required: string | null
@@ -396,6 +432,41 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_notes: {
+        Row: {
+          created_at: string | null
+          id: string
+          listing_id: string
+          note: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          listing_id: string
+          note: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          listing_id?: string
+          note?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_notes_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
             referencedColumns: ["id"]
           },
         ]
@@ -583,6 +654,41 @@ export type Database = {
           yield_percentage?: number | null
         }
         Relationships: []
+      }
+      discussion_replies: {
+        Row: {
+          content: string
+          created_at: string | null
+          discussion_id: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          discussion_id: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          discussion_id?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_replies_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "community_discussions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {

@@ -15,6 +15,7 @@ import { ComplianceTab } from "@/components/compliance/ComplianceTab";
 import { ForecastPanel } from "@/components/deals/ForecastPanel";
 import { DocumentUpload } from "@/components/deals/DocumentUpload";
 import { DealSyndicate } from "@/components/deals/DealSyndicate";
+import { DealNotes } from "@/components/deals/DealNotes";
 import { formatCurrency, formatPercentage } from "@/lib/portfolioCalculations";
 import { trackActivity } from "@/lib/activity";
 
@@ -245,6 +246,7 @@ const DealDetail = () => {
                 <TabsTrigger value="capex">CapEx</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="compliance">Compliance</TabsTrigger>
+                <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -330,6 +332,10 @@ const DealDetail = () => {
                   enrichment={enrichment}
                   propertyData={listing}
                 />
+              </TabsContent>
+
+              <TabsContent value="notes">
+                <DealNotes listingId={listing.id} />
               </TabsContent>
             </Tabs>
           </div>
