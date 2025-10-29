@@ -45,6 +45,7 @@ const AITelemetry = lazy(() => import("./pages/AITelemetry"));
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const Watchlist = lazy(() => import("./pages/Watchlist"));
+const Pipeline = lazy(() => import("./pages/Pipeline"));
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,7 @@ const App = () => (
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/pipeline" element={<Pipeline />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
