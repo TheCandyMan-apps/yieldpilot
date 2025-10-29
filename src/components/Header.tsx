@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { RegionSelector } from "@/components/RegionSelector";
 import { HealthStatus } from "@/components/HealthStatus";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,7 +41,9 @@ const Header = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          <GlobalSearch />
+          <NotificationCenter />
           <HealthStatus />
           <RegionSelector />
           <Link to="/auth">

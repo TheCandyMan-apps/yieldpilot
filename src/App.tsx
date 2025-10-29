@@ -8,6 +8,8 @@ import * as Sentry from "@sentry/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { MobileNav } from "@/components/MobileNav";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -70,6 +72,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <PWAUpdatePrompt />
+        <KeyboardShortcuts />
+        <OnboardingTour />
         <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>}>
             <MobileNav />
