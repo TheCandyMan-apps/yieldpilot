@@ -44,7 +44,7 @@ const ForecastUsage = lazy(() => import("./pages/ForecastUsage"));
 const AITelemetry = lazy(() => import("./pages/AITelemetry"));
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Integrations = lazy(() => import("./pages/Integrations"));
-// const Watchlist = lazy(() => import("./pages/Watchlist")); // Temporarily disabled
+const Watchlist = lazy(() => import("./pages/Watchlist"));
 
 const queryClient = new QueryClient();
 
@@ -112,7 +112,7 @@ const App = () => (
             <Route path="/ai-telemetry" element={<AITelemetry />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/integrations" element={<Integrations />} />
-            {/* <Route path="/watchlist" element={<Watchlist />} /> */}
+            <Route path="/watchlist" element={<Watchlist />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

@@ -401,6 +401,79 @@ export type Database = {
           },
         ]
       }
+      custom_fields: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          field_name: string
+          field_type: string | null
+          field_value: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          field_name: string
+          field_type?: string | null
+          field_value?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          field_name?: string
+          field_type?: string | null
+          field_value?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_fields_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_comments: {
+        Row: {
+          comment: string
+          created_at: string | null
+          deal_id: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          deal_id: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_comments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_interactions: {
         Row: {
           created_at: string | null
@@ -467,6 +540,47 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_pipeline: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          id: string
+          moved_at: string | null
+          notes: string | null
+          priority: string | null
+          stage: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          id?: string
+          moved_at?: string | null
+          notes?: string | null
+          priority?: string | null
+          stage?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+          moved_at?: string | null
+          notes?: string | null
+          priority?: string | null
+          stage?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_pipeline_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
         ]
@@ -714,6 +828,39 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      filter_presets: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          filters: Json
+          id: string
+          is_shared: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          filters?: Json
+          id?: string
+          is_shared?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          filters?: Json
+          id?: string
+          is_shared?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1602,6 +1749,41 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_history: {
+        Row: {
+          changed_at: string | null
+          deal_id: string
+          id: string
+          new_price: number
+          old_price: number
+          price_change_pct: number | null
+        }
+        Insert: {
+          changed_at?: string | null
+          deal_id: string
+          id?: string
+          new_price: number
+          old_price: number
+          price_change_pct?: number | null
+        }
+        Update: {
+          changed_at?: string | null
+          deal_id?: string
+          id?: string
+          new_price?: number
+          old_price?: number
+          price_change_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
         ]

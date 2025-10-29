@@ -15,7 +15,8 @@ import {
   Activity,
   Brain,
   Settings,
-  Plug
+  Plug,
+  Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export function DashboardNav() {
   const mainNav = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/deals", label: "Deals", icon: Building2 },
+    { path: "/watchlist", label: "Watchlist", icon: Star },
     { path: "/portfolio", label: "Portfolio", icon: Briefcase },
     { path: "/insights", label: "Insights", icon: TrendingUp },
     { path: "/alerts", label: "Alerts", icon: Bell },
