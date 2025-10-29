@@ -69,17 +69,24 @@ serve(async (req) => {
     const { data: leads } = await query.limit(50);
 
     // Trigger background discovery if we have few results
-    if (leads && leads.length < 10 && apifyToken) {
-      // This would trigger various scrapers for:
-      // - Auction sites (rightmove auctions, etc)
-      // - Planning portals
-      // - HMO registers
-      // - Recently withdrawn listings
-      
+    if (leads && leads.length < 10) {
       logger.info('Triggering background off-market discovery', { region, postcode }, requestId);
       
-      // Example: mock discovery (in production, this would call specialized Apify actors)
-      // For now, we'll just log the intent
+      // Trigger background ingestion (fire and forget)
+      fetch(`${supabaseUrl}/functions/v1/ingest-offmarket`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          region,
+          postcode,
+          sources: ['withdrawn', 'auctions', 'planning', 'hmo']
+        })
+      }).catch(error => {
+        logger.error('Background discovery trigger failed', { error: String(error) }, requestId);
+      });
     }
 
     logger.info('Returned off-market leads', { count: leads?.length || 0, region }, requestId);
