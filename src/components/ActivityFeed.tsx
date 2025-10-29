@@ -27,18 +27,22 @@ export function ActivityFeed() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("user_activity")
         .select("*")
         .eq("user_id", session.session.user.id)
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (error) {
+        console.error("Failed to load activity:", error);
+      }
+
       if (data) {
-        setActivities(data.map(item => ({
+        setActivities(data.map((item: any) => ({
           id: item.id,
-          action: item.action_type || item.action || '',
-          resource_type: (item.resource_type || 'deal') as any,
+          action: item.action || item.action_type || 'unknown_action',
+          resource_type: (item.resource_type || 'deal') as ActivityItem["resource_type"],
           resource_id: item.resource_id,
           metadata: item.metadata,
           created_at: item.created_at

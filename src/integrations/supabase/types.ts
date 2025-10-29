@@ -2090,24 +2090,33 @@ export type Database = {
       }
       user_activity: {
         Row: {
+          action: string | null
           action_type: string
           created_at: string | null
           id: string
           metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
           user_id: string
         }
         Insert: {
+          action?: string | null
           action_type: string
           created_at?: string | null
           id?: string
           metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
           user_id: string
         }
         Update: {
+          action?: string | null
           action_type?: string
           created_at?: string | null
           id?: string
           metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
           user_id?: string
         }
         Relationships: []

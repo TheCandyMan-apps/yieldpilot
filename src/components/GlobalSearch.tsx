@@ -46,17 +46,21 @@ export function GlobalSearch() {
       if (!session.session) return;
 
       // Search deals
-      const { data: deals } = await supabase
+      const { data: deals, error: dealsError } = await supabase
         .from("deals_feed")
-        .select("id, address, price, region")
-        .ilike("address", `%${searchQuery}%`)
+        .select("id, property_address, price, city")
+        .or(`property_address.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`)
         .limit(5);
+
+      if (dealsError) {
+        console.error("Search error:", dealsError);
+      }
 
       const dealResults: SearchResult[] = (deals || []).map((deal) => ({
         id: deal.id,
         type: "deal",
-        title: deal.address,
-        subtitle: `${deal.region} · £${deal.price?.toLocaleString()}`,
+        title: deal.property_address,
+        subtitle: `${deal.city || 'Location'} · £${deal.price?.toLocaleString()}`,
         path: `/deal/${deal.id}`,
       }));
 
