@@ -287,35 +287,35 @@ export type Database = {
         Row: {
           category: string
           content: string
-          created_at: string | null
+          created_at: string
           id: string
-          reply_count: number | null
+          reply_count: number
           title: string
-          updated_at: string | null
-          user_id: string
-          views: number | null
+          updated_at: string
+          user_id: string | null
+          views: number
         }
         Insert: {
           category: string
           content: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          reply_count?: number | null
+          reply_count?: number
           title: string
-          updated_at?: string | null
-          user_id: string
-          views?: number | null
+          updated_at?: string
+          user_id?: string | null
+          views?: number
         }
         Update: {
           category?: string
           content?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          reply_count?: number | null
+          reply_count?: number
           title?: string
-          updated_at?: string | null
-          user_id?: string
-          views?: number | null
+          updated_at?: string
+          user_id?: string | null
+          views?: number
         }
         Relationships: []
       }
@@ -794,15 +794,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "discussion_replies_discussion_id_fkey"
-            columns: ["discussion_id"]
-            isOneToOne: false
-            referencedRelation: "community_discussions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       feature_flags: {
         Row: {

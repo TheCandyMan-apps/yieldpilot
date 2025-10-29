@@ -36,6 +36,7 @@ export function DashboardNav() {
     { path: "/alerts", label: "Alerts", icon: Bell },
     { path: "/saved-searches", label: "Searches", icon: Search },
     { path: "/ai-assistant", label: "AI Assistant", icon: Brain },
+    { path: "/blog", label: "Blog", icon: BookOpen },
   ];
 
   const communityNav = [

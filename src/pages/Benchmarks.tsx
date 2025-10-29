@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,100 +78,102 @@ export default function Benchmarks() {
   );
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Market Benchmarks</h1>
-          <p className="text-muted-foreground">Regional property investment data</p>
-        </div>
-        <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select region" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="GB">United Kingdom</SelectItem>
-            <SelectItem value="US">United States</SelectItem>
-            <SelectItem value="DE">Germany</SelectItem>
-            <SelectItem value="ES">Spain</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      ) : benchmarks ? (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard
-              icon={DollarSign}
-              label="Average Price"
-              value={new Intl.NumberFormat('en-GB', {
-                style: 'currency',
-                currency: benchmarks.currency || 'GBP',
-                maximumFractionDigits: 0,
-              }).format(benchmarks.avg_price)}
-            />
-            <StatCard
-              icon={Target}
-              label="Average Yield"
-              value={benchmarks.avg_yield.toFixed(2)}
-              suffix="%"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="Median Yield"
-              value={benchmarks.median_yield.toFixed(2)}
-              suffix="%"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="P10 Yield"
-              value={benchmarks.p10_yield.toFixed(2)}
-              suffix="%"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="P90 Yield"
-              value={benchmarks.p90_yield.toFixed(2)}
-              suffix="%"
-            />
-            <StatCard
-              icon={Clock}
-              label="Sample Size"
-              value={benchmarks.sample_size}
-            />
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Market Benchmarks</h1>
+            <p className="text-muted-foreground">Regional property investment data</p>
           </div>
+          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select region" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="GB">United Kingdom</SelectItem>
+              <SelectItem value="US">United States</SelectItem>
+              <SelectItem value="DE">Germany</SelectItem>
+              <SelectItem value="ES">Spain</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        ) : benchmarks ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                icon={DollarSign}
+                label="Average Price"
+                value={new Intl.NumberFormat('en-GB', {
+                  style: 'currency',
+                  currency: benchmarks.currency || 'GBP',
+                  maximumFractionDigits: 0,
+                }).format(benchmarks.avg_price)}
+              />
+              <StatCard
+                icon={Target}
+                label="Average Yield"
+                value={benchmarks.avg_yield.toFixed(2)}
+                suffix="%"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Median Yield"
+                value={benchmarks.median_yield.toFixed(2)}
+                suffix="%"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="P10 Yield"
+                value={benchmarks.p10_yield.toFixed(2)}
+                suffix="%"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="P90 Yield"
+                value={benchmarks.p90_yield.toFixed(2)}
+                suffix="%"
+              />
+              <StatCard
+                icon={Clock}
+                label="Sample Size"
+                value={benchmarks.sample_size}
+              />
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Data Quality</CardTitle>
+                <CardDescription>
+                  Based on {benchmarks.sample_size} properties in {selectedRegion}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Badge variant={benchmarks.sample_size > 100 ? "default" : "secondary"}>
+                    {benchmarks.sample_size > 100 ? "High confidence" : "Limited data"}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Last updated today
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
           <Card>
-            <CardHeader>
-              <CardTitle>Data Quality</CardTitle>
-              <CardDescription>
-                Based on {benchmarks.sample_size} properties in {selectedRegion}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Badge variant={benchmarks.sample_size > 100 ? "default" : "secondary"}>
-                  {benchmarks.sample_size > 100 ? "High confidence" : "Limited data"}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Last updated today
-                </span>
-              </div>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No benchmark data available for this region</p>
             </CardContent>
           </Card>
-        </>
-      ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No benchmark data available for this region</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 }
