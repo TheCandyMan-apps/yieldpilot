@@ -14,7 +14,8 @@ import {
   BookOpen,
   Activity,
   Brain,
-  Settings
+  Settings,
+  Plug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ export function DashboardNav() {
     { path: "/insights", label: "Insights", icon: TrendingUp },
     { path: "/alerts", label: "Alerts", icon: Bell },
     { path: "/saved-searches", label: "Searches", icon: Search },
+    { path: "/ai-assistant", label: "AI Assistant", icon: Brain },
   ];
 
   const communityNav = [
@@ -37,6 +39,7 @@ export function DashboardNav() {
   ];
 
   const adminNav = [
+    { path: "/integrations", label: "Integrations", icon: Plug },
     { path: "/forecast-usage", label: "AI Usage", icon: Activity },
     { path: "/ai-telemetry", label: "AI Telemetry", icon: Brain },
     { path: "/billing", label: "Billing", icon: DollarSign },

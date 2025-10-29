@@ -10,6 +10,7 @@ import PropertyAnalysisForm from "@/components/PropertyAnalysisForm";
 import AnalysisResults from "@/components/AnalysisResults";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import { Link } from "react-router-dom";
+import { SmartRecommendations } from "@/components/ai/SmartRecommendations";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -187,58 +188,68 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* Analysis Form/Results */}
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Property Analysis</CardTitle>
-              <CardDescription>
-                Enter property details to get AI-powered investment insights
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PropertyAnalysisForm
-                onComplete={handleAnalysisComplete}
-                onCancel={() => {
+        {/* Smart Recommendations */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Analysis Form/Results */}
+            {showForm && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Property Analysis</CardTitle>
+                  <CardDescription>
+                    Enter property details to get AI-powered investment insights
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PropertyAnalysisForm
+                    onComplete={handleAnalysisComplete}
+                    onCancel={() => {
+                      setShowForm(false);
+                      setEditingAnalysis(null);
+                    }}
+                    existingAnalysis={editingAnalysis}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {currentAnalysis && !showForm && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Analysis Results</h2>
+                  <Button onClick={() => {
+                    setCurrentAnalysis(null);
+                    setEditingAnalysis(null);
+                    setShowForm(true);
+                  }}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Analysis
+                  </Button>
+                </div>
+                <AnalysisResults 
+                  analysis={currentAnalysis} 
+                  onEdit={() => handleEditAnalysis(currentAnalysis)}
+                />
+              </div>
+            )}
+
+            {/* History Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Recent Analyses</h2>
+              <AnalysisHistory
+                key={refreshTrigger}
+                onSelectAnalysis={(analysis) => {
+                  setCurrentAnalysis(analysis);
                   setShowForm(false);
-                  setEditingAnalysis(null);
                 }}
-                existingAnalysis={editingAnalysis}
               />
-            </CardContent>
-          </Card>
-        )}
-
-        {currentAnalysis && !showForm && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Analysis Results</h2>
-              <Button onClick={() => {
-                setCurrentAnalysis(null);
-                setEditingAnalysis(null);
-                setShowForm(true);
-              }}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Analysis
-              </Button>
             </div>
-            <AnalysisResults 
-              analysis={currentAnalysis} 
-              onEdit={() => handleEditAnalysis(currentAnalysis)}
-            />
           </div>
-        )}
 
-        {/* History Section */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Recent Analyses</h2>
-          <AnalysisHistory
-            key={refreshTrigger}
-            onSelectAnalysis={(analysis) => {
-              setCurrentAnalysis(analysis);
-              setShowForm(false);
-            }}
-          />
+          {/* Sidebar with Smart Recommendations */}
+          <div className="lg:col-span-1">
+            <SmartRecommendations />
+          </div>
         </div>
       </div>
     </DashboardLayout>
