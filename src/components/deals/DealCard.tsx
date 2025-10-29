@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import DealSummaryGenerator from "./DealSummaryGenerator";
 import { MultiCurrencyPrice } from "./MultiCurrencyPrice";
+import { MarketBadge } from "./MarketBadge";
 
 interface DealCardProps {
   deal: {
@@ -23,6 +24,9 @@ interface DealCardProps {
     investment_score?: "A" | "B" | "C" | "D" | "E";
     city?: string;
     property_type?: string;
+    region?: string;
+    currency?: string;
+    source?: string;
   };
   isWatchlisted?: boolean;
   onWatchlistToggle?: () => void;
@@ -134,13 +138,19 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
             }`}
           />
         </button>
-        {deal.investment_score && (
-          <Badge
-            className={`absolute top-3 left-3 ${scoreColors[deal.investment_score]} text-white font-bold`}
-          >
-            Score: {deal.investment_score}
-          </Badge>
-        )}
+        <div className="absolute top-3 left-3 flex gap-2">
+          {deal.investment_score && (
+            <Badge
+              className={`${scoreColors[deal.investment_score]} text-white font-bold`}
+            >
+              Score: {deal.investment_score}
+            </Badge>
+          )}
+          <MarketBadge 
+            region={deal.region || "UK"} 
+            source={deal.source}
+          />
+        </div>
       </div>
 
       <CardContent className="p-4">
@@ -156,13 +166,17 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
         <div className="flex items-center justify-between mb-3">
           <MultiCurrencyPrice 
             amount={deal.price} 
-            sourceCurrency="GBP" 
+            sourceCurrency={deal.currency || "GBP"} 
+            sourceRegion={deal.region}
             className="text-2xl font-bold"
           />
           {deal.estimated_rent && (
-            <span className="text-sm text-muted-foreground">
-              £{deal.estimated_rent}/mo rent
-            </span>
+            <MultiCurrencyPrice 
+              amount={deal.estimated_rent}
+              sourceCurrency={deal.currency || "GBP"}
+              sourceRegion={deal.region}
+              className="text-sm text-muted-foreground"
+            />
           )}
         </div>
 

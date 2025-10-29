@@ -26,6 +26,9 @@ interface Deal {
   property_type?: string;
   postcode: string | null;
   listing_url: string | null;
+  region?: string;
+  currency?: string;
+  source?: string;
 }
 
 const Deals = () => {
@@ -246,6 +249,14 @@ const Deals = () => {
         if (!deal.investment_score) return false;
         return scoreOrder.indexOf(deal.investment_score) <= minScoreIndex;
       });
+    }
+
+    // Region filter
+    if (filterValues.region) {
+      filtered = filtered.filter((deal) => 
+        deal.region === filterValues.region || 
+        (filterValues.region === "UK" && (deal.region === "GB" || !deal.region))
+      );
     }
 
     setFilteredDeals(filtered);

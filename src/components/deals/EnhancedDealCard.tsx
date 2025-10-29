@@ -5,6 +5,8 @@ import { Heart, Eye, MapPin, Bed, Bath, Home, TrendingUp, Brain, ExternalLink } 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DealSummaryGenerator from "./DealSummaryGenerator";
+import { MultiCurrencyPrice } from "./MultiCurrencyPrice";
+import { MarketBadge } from "./MarketBadge";
 
 interface Deal {
   id: string;
@@ -21,6 +23,9 @@ interface Deal {
   image_url?: string;
   listing_url: string | null;
   property_type?: string;
+  region?: string;
+  currency?: string;
+  source?: string;
 }
 
 interface EnhancedDealCardProps {
@@ -102,13 +107,19 @@ export const EnhancedDealCard = ({
           />
         </Button>
 
-        {/* Personalized Score Badge */}
-        {personalizedScore && (
-          <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-            <Brain className="h-4 w-4" />
-            {personalizedScore}/100
-          </div>
-        )}
+        {/* Personalized Score & Market Badge */}
+        <div className="absolute top-2 left-2 flex gap-2">
+          {personalizedScore && (
+            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+              <Brain className="h-4 w-4" />
+              {personalizedScore}/100
+            </div>
+          )}
+          <MarketBadge 
+            region={deal.region || "UK"} 
+            source={deal.source}
+          />
+        </div>
       </div>
 
       <CardContent className="p-4 space-y-3">
@@ -128,11 +139,19 @@ export const EnhancedDealCard = ({
         {/* Price & Rent */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-lg font-bold">{formatCurrency(deal.price)}</p>
+            <MultiCurrencyPrice 
+              amount={deal.price} 
+              sourceCurrency={deal.currency || "GBP"} 
+              sourceRegion={deal.region}
+              className="text-lg font-bold"
+            />
             {deal.estimated_rent && (
-              <p className="text-xs text-muted-foreground">
-                £{deal.estimated_rent.toLocaleString()}/mo rent
-              </p>
+              <MultiCurrencyPrice 
+                amount={deal.estimated_rent}
+                sourceCurrency={deal.currency || "GBP"}
+                sourceRegion={deal.region}
+                className="text-xs text-muted-foreground"
+              />
             )}
           </div>
           <div className="text-right">

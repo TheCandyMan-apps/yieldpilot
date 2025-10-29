@@ -19,6 +19,7 @@ export interface FilterValues {
   propertyType?: string;
   city?: string;
   investmentScore?: string;
+  region?: string;
 }
 
 const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
@@ -196,6 +197,29 @@ const DealFilters = ({ onFilterChange }: DealFiltersProps) => {
                     <SelectItem value="B">B or better</SelectItem>
                     <SelectItem value="C">C or better</SelectItem>
                     <SelectItem value="D">D or better</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Market / Region */}
+              <div className="space-y-2">
+                <Label>Market</Label>
+                <Select
+                  value={filters.region || "all"}
+                  onValueChange={(value) =>
+                    handleFilterUpdate("region", value === "all" ? undefined : value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All markets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All markets</SelectItem>
+                    <SelectItem value="UK">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="US">🇺🇸 United States</SelectItem>
+                    <SelectItem value="DE">🇩🇪 Germany</SelectItem>
+                    <SelectItem value="ES">🇪🇸 Spain</SelectItem>
+                    <SelectItem value="FR">🇫🇷 France</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
