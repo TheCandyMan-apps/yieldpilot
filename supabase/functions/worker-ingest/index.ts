@@ -251,26 +251,68 @@ async function processJob(supabase: any, apifyToken: string) {
       metadata: { datasetId, runId, adapter: job.site },
     });
 
-    // Upsert items into listings with validation
+    // Validate and upsert items into listings
     const userId = job.created_by;
-    const listingsToInsert = items.slice(0, 10).map(item => ({
-      user_id: userId,
-      property_address: item.address || item.title || 'Unknown',
-      price: item.price || 0,
-      bedrooms: item.bedrooms,
-      bathrooms: item.bathrooms,
-      property_type: item.propertyType || 'Unknown',
-      listing_url: item.url || job.normalized_url,
-      image_url: item.images?.[0],
-      source: job.site,
-      region: adapterConfig.region,
-      currency: adapterConfig.currency,
-      country_code: adapterConfig.region,
-    }));
+    const validListings = [];
+    const invalidListings = [];
+
+    for (const item of items.slice(0, 10)) {
+      // Validation checks
+      const address = item.address || item.title;
+      const price = item.price || 0;
+      const url = item.url || job.normalized_url;
+
+      if (!address || address.length < 3) {
+        invalidListings.push({ item, reason: 'Invalid address' });
+        continue;
+      }
+
+      if (price <= 0 || price > 100000000) {
+        invalidListings.push({ item, reason: 'Invalid price' });
+        continue;
+      }
+
+      if (!url || !url.startsWith('http')) {
+        invalidListings.push({ item, reason: 'Invalid URL' });
+        continue;
+      }
+
+      validListings.push({
+        user_id: userId,
+        property_address: address,
+        price,
+        bedrooms: item.bedrooms,
+        bathrooms: item.bathrooms,
+        property_type: item.propertyType || 'Unknown',
+        listing_url: url,
+        image_url: item.images?.[0],
+        source: job.site,
+        region: adapterConfig.region,
+        currency: adapterConfig.currency,
+        country_code: adapterConfig.region,
+      });
+    }
+
+    console.log(`✓ Validated: ${validListings.length} valid, ${invalidListings.length} invalid`);
+
+    if (validListings.length === 0) {
+      await supabase
+        .from('ingest_jobs')
+        .update({
+          status: 'failed',
+          error: { 
+            code: 'validation_failed', 
+            message: 'No valid listings after validation',
+            details: invalidListings.map(i => i.reason)
+          },
+        })
+        .eq('id', job.id);
+      return;
+    }
 
     const { data: insertedListings, error: insertError } = await supabase
       .from('listings')
-      .upsert(listingsToInsert, { onConflict: 'listing_url', ignoreDuplicates: false })
+      .upsert(validListings, { onConflict: 'listing_url', ignoreDuplicates: false })
       .select();
 
     if (insertError) {
@@ -285,7 +327,19 @@ async function processJob(supabase: any, apifyToken: string) {
       return;
     }
 
-    console.log(`✅ Inserted ${insertedListings?.length || 0} listings`);
+    console.log(`✅ Inserted ${insertedListings?.length || 0}/${items.length} listings`);
+
+    // Log validation results
+    await supabase.from('ingest_events').insert({
+      job_id: job.id,
+      event_type: 'validation_complete',
+      item_count: validListings.length,
+      metadata: {
+        valid: validListings.length,
+        invalid: invalidListings.length,
+        invalidReasons: invalidListings.map(i => i.reason)
+      },
+    });
 
     // Mark job as succeeded
     await supabase
