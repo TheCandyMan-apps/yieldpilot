@@ -46,6 +46,7 @@ const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const Watchlist = lazy(() => import("./pages/Watchlist"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
+const Blog = lazy(() => import("./pages/Blog"));
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/blog" element={<Blog />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
