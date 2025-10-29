@@ -17,7 +17,8 @@ import {
   Settings,
   Plug,
   Star,
-  KanbanSquare
+  KanbanSquare,
+  ShoppingBag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export function DashboardNav() {
   const mainNav = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/deals", label: "Deals", icon: Building2 },
+    { path: "/offmarket", label: "Off-Market", icon: ShoppingBag },
     { path: "/watchlist", label: "Watchlist", icon: Star },
     { path: "/pipeline", label: "Pipeline", icon: KanbanSquare },
     { path: "/portfolio", label: "Portfolio", icon: Briefcase },
