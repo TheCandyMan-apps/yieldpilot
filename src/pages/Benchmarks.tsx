@@ -12,13 +12,11 @@ interface BenchmarkData {
   region: string;
   avg_price: number;
   avg_yield: number;
-  avg_rent: number;
-  avg_roi: number;
-  median_days_on_market: number;
-  transaction_volume: number;
-  price_growth_1yr: number;
-  rental_growth_1yr: number;
+  median_yield: number;
+  p10_yield: number;
+  p90_yield: number;
   sample_size: number;
+  currency: string;
 }
 
 export default function Benchmarks() {
@@ -112,10 +110,9 @@ export default function Benchmarks() {
               label="Average Price"
               value={new Intl.NumberFormat('en-GB', {
                 style: 'currency',
-                currency: 'GBP',
+                currency: benchmarks.currency || 'GBP',
                 maximumFractionDigits: 0,
               }).format(benchmarks.avg_price)}
-              trend={benchmarks.price_growth_1yr}
             />
             <StatCard
               icon={Target}
@@ -124,30 +121,27 @@ export default function Benchmarks() {
               suffix="%"
             />
             <StatCard
-              icon={Home}
-              label="Average Rent"
-              value={new Intl.NumberFormat('en-GB', {
-                style: 'currency',
-                currency: 'GBP',
-                maximumFractionDigits: 0,
-              }).format(benchmarks.avg_rent)}
-              trend={benchmarks.rental_growth_1yr}
+              icon={TrendingUp}
+              label="Median Yield"
+              value={benchmarks.median_yield.toFixed(2)}
+              suffix="%"
             />
             <StatCard
               icon={TrendingUp}
-              label="Average ROI"
-              value={benchmarks.avg_roi.toFixed(1)}
+              label="P10 Yield"
+              value={benchmarks.p10_yield.toFixed(2)}
+              suffix="%"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="P90 Yield"
+              value={benchmarks.p90_yield.toFixed(2)}
               suffix="%"
             />
             <StatCard
               icon={Clock}
-              label="Days on Market"
-              value={benchmarks.median_days_on_market}
-            />
-            <StatCard
-              icon={Home}
-              label="Transaction Volume"
-              value={benchmarks.transaction_volume.toLocaleString()}
+              label="Sample Size"
+              value={benchmarks.sample_size}
             />
           </div>
 

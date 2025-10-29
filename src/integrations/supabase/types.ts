@@ -1469,6 +1469,63 @@ export type Database = {
         }
         Relationships: []
       }
+      offmarket_leads: {
+        Row: {
+          address_line1: string
+          bedrooms: number | null
+          city: string | null
+          created_at: string
+          currency: string
+          discovered_at: string
+          estimated_value: number | null
+          expires_at: string
+          id: string
+          lead_score: number
+          lead_source: string
+          postcode: string
+          property_type: string | null
+          region: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address_line1: string
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          currency?: string
+          discovered_at?: string
+          estimated_value?: number | null
+          expires_at?: string
+          id?: string
+          lead_score?: number
+          lead_source: string
+          postcode: string
+          property_type?: string | null
+          region: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          currency?: string
+          discovered_at?: string
+          estimated_value?: number | null
+          expires_at?: string
+          id?: string
+          lead_score?: number
+          lead_source?: string
+          postcode?: string
+          property_type?: string | null
+          region?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       org_members: {
         Row: {
           id: string
@@ -1935,6 +1992,66 @@ export type Database = {
           key?: string
           updated_at?: string | null
           window_start?: string
+        }
+        Relationships: []
+      }
+      regional_benchmarks: {
+        Row: {
+          avg_price: number | null
+          avg_yield: number | null
+          confidence_level: number | null
+          created_at: string
+          currency: string
+          data_date: string
+          id: string
+          median_yield: number | null
+          p10_yield: number | null
+          p90_yield: number | null
+          postcode_prefix: string | null
+          postcode_prefix_norm: string | null
+          property_type: string | null
+          property_type_norm: string | null
+          region: string
+          sample_size: number
+          updated_at: string
+        }
+        Insert: {
+          avg_price?: number | null
+          avg_yield?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          currency?: string
+          data_date: string
+          id?: string
+          median_yield?: number | null
+          p10_yield?: number | null
+          p90_yield?: number | null
+          postcode_prefix?: string | null
+          postcode_prefix_norm?: string | null
+          property_type?: string | null
+          property_type_norm?: string | null
+          region: string
+          sample_size: number
+          updated_at?: string
+        }
+        Update: {
+          avg_price?: number | null
+          avg_yield?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          currency?: string
+          data_date?: string
+          id?: string
+          median_yield?: number | null
+          p10_yield?: number | null
+          p90_yield?: number | null
+          postcode_prefix?: string | null
+          postcode_prefix_norm?: string | null
+          property_type?: string | null
+          property_type_norm?: string | null
+          region?: string
+          sample_size?: number
+          updated_at?: string
         }
         Relationships: []
       }
