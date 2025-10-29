@@ -33,32 +33,82 @@ export function CopilotChat({ context, listingId }: CopilotChatProps) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setLoading(true);
 
+    // Add placeholder for assistant message
+    const assistantPlaceholder: Message = {
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, assistantPlaceholder]);
+
     try {
-      const { data, error } = await supabase.functions.invoke('copilot-advisor', {
-        body: {
-          question: input,
-          context: {
-            ...context,
-            listingId
-          }
-        }
+      // Get streaming response
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/copilot-advisor`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question: currentInput,
+          context: { ...context, listingId },
+          stream: true
+        })
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.answer,
-        timestamp: data.timestamp
-      };
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
 
-      setMessages(prev => [...prev, assistantMessage]);
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  accumulatedText += content;
+                  // Update last message
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: accumulatedText
+                    };
+                    return newMessages;
+                  });
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
+      }
     } catch (error: any) {
       console.error('Copilot error:', error);
       toast.error('Failed to get response from copilot');
+      // Remove placeholder on error
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }

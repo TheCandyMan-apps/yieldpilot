@@ -83,3 +83,12 @@ verify_jwt = false
 
 [functions.riskparse]
 verify_jwt = true
+
+[functions.copilot-advisor]
+verify_jwt = true
+
+[functions.health-ai]
+verify_jwt = false
+
+[functions.forecast-portfolio]
+verify_jwt = true

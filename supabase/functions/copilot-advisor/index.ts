@@ -41,7 +41,7 @@ serve(async (req) => {
       });
     }
 
-    const { question, context } = await req.json();
+    const { question, context, stream = false } = await req.json();
 
     if (!question) {
       return new Response(JSON.stringify({ error: 'Question is required' }), {
@@ -59,7 +59,7 @@ ${JSON.stringify(context || {}, null, 2)}
 
 Provide clear, actionable insights. Be concise but thorough.`;
 
-    logger.info('Copilot request', { userId: user.id, question }, requestId);
+    logger.info('Copilot request', { userId: user.id, question, stream }, requestId);
 
     // Call Lovable AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -75,7 +75,8 @@ Provide clear, actionable insights. Be concise but thorough.`;
           { role: 'user', content: question }
         ],
         temperature: 0.7,
-        max_tokens: 800
+        max_tokens: 800,
+        stream
       })
     });
 
@@ -104,6 +105,20 @@ Provide clear, actionable insights. Be concise but thorough.`;
       throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
+    // Handle streaming response
+    if (stream) {
+      logger.info('Copilot streaming response', { userId: user.id }, requestId);
+      return new Response(aiResponse.body, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      });
+    }
+
+    // Handle non-streaming response
     const aiData = await aiResponse.json();
     const answer = aiData.choices?.[0]?.message?.content || 'Unable to generate response';
 
