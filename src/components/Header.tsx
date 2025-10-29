@@ -6,6 +6,7 @@ import { RegionSelector } from "@/components/RegionSelector";
 import { HealthStatus } from "@/components/HealthStatus";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,6 +46,7 @@ const Header = () => {
           <GlobalSearch />
           <NotificationCenter />
           <HealthStatus />
+          <ThemeToggle />
           <RegionSelector />
           <Link to="/auth">
             <Button variant="ghost">Sign In</Button>
