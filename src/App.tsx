@@ -42,7 +42,7 @@ const OffMarket = lazy(() => import("./pages/OffMarket"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 const ForecastUsage = lazy(() => import("./pages/ForecastUsage"));
 const AITelemetry = lazy(() => import("./pages/AITelemetry"));
-const Watchlist = lazy(() => import("./pages/Watchlist"));
+// const Watchlist = lazy(() => import("./pages/Watchlist")); // Temporarily disabled
 
 const queryClient = new QueryClient();
 
@@ -108,7 +108,7 @@ const App = () => (
             <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="/forecast-usage" element={<ForecastUsage />} />
             <Route path="/ai-telemetry" element={<AITelemetry />} />
-            <Route path="/watchlist" element={<Watchlist />} />
+            {/* <Route path="/watchlist" element={<Watchlist />} /> */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
