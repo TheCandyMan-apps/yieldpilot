@@ -3,6 +3,7 @@ import { Building2, Menu } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { RegionSelector } from "@/components/RegionSelector";
+import { HealthStatus } from "@/components/HealthStatus";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,6 +40,7 @@ const Header = () => {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-4">
+          <HealthStatus />
           <RegionSelector />
           <Link to="/auth">
             <Button variant="ghost">Sign In</Button>

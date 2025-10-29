@@ -38,6 +38,8 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const InvestorNetwork = lazy(() => import("./pages/InvestorNetwork"));
 const OffMarket = lazy(() => import("./pages/OffMarket"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
+const ForecastUsage = lazy(() => import("./pages/ForecastUsage"));
+const AITelemetry = lazy(() => import("./pages/AITelemetry"));
 
 const queryClient = new QueryClient();
 
@@ -99,6 +101,8 @@ const App = () => (
             <Route path="/organizations" element={<Organizations />} />
             <Route path="/api-keys" element={<ApiKeys />} />
             <Route path="/api-docs" element={<ApiDocs />} />
+            <Route path="/forecast-usage" element={<ForecastUsage />} />
+            <Route path="/ai-telemetry" element={<AITelemetry />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
