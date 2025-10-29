@@ -762,6 +762,44 @@ export type Database = {
         }
         Relationships: []
       }
+      forecast_usage: {
+        Row: {
+          cost_tokens: number | null
+          created_at: string | null
+          forecast_horizon: string
+          id: string
+          listing_id: string | null
+          model_version: string | null
+          user_id: string
+        }
+        Insert: {
+          cost_tokens?: number | null
+          created_at?: string | null
+          forecast_horizon: string
+          id?: string
+          listing_id?: string | null
+          model_version?: string | null
+          user_id: string
+        }
+        Update: {
+          cost_tokens?: number | null
+          created_at?: string | null
+          forecast_horizon?: string
+          id?: string
+          listing_id?: string | null
+          model_version?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_usage_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fx_rates: {
         Row: {
           base: string
@@ -2102,6 +2140,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_forecast_limit: {
+        Args: { p_tier: string; p_user_id: string }
+        Returns: boolean
+      }
       check_subscription_tier_unchanged: {
         Args: { _new_tier: string; _user_id: string }
         Returns: boolean

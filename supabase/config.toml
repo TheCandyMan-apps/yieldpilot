@@ -21,6 +21,12 @@ verify_jwt = false
 [functions.apify-import]
 verify_jwt = false
 
+[functions.copilot-advisor]
+verify_jwt = true
+
+[functions.forecast]
+verify_jwt = true
+
 [functions.generate-report-pdf]
 verify_jwt = true
 

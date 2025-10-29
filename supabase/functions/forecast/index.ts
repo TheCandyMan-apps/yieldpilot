@@ -25,6 +25,44 @@ serve(async (req) => {
       });
     }
 
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check usage limits based on subscription tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', user.id)
+      .single();
+
+    const tier = profile?.subscription_tier || 'free';
+
+    // Check if user has exceeded their forecast limit
+    const { data: canForecast, error: limitError } = await supabase
+      .rpc('check_forecast_limit', {
+        p_user_id: user.id,
+        p_tier: tier
+      });
+
+    if (limitError || !canForecast) {
+      logger.warn('Forecast limit exceeded', { userId: user.id, tier }, requestId);
+      return new Response(JSON.stringify({ 
+        error: 'forecast_limit_exceeded',
+        message: `Daily forecast limit reached for ${tier} plan. Upgrade to get more forecasts.`,
+        tier,
+        upgrade_url: '/billing'
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const { listingId, horizon = '24m' } = await req.json();
 
     if (!listingId) {
@@ -188,7 +226,17 @@ Format as JSON: { "yieldLow": 0, "yieldMid": 0, "yieldHigh": 0, "appreciation": 
       .select()
       .single();
 
-    logger.info('Generated forecast', { listingId, horizon }, requestId);
+    // Track usage
+    await supabase
+      .from('forecast_usage')
+      .insert({
+        user_id: user.id,
+        listing_id: listingId,
+        forecast_horizon: horizon,
+        model_version: lovableApiKey ? 'ai_v1' : 'trend_v1'
+      });
+
+    logger.info('Generated forecast', { listingId, horizon, userId: user.id, tier }, requestId);
 
     return new Response(JSON.stringify({
       ...forecast,

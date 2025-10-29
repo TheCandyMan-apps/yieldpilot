@@ -123,6 +123,7 @@ const Billing = () => {
       price: "£0",
       features: [
         "5 property analyses/month",
+        "1 AI forecast/day",
         "Basic deal feed access",
         "Investment simulator",
         "Market insights",
@@ -134,6 +135,8 @@ const Billing = () => {
       price: "£29",
       features: [
         "Unlimited property analyses",
+        "10 AI forecasts/day",
+        "AI Copilot assistant",
         "Full deal feed access",
         "Priority alerts",
         "Advanced analytics",
@@ -147,6 +150,7 @@ const Billing = () => {
       price: "£99",
       features: [
         "Everything in Pro",
+        "Unlimited AI forecasts",
         "Portfolio tracking",
         "Team collaboration (3 users)",
         "API access",

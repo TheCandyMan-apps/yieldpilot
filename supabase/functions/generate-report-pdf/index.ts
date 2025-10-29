@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { deal, summary, assumptions } = await req.json();
+    const { deal, summary, assumptions, forecast } = await req.json();
 
     console.log("Generating PDF for deal:", deal.address);
 
@@ -154,6 +154,43 @@ serve(async (req) => {
         doc.text(lines, 14, yPos);
         yPos += lines.length * 5 + 3;
       });
+    }
+
+    // AI Forecast (if available)
+    if (forecast) {
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(16);
+      doc.text("AI Yield Forecast", 14, yPos);
+      yPos += 8;
+
+      doc.setFillColor(224, 231, 255);
+      doc.rect(14, yPos - 3, pageWidth - 28, 2, "F");
+      yPos += 5;
+
+      doc.setFontSize(10);
+      doc.text(`Horizon: ${forecast.forecast_horizon}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Predicted Yield: ${forecast.predicted_yield_mid?.toFixed(2)}%`, 14, yPos);
+      yPos += 6;
+      doc.text(`Range: ${forecast.predicted_yield_low?.toFixed(2)}% - ${forecast.predicted_yield_high?.toFixed(2)}%`, 14, yPos);
+      yPos += 6;
+      doc.text(`Capital Appreciation: ${forecast.predicted_appreciation_pct > 0 ? '+' : ''}${forecast.predicted_appreciation_pct?.toFixed(1)}%`, 14, yPos);
+      yPos += 6;
+      doc.text(`Confidence: ${(forecast.confidence_score * 100).toFixed(0)}%`, 14, yPos);
+      yPos += 8;
+
+      if (forecast.ai_reasoning) {
+        doc.setFontSize(9);
+        const reasoningLines = doc.splitTextToSize(forecast.ai_reasoning, pageWidth - 28);
+        doc.text(reasoningLines, 14, yPos);
+        yPos += reasoningLines.length * 4;
+      }
+
+      yPos += 5;
     }
 
     // Footer with metadata

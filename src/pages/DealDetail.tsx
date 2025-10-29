@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin, Bed, Bath, Home, TrendingUp, DollarSign } from "lucide-react";
 import { CopilotPanel } from "@/components/copilot/CopilotPanel";
+import { CopilotChat } from "@/components/copilot/CopilotChat";
 import { CapexBuilder } from "@/components/capex/CapexBuilder";
 import { ComplianceTab } from "@/components/compliance/ComplianceTab";
 import { ForecastPanel } from "@/components/deals/ForecastPanel";
@@ -347,6 +348,16 @@ const DealDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating AI Copilot */}
+      <CopilotChat 
+        context={{
+          listing: deal.listing,
+          metrics: deal.metrics,
+          kpis: deal.metrics?.kpis
+        }}
+        listingId={id}
+      />
     </DashboardLayout>
   );
 };
