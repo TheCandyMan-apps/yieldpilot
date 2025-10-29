@@ -196,7 +196,7 @@ const Hero = () => {
 
       if (!data.ok) {
         const errorMessages: Record<string, string> = {
-          unsupported_site: 'Only Zoopla or Rightmove links supported.',
+          unsupported_site: 'Try Zoopla, Rightmove, Zillow, Realtor, Redfin, ImmobilienScout24, SeLoger, or Idealista.',
           invalid_url: 'Please enter a valid URL.',
         };
         throw new Error(errorMessages[data.error] || data.error || 'Failed to queue job');

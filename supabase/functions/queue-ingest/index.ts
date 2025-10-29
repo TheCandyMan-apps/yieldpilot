@@ -26,12 +26,22 @@ function normalizeUrl(rawUrl: string): URL | null {
   }
 }
 
-// Detect site from URL
-function siteFor(url: URL): 'zoopla' | 'rightmove' | null {
+// Detect site from URL using global adapter registry
+function siteFor(url: URL): string | null {
   const hostname = url.hostname.toLowerCase();
-  if (hostname.includes('zoopla.co.uk')) return 'zoopla';
-  if (hostname.includes('rightmove.co.uk')) return 'rightmove';
-  return null;
+  const adapters = [
+    { id: 'zoopla-uk', pattern: 'zoopla.co.uk' },
+    { id: 'rightmove-uk', pattern: 'rightmove.co.uk' },
+    { id: 'realtor-us', pattern: 'realtor.com' },
+    { id: 'zillow-us', pattern: 'zillow.com' },
+    { id: 'redfin-us', pattern: 'redfin.com' },
+    { id: 'immobilienscout-de', pattern: 'immobilienscout24.de' },
+    { id: 'seloger-fr', pattern: 'seloger.com' },
+    { id: 'idealista-es', pattern: 'idealista.com' },
+  ];
+  
+  const match = adapters.find(a => hostname.includes(a.pattern));
+  return match?.id || null;
 }
 
 Deno.serve(async (req) => {
@@ -59,7 +69,7 @@ Deno.serve(async (req) => {
     const site = siteFor(normalized);
     if (!site) {
       return new Response(
-        JSON.stringify({ error: 'unsupported_site', message: 'Only Zoopla and Rightmove URLs are supported' }),
+        JSON.stringify({ error: 'unsupported_site', message: 'Site not supported. Try Zoopla, Rightmove, Zillow, Realtor, Redfin, ImmobilienScout24, SeLoger, or Idealista.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

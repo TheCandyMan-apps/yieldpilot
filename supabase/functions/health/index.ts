@@ -32,19 +32,36 @@ serve(async (req) => {
       dbConnected = false;
     }
 
-    // Get recent error counts by provider
-    const { data: recentErrors } = await supabase
-      .from('ingest_events')
-      .select('provider, status')
-      .gte('created_at', new Date(Date.now() - 3600000).toISOString()) // Last hour
-      .eq('status', 'failed');
+    // Provider health checks
+    const providers = [
+      { id: 'zoopla-uk', region: 'UK' }, { id: 'rightmove-uk', region: 'UK' },
+      { id: 'realtor-us', region: 'US' }, { id: 'zillow-us', region: 'US' }, { id: 'redfin-us', region: 'US' },
+      { id: 'immobilienscout-de', region: 'DE' }, { id: 'seloger-fr', region: 'FR' }, { id: 'idealista-es', region: 'ES' },
+    ];
 
-    const errorsByProvider: Record<string, number> = {};
-    if (recentErrors) {
-      for (const event of recentErrors) {
-        errorsByProvider[event.provider] = (errorsByProvider[event.provider] || 0) + 1;
-      }
-    }
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    
+    const providerHealth = await Promise.all(
+      providers.map(async (p) => {
+        const { data: jobs } = await supabase
+          .from('ingest_jobs')
+          .select('status')
+          .eq('site', p.id)
+          .gte('created_at', yesterday);
+
+        const total = jobs?.length || 0;
+        const succeeded = jobs?.filter(j => j.status === 'succeeded').length || 0;
+        const successRate = total > 0 ? Math.round((succeeded / total) * 100) : 0;
+
+        return {
+          id: p.id,
+          region: p.region,
+          status: successRate >= 80 ? 'ok' : successRate >= 50 ? 'degraded' : 'down',
+          jobsLast24h: total,
+          successRate,
+        };
+      })
+    );
 
     // Get last FX refresh time
     const { data: lastFxRate } = await supabase
@@ -59,8 +76,10 @@ serve(async (req) => {
       ? Date.now() - new Date(lastFxRefresh).getTime() > 86400000 // >24h
       : true;
 
+    const avgSuccessRate = providerHealth.reduce((sum, p) => sum + p.successRate, 0) / providerHealth.length;
+
     const health = {
-      status: dbConnected ? 'healthy' : 'degraded',
+      status: dbConnected && avgSuccessRate >= 70 ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       checks: {
         database: dbConnected,
@@ -69,9 +88,10 @@ serve(async (req) => {
           lastRefresh: lastFxRefresh,
           stale: fxStale,
         },
-        ingestion: {
-          errorsByProvider,
-          recentErrorCount: Object.values(errorsByProvider).reduce((a, b) => a + b, 0),
+        providers: providerHealth,
+        summary: {
+          avgSuccessRate: Math.round(avgSuccessRate),
+          totalJobs24h: providerHealth.reduce((sum, p) => sum + p.jobsLast24h, 0),
         },
       },
     };

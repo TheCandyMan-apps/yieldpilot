@@ -166,25 +166,28 @@ async function processJob(supabase: any, apifyToken: string) {
       return;
     }
 
-    // Determine actor
-    const actor = job.site === 'zoopla' 
-      ? 'dhrumil/zoopla-scraper'
-      : 'dhrumil/rightmove-scraper';
+    // Global adapter mapping
+    const adapters: Record<string, { actor: string; region: string; currency: string }> = {
+      'zoopla-uk': { actor: 'maxcopell~zoopla-scraper', region: 'UK', currency: 'GBP' },
+      'rightmove-uk': { actor: 'shanes~rightmove-scraper', region: 'UK', currency: 'GBP' },
+      'realtor-us': { actor: 'maxcopell~realtorcom-scraper', region: 'US', currency: 'USD' },
+      'zillow-us': { actor: 'maxcopell~zillow-scraper', region: 'US', currency: 'USD' },
+      'redfin-us': { actor: 'maxcopell~redfin-scraper', region: 'US', currency: 'USD' },
+      'immobilienscout-de': { actor: 'maxcopell~immobilienscout24-scraper', region: 'DE', currency: 'EUR' },
+      'seloger-fr': { actor: 'maxcopell~seloger-scraper', region: 'FR', currency: 'EUR' },
+      'idealista-es': { actor: 'maxcopell~idealista-scraper', region: 'ES', currency: 'EUR' },
+    };
 
-    // Stage 1: Full details
-    let input: any;
-    if (job.site === 'zoopla') {
-      input = {
-        startUrls: [{ url: job.normalized_url }],
-        fullPropertyDetails: true,
-        monitoringMode: false,
-      };
-    } else {
-      input = {
-        startUrls: [{ url: job.normalized_url }],
-        fullPropertyDetails: true,
-      };
+    const adapterConfig = adapters[job.site];
+    if (!adapterConfig) {
+      throw new Error(`Unknown site: ${job.site}`);
     }
+
+    const actor = adapterConfig.actor;
+    const input = {
+      startUrls: [{ url: job.normalized_url }],
+      maxItems: 100,
+    };
 
     let runResponse: ApifyRunResponse;
     try {
@@ -230,36 +233,25 @@ async function processJob(supabase: any, apifyToken: string) {
     console.log(`✓ Fetched ${items.length} items`);
 
     if (items.length === 0) {
-      // Try Stage 2: basic mode
-      console.log('🔄 Retrying with basic mode...');
-      
-      if (job.site === 'zoopla') {
-        input.fullPropertyDetails = false;
-      } else {
-        input.fullPropertyDetails = false;
-      }
-
-      const retryResponse = await startApifyRun(actor, input, apifyToken, { memory: 512, timeout: 120 });
-      const retryRunId = retryResponse.data.id;
-      
-      await supabase.from('ingest_jobs').update({ run_id: retryRunId }).eq('id', job.id);
-      
-      const retryDatasetId = await pollDatasetId(retryRunId, apifyToken);
-      if (!retryDatasetId) {
-        await supabase.from('ingest_jobs').update({ status: 'no_items' }).eq('id', job.id);
-        return;
-      }
-
-      const retryItems = await fetchItems(retryDatasetId, apifyToken);
-      if (retryItems.length === 0) {
-        await supabase.from('ingest_jobs').update({ status: 'no_items' }).eq('id', job.id);
-        return;
-      }
-
-      items.push(...retryItems);
+      await supabase.from('ingest_events').insert({
+        job_id: job.id,
+        event_type: 'no_items',
+        metadata: { message: 'Empty dataset returned' },
+      });
+      await supabase.from('ingest_jobs').update({ status: 'no_items' }).eq('id', job.id);
+      return;
     }
 
-    // Upsert items into listings
+    // Log to ingest_events
+    await supabase.from('ingest_events').insert({
+      job_id: job.id,
+      event_type: 'items_fetched',
+      item_count: items.length,
+      runtime_ms: Date.now() - new Date(job.created_at).getTime(),
+      metadata: { datasetId, runId, adapter: job.site },
+    });
+
+    // Upsert items into listings with validation
     const userId = job.created_by;
     const listingsToInsert = items.slice(0, 10).map(item => ({
       user_id: userId,
@@ -271,6 +263,9 @@ async function processJob(supabase: any, apifyToken: string) {
       listing_url: item.url || job.normalized_url,
       image_url: item.images?.[0],
       source: job.site,
+      region: adapterConfig.region,
+      currency: adapterConfig.currency,
+      country_code: adapterConfig.region,
     }));
 
     const { data: insertedListings, error: insertError } = await supabase
