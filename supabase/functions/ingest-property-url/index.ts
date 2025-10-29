@@ -1,9 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { checkRateLimit, getRateLimitKey, getClientIp } from '../_shared/rate-limiter.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { jsonResponse, errorResponse, parseJsonBody } from '../_shared/api-helpers.ts';
 
 interface IngestRequest {
   url: string;
@@ -358,42 +356,6 @@ async function fetchDatasetItems(
   }
 }
 
-// Rate limiting
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(key: string): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute
-  const maxRequests = 10;
-  
-  const entry = rateLimitStore.get(key);
-  
-  if (!entry || entry.resetAt < now) {
-    const resetAt = now + windowMs;
-    rateLimitStore.set(key, { count: 1, resetAt });
-    return { allowed: true, remaining: maxRequests - 1, resetAt };
-  }
-  
-  if (entry.count < maxRequests) {
-    entry.count++;
-    return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
-  }
-  
-  return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-}
-
-function getRateLimitKey(req: Request): string {
-  const authHeader = req.headers.get('authorization');
-  if (authHeader) {
-    const token = authHeader.replace('Bearer ', '');
-    return `user:${token.slice(0, 20)}`;
-  }
-  
-  const forwarded = req.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-  return `ip:${ip}`;
-}
-
 // Main handler
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -402,8 +364,18 @@ Deno.serve(async (req) => {
 
   try {
     // Rate limiting check
-    const rateLimitKey = getRateLimitKey(req);
-    const rateLimit = checkRateLimit(rateLimitKey);
+    const ip = getClientIp(req);
+    const authHeader = req.headers.get('authorization');
+    
+    // Extract user ID from auth header if present
+    let userId: string | null = null;
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      userId = `token:${token.slice(0, 20)}`;
+    }
+    
+    const rateLimitKey = getRateLimitKey(userId, ip);
+    const rateLimit = await checkRateLimit(rateLimitKey);
     
     if (!rateLimit.allowed) {
       const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
@@ -443,11 +415,11 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    const body: IngestRequest = await req.json();
+    
+    const body = await parseJsonBody<IngestRequest>(req);
     
     // Validate URL
-    if (!body.url) {
+    if (!body || !body.url) {
       const error: IngestError = {
         ok: false,
         error: 'missing_url',

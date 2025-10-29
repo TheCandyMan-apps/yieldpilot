@@ -22,6 +22,12 @@ export function securityHeadersMiddleware() {
           'geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()'
         );
         
+        // CSP (relaxed for dev)
+        res.setHeader(
+          'Content-Security-Policy',
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:*"
+        );
+        
         next();
       });
     }

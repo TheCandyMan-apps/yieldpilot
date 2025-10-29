@@ -1,5 +1,5 @@
-// Simple in-memory rate limiter for edge functions
-// For production, consider Redis or Upstash
+// Simple in-memory rate limiter for client-side use
+// For edge functions, use supabase/functions/_shared/rate-limiter.ts
 
 interface RateLimitEntry {
   count: number;
