@@ -960,6 +960,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_audit: {
+        Row: {
+          count: number
+          created_at: string | null
+          duration_ms: number
+          error_message: string | null
+          fetched_at: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string | null
+          duration_ms: number
+          error_message?: string | null
+          fetched_at?: string
+          id?: string
+          provider: string
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          duration_ms?: number
+          error_message?: string | null
+          fetched_at?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: []
+      }
       ingest_events: {
         Row: {
           created_at: string
@@ -1963,6 +1993,45 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth_key: string | null
+          created_at: string | null
+          endpoint: string | null
+          fcm_token: string | null
+          id: string
+          is_active: boolean | null
+          p256dh: string | null
+          subscription_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key?: string | null
+          created_at?: string | null
+          endpoint?: string | null
+          fcm_token?: string | null
+          id?: string
+          is_active?: boolean | null
+          p256dh?: string | null
+          subscription_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string | null
+          created_at?: string | null
+          endpoint?: string | null
+          fcm_token?: string | null
+          id?: string
+          is_active?: boolean | null
+          p256dh?: string | null
+          subscription_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           count: number
@@ -2218,6 +2287,48 @@ export type Database = {
             columns: ["portfolio_id"]
             isOneToOne: false
             referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_matches: {
+        Row: {
+          id: string
+          is_notified: boolean | null
+          is_read: boolean | null
+          listing_id: string
+          matched_at: string | null
+          search_id: string
+        }
+        Insert: {
+          id?: string
+          is_notified?: boolean | null
+          is_read?: boolean | null
+          listing_id: string
+          matched_at?: string | null
+          search_id: string
+        }
+        Update: {
+          id?: string
+          is_notified?: boolean | null
+          is_read?: boolean | null
+          listing_id?: string
+          matched_at?: string | null
+          search_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_matches_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_matches_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "saved_searches"
             referencedColumns: ["id"]
           },
         ]
