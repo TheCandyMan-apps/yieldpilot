@@ -89,51 +89,63 @@ const DealsV2 = () => {
 
   const fetchListings = async () => {
     try {
-      // Use raw query to avoid type inference issues
-      const { data: listingsData, error: listingsError } = await (supabase as any)
-        .from("listings")
+      setLoading(true);
+      
+      // Use the v_investor_deals view for optimized query with FX conversion
+      const { data: dealsData, error } = await (supabase as any)
+        .from("v_investor_deals")
         .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
 
-      if (listingsError) throw listingsError;
+      if (error) throw error;
 
-      if (!listingsData || listingsData.length === 0) {
+      if (!dealsData || dealsData.length === 0) {
         setListings([]);
         setFilteredListings([]);
         setLoading(false);
         return;
       }
 
-      // Fetch metrics separately
-      const listingIds = listingsData.map((l: any) => l.id);
-      const { data: metricsData, error: metricsError } = await (supabase as any)
-        .from("listing_metrics")
-        .select("*")
-        .in("listing_id", listingIds);
-
-      if (metricsError) console.error("Error fetching metrics:", metricsError);
-
-      // Combine the data
-      const combinedData: Listing[] = listingsData.map((listing: any) => ({
-        id: listing.id,
-        address_line1: listing.address_line1,
-        address_town: listing.address_town,
-        postcode: listing.postcode,
-        price: listing.price,
-        bedrooms: listing.bedrooms,
-        bathrooms: listing.bathrooms,
-        property_type: listing.property_type,
-        images: listing.images || [],
-        source_refs: listing.source_refs || [],
-        listing_metrics: metricsData?.filter((m: any) => m.listing_id === listing.id) || []
+      // Transform view data to Listing interface (view already has metrics joined)
+      const transformedData: Listing[] = dealsData.map((deal: any) => ({
+        id: deal.id,
+        address_line1: deal.address_line1 || '',
+        address_town: deal.city,
+        postcode: deal.postcode,
+        price: deal.price,
+        bedrooms: deal.bedrooms,
+        bathrooms: deal.bathrooms,
+        property_type: deal.property_type,
+        images: deal.images || [],
+        source_refs: deal.source_refs || {},
+        listing_metrics: [{
+          listing_id: deal.id,
+          score: deal.score_numeric,
+          drivers: deal.explain_json?.drivers || [],
+          risks: deal.explain_json?.risks || [],
+          kpis: {
+            gross_yield_pct: deal.gross_yield_pct,
+            net_yield_pct: deal.net_yield_pct,
+            cashflow_monthly: deal.cashflow_monthly,
+            dscr: deal.dscr,
+            cap_rate: deal.cap_rate,
+          },
+          enrichment: {
+            price_usd: deal.price_usd,
+            price_eur: deal.price_eur,
+            country: deal.country,
+            source: deal.source,
+          }
+        }]
       }));
 
-      setListings(combinedData);
-      setFilteredListings(combinedData);
+      setListings(transformedData);
+      setFilteredListings(transformedData);
     } catch (error: any) {
+      console.error("Error fetching deals:", error);
       toast({
-        title: "Error loading listings",
+        title: "Error loading deals",
         description: error.message,
         variant: "destructive",
       });
