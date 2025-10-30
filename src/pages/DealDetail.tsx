@@ -17,6 +17,8 @@ import { ForecastPanel } from "@/components/deals/ForecastPanel";
 import { DocumentUpload } from "@/components/deals/DocumentUpload";
 import { DealSyndicate } from "@/components/deals/DealSyndicate";
 import { DealNotes } from "@/components/deals/DealNotes";
+import { DealComments } from "@/components/deals/DealComments";
+import { CustomFields } from "@/components/deals/CustomFields";
 import { formatCurrency, formatPercentage } from "@/lib/portfolioCalculations";
 import { trackActivity } from "@/lib/activity";
 
@@ -241,13 +243,15 @@ const DealDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="overview">
-              <TabsList>
+              <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="forecast">Forecast</TabsTrigger>
                 <TabsTrigger value="capex">CapEx</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="compliance">Compliance</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="comments">Comments</TabsTrigger>
+                <TabsTrigger value="fields">Custom Fields</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -337,6 +341,14 @@ const DealDetail = () => {
 
               <TabsContent value="notes">
                 <DealNotes listingId={listing.id} />
+              </TabsContent>
+
+              <TabsContent value="comments">
+                <DealComments dealId={listing.id} />
+              </TabsContent>
+
+              <TabsContent value="fields">
+                <CustomFields dealId={listing.id} />
               </TabsContent>
             </Tabs>
           </div>
