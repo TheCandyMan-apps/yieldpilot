@@ -47,6 +47,9 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}'],
+        // Background sync for offline writes
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -63,15 +66,38 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest.*deals_feed/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'deals-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 10 // 10 minutes for deals
+              },
+              networkTimeoutSeconds: 10,
+              plugins: [
+                {
+                  cacheWillUpdate: async ({ response }: any) => {
+                    // Only cache successful responses
+                    if (response.status === 200) {
+                      return response;
+                    }
+                    return null;
+                  },
+                },
+              ],
+            }
+          },
+          {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 3 // 3 minutes
               },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 8
             }
           },
           {

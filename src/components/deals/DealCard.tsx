@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, MapPin, Bed, Bath, TrendingUp, DollarSign, FileText } from "lucide-react";
+import { Heart, MapPin, Bed, Bath, TrendingUp, DollarSign, FileText, Lock } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,9 @@ import { useNavigate } from "react-router-dom";
 import DealSummaryGenerator from "./DealSummaryGenerator";
 import { MultiCurrencyPrice } from "./MultiCurrencyPrice";
 import { MarketBadge } from "./MarketBadge";
+import { ProvenanceDrawer } from "./ProvenanceDrawer";
+import { UnderwriteDrawer } from "@/features/underwrite/UnderwriteDrawer";
+import { UpgradeModal } from "@/components/UpgradeModal";
 
 interface DealCardProps {
   deal: {
@@ -43,8 +46,26 @@ const scoreColors = {
 const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [watchlisted, setWatchlisted] = useState(isWatchlisted);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userTier, setUserTier] = useState<string>('free');
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch user tier on mount
+  useState(() => {
+    const fetchUserTier = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single();
+        setUserTier(profile?.subscription_tier || 'free');
+      }
+    };
+    fetchUserTier();
+  });
 
   const handleWatchlistToggle = async () => {
     setIsLoading(true);
@@ -150,6 +171,15 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
             region={deal.region || "UK"} 
             source={deal.source}
           />
+          {userTier === 'free' && (
+            <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+              <Lock className="h-3 w-3 mr-1" />
+              Pro
+            </Badge>
+          )}
+        </div>
+        <div className="absolute bottom-3 right-3">
+          <ProvenanceDrawer deal={deal} />
         </div>
       </div>
 
@@ -224,11 +254,11 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <DealSummaryGenerator
+        <UnderwriteDrawer
           deal={deal}
           trigger={
             <Button className="flex-1" variant="default">
-              Analyze This Deal
+              Underwrite Deal
             </Button>
           }
         />
@@ -241,6 +271,12 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
           }
         />
       </CardFooter>
+      
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        feature="Advanced Analytics"
+      />
     </Card>
   );
 };

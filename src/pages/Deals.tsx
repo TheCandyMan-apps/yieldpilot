@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useVirtualizer } from '@tanstack/react-virtual';
 import DashboardLayout from "@/components/DashboardLayout";
 import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
@@ -42,6 +43,7 @@ const Deals = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get('location') || '';
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // Simple county-to-postcode prefix mapping (helps when listings don't include the county name)
   const countyPostcodePrefixes: Record<string, string[]> = {
@@ -447,7 +449,7 @@ const Deals = () => {
           })()}
         </div>
 
-        {/* Deals Grid */}
+        {/* Virtualized Deals Grid */}
         {filteredDeals.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
@@ -455,15 +457,21 @@ const Deals = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDeals.map((deal) => (
-              <EnhancedDealCard
-                key={deal.id}
-                deal={deal}
-                isWatchlisted={watchlistedIds.has(deal.id)}
-                onWatchlistToggle={handleWatchlistToggle}
-              />
-            ))}
+          <div
+            ref={parentRef}
+            className="overflow-auto"
+            style={{ height: 'calc(100vh - 400px)' }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDeals.map((deal) => (
+                <EnhancedDealCard
+                  key={deal.id}
+                  deal={deal}
+                  isWatchlisted={watchlistedIds.has(deal.id)}
+                  onWatchlistToggle={handleWatchlistToggle}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
