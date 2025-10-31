@@ -1,6 +1,39 @@
-# YieldPilot Production Readiness Checklist
+# YieldPilot Production Launch Checklist
 
-## ✅ Phase 8 - AI Intelligence Layer (COMPLETE)
+## Pre-Launch Setup
+
+### 1. Stripe Configuration
+- [ ] Create Stripe account (live mode)
+- [ ] Create products in Stripe Dashboard:
+  - [ ] Pro Monthly (recurring)
+  - [ ] Investor Monthly (recurring)
+  - [ ] Deal Lab Monthly (recurring)
+  - [ ] AI Lease Report (one-time)
+  - [ ] Due Diligence Pack (one-time)
+- [ ] Copy Price IDs to `src/lib/stripe-config.ts`
+- [ ] Copy Product IDs to `PLAN_MAPPING` in `supabase/functions/billing-webhooks/index.ts`
+- [ ] Set up billing portal: https://dashboard.stripe.com/settings/billing/portal
+- [ ] Configure webhook endpoint: `https://yourdomain.com/functions/v1/billing-webhooks`
+- [ ] Copy webhook secret to Vercel env
+
+### 2. Environment Variables (Vercel)
+Set these in Vercel Dashboard → Project → Settings → Environment Variables:
+
+```bash
+# Stripe (Production)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Monitoring (Optional but Recommended)
+VITE_SENTRY_DSN=https://...@sentry.io/...
+VITE_POSTHOG_KEY=phc_...
+VITE_POSTHOG_HOST=https://eu.posthog.com
+
+# Supabase (Auto-configured by Lovable Cloud)
+VITE_SUPABASE_URL=https://...supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+VITE_SUPABASE_PROJECT_ID=...
+```
 
 ### Core AI Features
 - [x] Forecast engine with usage tracking

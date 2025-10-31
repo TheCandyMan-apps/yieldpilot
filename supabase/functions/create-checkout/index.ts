@@ -18,13 +18,13 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId } = await req.json();
+    const { priceId, quantity = 1, mode = "subscription", metadata = {} } = await req.json();
     
     if (!priceId) {
       throw new Error("Price ID is required");
     }
 
-    console.log("[CREATE-CHECKOUT] Starting checkout for price:", priceId);
+    console.log("[CREATE-CHECKOUT] Starting checkout:", { priceId, quantity, mode });
 
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -57,14 +57,15 @@ serve(async (req) => {
       line_items: [
         {
           price: priceId,
-          quantity: 1,
+          quantity,
         },
       ],
-      mode: "subscription",
+      mode: mode as 'subscription' | 'payment',
       success_url: `${req.headers.get("origin")}/billing?success=true`,
       cancel_url: `${req.headers.get("origin")}/billing?canceled=true`,
       metadata: {
         user_id: user.id,
+        ...metadata,
       },
     });
 

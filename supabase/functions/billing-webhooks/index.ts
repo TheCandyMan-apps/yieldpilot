@@ -2,6 +2,13 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
+const PLAN_MAPPING: Record<string, string> = {
+  'prod_pro': 'pro',
+  'prod_investor': 'investor',
+  'prod_deal_lab': 'deal_lab',
+  // Add your product IDs here after creating them in Stripe
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
@@ -38,29 +45,64 @@ serve(async (req) => {
 
     log("Event received", { type: event.type, id: event.id });
 
-    // Map product IDs to tiers
-    const tierMap: Record<string, string> = {
-      "prod_TKnjtL7SEh4si6": "pro",
-      "prod_TKo9PjfjAujttR": "enterprise",
-      "prod_TIQPO5z7ZmKw3Q": "team",
-      // Legacy products (keeping for existing subscribers)
-      "prod_TIQGr19KW6WSf2": "pro",
-      "prod_TIQG8NQ9FVZHVD": "enterprise",
-    };
+    function getTierFromProductId(productId: string): string {
+      return PLAN_MAPPING[productId] || "free";
+    }
 
     switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const customerId = session.customer as string;
+        const subscriptionId = session.subscription as string;
+        
+        log("Checkout completed", { customerId, subscriptionId, mode: session.mode });
+
+        if (session.mode === 'payment') {
+          // One-time purchase
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_customer_id", customerId);
+
+          if (!profiles || profiles.length === 0) {
+            log("ERROR: No profile found for customer", { customerId });
+            return new Response(JSON.stringify({ error: "Profile not found" }), { 
+              status: 404, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            });
+          }
+
+          const userId = profiles[0].id;
+          const metadata = session.metadata || {};
+
+          await supabase.from("purchases").insert({
+            user_id: userId,
+            product_type: metadata.product_type || 'unknown',
+            stripe_payment_intent_id: session.payment_intent as string,
+            amount: session.amount_total || 0,
+            currency: session.currency || 'usd',
+            metadata: metadata,
+          });
+
+          log("One-time purchase recorded", { userId, productType: metadata.product_type });
+        }
+        break;
+      }
+
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         const productId = subscription.items.data[0]?.price.product as string;
-        const plan = tierMap[productId] || "free";
+        const plan = getTierFromProductId(productId);
+        const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
 
         log("Subscription event", { 
           customerId, 
           subscriptionId: subscription.id, 
           status: subscription.status,
-          plan 
+          plan,
+          productId
         });
 
         // Get user by stripe customer ID
@@ -68,22 +110,30 @@ serve(async (req) => {
           .from("subscriptions")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (existingSub) {
-          // Update existing subscription
+          // Update entitlements table
+          await supabase.from("user_entitlements").upsert({
+            user_id: existingSub.user_id,
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: customerId,
+            plan,
+            expires_at: currentPeriodEnd.toISOString(),
+          }, { onConflict: "user_id" });
+
+          // Keep legacy tables in sync
           await supabase
             .from("subscriptions")
             .update({
               stripe_subscription_id: subscription.id,
               plan,
               status: subscription.status,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_end: currentPeriodEnd.toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_customer_id", customerId);
 
-          // Update profile
           await supabase
             .from("profiles")
             .update({ subscription_tier: plan })
@@ -105,9 +155,16 @@ serve(async (req) => {
           .from("subscriptions")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (sub) {
+          // Update entitlements
+          await supabase.from("user_entitlements").update({ 
+            plan: "free",
+            expires_at: new Date().toISOString() 
+          }).eq("user_id", sub.user_id);
+
+          // Keep legacy tables in sync
           await supabase
             .from("subscriptions")
             .update({
@@ -138,7 +195,7 @@ serve(async (req) => {
           .from("subscriptions")
           .select("*")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (sub && sub.status !== "active") {
           await supabase
