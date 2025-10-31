@@ -51,6 +51,8 @@ const Methodology = lazy(() => import("./pages/Methodology"));
 const AdjustedRoiMethodology = lazy(() => import("./pages/methodology/AdjustedRoi"));
 const InvestCityPage = lazy(() => import("./pages/seo/InvestCityPage"));
 const LeaseScanner = lazy(() => import("./pages/LeaseScanner"));
+const Enfranchisement = lazy(() => import("./pages/Enfranchisement"));
+const StressTesting = lazy(() => import("./pages/StressTesting"));
 
 const queryClient = new QueryClient();
 
@@ -125,6 +127,8 @@ const App = () => (
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/lease-scanner" element={<LeaseScanner />} />
+            <Route path="/enfranchisement" element={<Enfranchisement />} />
+            <Route path="/stress-testing/:id" element={<StressTesting />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
