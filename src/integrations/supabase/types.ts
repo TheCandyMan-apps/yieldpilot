@@ -2714,6 +2714,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_scenarios: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string | null
+          params: Json
+          strategy_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          params?: Json
+          strategy_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          params?: Json
+          strategy_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scenarios_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watchlist: {
         Row: {
           created_at: string | null

@@ -250,7 +250,7 @@ export default function AITelemetry() {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={regionalData}
+                    data={regionalData as any}
                     dataKey="count"
                     nameKey="region"
                     cx="50%"
@@ -282,7 +282,7 @@ export default function AITelemetry() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={regionalData}>
+                <BarChart data={regionalData as any}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="region" />
                   <YAxis />
@@ -304,7 +304,7 @@ export default function AITelemetry() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={regionalData}>
+                <BarChart data={regionalData as any}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="region" />
                   <YAxis />

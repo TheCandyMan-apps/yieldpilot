@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Calculator, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calculator, Download, FileSpreadsheet, FileText, Zap, Save, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -18,6 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Checkbox } from "@/components/ui/checkbox";
+import { getEPCAdvice, runStrategySimulation } from "@/lib/sdk/adjusted";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UnderwriteDrawerProps {
   deal: {
@@ -26,6 +29,9 @@ interface UnderwriteDrawerProps {
     price: number;
     estimated_rent?: number;
     bedrooms?: number;
+    city?: string;
+    country?: string;
+    epc_rating?: string;
   };
   trigger?: React.ReactNode;
 }
@@ -74,6 +80,20 @@ export function UnderwriteDrawer({ deal, trigger }: UnderwriteDrawerProps) {
     appreciationRate: 3,
   });
 
+  // Regulation & Tax state
+  const [regulationSettings, setRegulationSettings] = useState({
+    country: deal.country || 'UK',
+    taxYear: 2025,
+    personalTaxBand: 'higher', // 'basic' | 'higher' | 'additional' | 'defaults'
+    applySection24: true,
+    includeEPCRetrofit: true,
+    includeLicensing: false,
+  });
+
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('LTR');
+  const [epcAdvice, setEpcAdvice] = useState<any>(null);
+  const [strategySimResults, setStrategySimResults] = useState<any>(null);
+
   const [results, setResults] = useState<{
     cashflows: CashflowRow[];
     dscr: number;
@@ -81,6 +101,27 @@ export function UnderwriteDrawer({ deal, trigger }: UnderwriteDrawerProps) {
     irr: number;
     equityMultiple: number;
   } | null>(null);
+
+  // Load strategy presets when strategy changes
+  useEffect(() => {
+    const applyStrategyPreset = async () => {
+      const presets: Record<string, Partial<UnderwriteInputs>> = {
+        LTR: { opexPct: 15, vacancyPct: 5, ltv: 75 },
+        HMO: { opexPct: 25, vacancyPct: 8, ltv: 70, capexYear1: 15000 },
+        STR: { opexPct: 30, vacancyPct: 15, ltv: 65 },
+        BRRR: { ltv: 75, capexYear1: 25000, appreciationRate: 5, exitYear: 3 },
+      };
+      
+      if (presets[selectedStrategy]) {
+        setInputs(prev => ({ ...prev, ...presets[selectedStrategy] }));
+        if (selectedStrategy === 'HMO') {
+          setRegulationSettings(prev => ({ ...prev, includeLicensing: true }));
+        }
+      }
+    };
+    
+    applyStrategyPreset();
+  }, [selectedStrategy]);
 
   const calculateMetrics = () => {
     const loanAmount = deal.price * (inputs.ltv / 100);
@@ -233,6 +274,86 @@ export function UnderwriteDrawer({ deal, trigger }: UnderwriteDrawerProps) {
     });
   };
 
+  const handleEPCAdvisor = async () => {
+    setLoading(true);
+    try {
+      const advice = await getEPCAdvice(deal.id, 'C');
+      setEpcAdvice(advice);
+      toast({
+        title: "EPC Analysis Complete",
+        description: `Retrofit to EPC C: £${advice.cost_estimate_min.toLocaleString()} - £${advice.cost_estimate_max.toLocaleString()}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "EPC Analysis Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRunStrategy = async () => {
+    setLoading(true);
+    try {
+      const simResults = await runStrategySimulation(deal.id, selectedStrategy, {
+        ltv: inputs.ltv,
+        licensing_monthly: regulationSettings.includeLicensing ? 150 : 0,
+      });
+      setStrategySimResults(simResults);
+      toast({
+        title: "Strategy Simulation Complete",
+        description: `${selectedStrategy}: ${simResults.projection_10yr.length} year projection ready`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Simulation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveScenario = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Must be logged in");
+
+      // Workaround for type generation - cast to any temporarily
+      const { error } = await (supabase.from('user_scenarios') as any).insert({
+        user_id: user.id,
+        listing_id: deal.id,
+        strategy_key: selectedStrategy,
+        params: {
+          inputs,
+          regulationSettings,
+          results,
+          epcAdvice,
+          strategySimResults,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Scenario Saved",
+        description: "You can review this later in your saved scenarios",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Save Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -252,13 +373,38 @@ export function UnderwriteDrawer({ deal, trigger }: UnderwriteDrawerProps) {
         </SheetHeader>
 
         <Tabs defaultValue="inputs" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="inputs">Inputs</TabsTrigger>
+            <TabsTrigger value="regulation">Regulation</TabsTrigger>
             <TabsTrigger value="outputs" disabled={!results}>Outputs</TabsTrigger>
             <TabsTrigger value="cashflow" disabled={!results}>Cashflow</TabsTrigger>
           </TabsList>
 
           <TabsContent value="inputs" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Strategy</CardTitle>
+                <CardDescription>Select investment approach</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LTR">LTR - Long Term Rental</SelectItem>
+                    <SelectItem value="HMO">HMO - House in Multiple Occupation</SelectItem>
+                    <SelectItem value="STR">STR - Short Term Rental</SelectItem>
+                    <SelectItem value="BRRR">BRRR - Buy-Refurb-Rent-Refinance</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleRunStrategy} disabled={loading} className="w-full mt-3" variant="outline">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Run Strategy Simulation
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Financing</CardTitle>
@@ -348,6 +494,140 @@ export function UnderwriteDrawer({ deal, trigger }: UnderwriteDrawerProps) {
             <Button onClick={calculateMetrics} className="w-full">
               <Calculator className="h-4 w-4 mr-2" />
               Calculate Metrics
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="regulation" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Regulation & Tax</CardTitle>
+                <CardDescription>Apply country-specific tax rules and compliance costs</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Country</Label>
+                    <Input value={regulationSettings.country} disabled className="bg-muted" />
+                  </div>
+                  <div>
+                    <Label>Tax Year</Label>
+                    <Select 
+                      value={String(regulationSettings.taxYear)} 
+                      onValueChange={(val) => setRegulationSettings({...regulationSettings, taxYear: Number(val)})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2024">2024</SelectItem>
+                        <SelectItem value="2025">2025</SelectItem>
+                        <SelectItem value="2026">2026</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Personal Tax Band</Label>
+                    <Select 
+                      value={regulationSettings.personalTaxBand} 
+                      onValueChange={(val: any) => setRegulationSettings({...regulationSettings, personalTaxBand: val})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="defaults">Use Country Defaults</SelectItem>
+                        <SelectItem value="basic">Basic Rate (20%)</SelectItem>
+                        <SelectItem value="higher">Higher Rate (40%)</SelectItem>
+                        <SelectItem value="additional">Additional Rate (45%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="section24" 
+                      checked={regulationSettings.applySection24}
+                      onCheckedChange={(checked) => setRegulationSettings({...regulationSettings, applySection24: checked as boolean})}
+                    />
+                    <Label htmlFor="section24" className="text-sm cursor-pointer">
+                      Apply Section 24 rules (UK: no mortgage interest deduction, 20% tax credit)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="epc" 
+                      checked={regulationSettings.includeEPCRetrofit}
+                      onCheckedChange={(checked) => setRegulationSettings({...regulationSettings, includeEPCRetrofit: checked as boolean})}
+                    />
+                    <Label htmlFor="epc" className="text-sm cursor-pointer">
+                      Include EPC retrofit costs to minimum standard (C)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="licensing" 
+                      checked={regulationSettings.includeLicensing}
+                      onCheckedChange={(checked) => setRegulationSettings({...regulationSettings, includeLicensing: checked as boolean})}
+                    />
+                    <Label htmlFor="licensing" className="text-sm cursor-pointer">
+                      Include licensing/compliance costs where applicable
+                    </Label>
+                  </div>
+                </div>
+
+                {regulationSettings.applySection24 && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Section 24: Higher-rate taxpayers are significantly impacted. 
+                      Adjusted yield will be lower than gross yield.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>EPC Retrofit Advisor</CardTitle>
+                <CardDescription>
+                  {deal.epc_rating ? `Current: EPC ${deal.epc_rating}` : 'EPC rating unknown'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button onClick={handleEPCAdvisor} disabled={loading} className="w-full" variant="outline">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Get EPC Upgrade Recommendations
+                </Button>
+
+                {epcAdvice && (
+                  <div className="space-y-2 p-3 bg-muted rounded-lg text-sm">
+                    <div className="flex justify-between">
+                      <span>Cost Range:</span>
+                      <span className="font-semibold">
+                        £{epcAdvice.cost_estimate_min.toLocaleString()} - £{epcAdvice.cost_estimate_max.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Amortized (7yr):</span>
+                      <span className="font-semibold">
+                        £{((epcAdvice.cost_estimate_min + epcAdvice.cost_estimate_max) / 2 / 7 / 12).toFixed(0)}/mo
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Expected Yield Uplift:</span>
+                      <span className="font-semibold text-green-600">+{epcAdvice.expected_yield_uplift || 0.3}%</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Button onClick={handleSaveScenario} disabled={loading || !results} className="w-full">
+              <Save className="h-4 w-4 mr-2" />
+              Save as Scenario
             </Button>
           </TabsContent>
 
