@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,29 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, FileText, AlertTriangle, CheckCircle2, Clock, TrendingDown, TrendingUp } from "lucide-react";
+import { Upload, FileText, AlertTriangle, CheckCircle2, Clock, TrendingDown, TrendingUp, Crown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PurchaseDialog } from "@/components/PurchaseDialog";
+import { hasFeatureAccess, PREMIUM_FEATURES } from "@/lib/entitlements";
 
 export default function LeaseScanner() {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanProgress, setScanProgress] = useState(0);
+  const [showPurchase, setShowPurchase] = useState(false);
+  const [hasPremium, setHasPremium] = useState(false);
+
+  // Check premium access on mount
+  useEffect(() => {
+    const checkAccess = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const access = await hasFeatureAccess(user.id, PREMIUM_FEATURES.LEASE_PREMIUM);
+        setHasPremium(access);
+      }
+    };
+    checkAccess();
+  }, []);
 
   // Fetch lease scan jobs
   const { data: scanJobs, refetch } = useQuery({

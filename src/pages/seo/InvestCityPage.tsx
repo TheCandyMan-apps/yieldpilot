@@ -4,9 +4,10 @@ import { Helmet } from "react-helmet";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, MapPin, DollarSign, Home } from "lucide-react";
+import { TrendingUp, MapPin, DollarSign, Home, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PurchaseDialog } from "@/components/PurchaseDialog";
 
 interface CityStats {
   avgYield: number;
@@ -20,6 +21,7 @@ export default function InvestCityPage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<CityStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPurchase, setShowPurchase] = useState(false);
 
   useEffect(() => {
     fetchCityStats();

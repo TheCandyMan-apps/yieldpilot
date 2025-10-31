@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatHistory } from "@/components/ai/ChatHistory";
 import { SmartRecommendations } from "@/components/ai/SmartRecommendations";
 import { MessageSquare, Sparkles } from "lucide-react";
+import { EntitlementGuard } from "@/components/EntitlementGuard";
+import { PREMIUM_FEATURES } from "@/lib/entitlements";
 
 export default function AIAssistant() {
   return (
@@ -17,29 +19,31 @@ export default function AIAssistant() {
           </p>
         </div>
 
-        <Tabs defaultValue="recommendations" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="recommendations">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Recommendations
-            </TabsTrigger>
-            <TabsTrigger value="history">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Chat History
-            </TabsTrigger>
-          </TabsList>
+        <EntitlementGuard feature={PREMIUM_FEATURES.AI_ASSISTANT}>
+          <Tabs defaultValue="recommendations" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="recommendations">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Recommendations
+              </TabsTrigger>
+              <TabsTrigger value="history">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Chat History
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="recommendations" className="space-y-4">
-            <SmartRecommendations />
-          </TabsContent>
+            <TabsContent value="recommendations" className="space-y-4">
+              <SmartRecommendations />
+            </TabsContent>
 
-          <TabsContent value="history" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="font-semibold mb-4">Previous Conversations</h3>
-              <ChatHistory />
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="history" className="space-y-4">
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4">Previous Conversations</h3>
+                <ChatHistory />
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </EntitlementGuard>
       </div>
     </DashboardLayout>
   );

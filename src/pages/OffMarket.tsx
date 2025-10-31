@@ -1,5 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { OffMarketFeed } from "@/components/offmarket/OffMarketFeed";
+import { EntitlementGuard } from "@/components/EntitlementGuard";
+import { PREMIUM_FEATURES } from "@/lib/entitlements";
 
 export default function OffMarket() {
   return (
@@ -12,7 +14,9 @@ export default function OffMarket() {
           </p>
         </div>
 
-        <OffMarketFeed />
+        <EntitlementGuard feature={PREMIUM_FEATURES.OFFMARKET}>
+          <OffMarketFeed />
+        </EntitlementGuard>
       </div>
     </DashboardLayout>
   );

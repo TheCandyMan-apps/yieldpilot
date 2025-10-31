@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TrendingDown, TrendingUp, AlertTriangle, CheckCircle2, XCircle, Activity } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EntitlementGuard } from "@/components/EntitlementGuard";
+import { PREMIUM_FEATURES } from "@/lib/entitlements";
 
 interface ScenarioResult {
   name: string;
@@ -130,6 +132,7 @@ export default function StressTesting() {
 
   return (
     <DashboardLayout>
+      <EntitlementGuard feature={PREMIUM_FEATURES.STRESS_TESTING}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Portfolio Stress Testing</h1>
@@ -370,9 +373,10 @@ export default function StressTesting() {
                 </div>
               ))}
             </CardContent>
-          </Card>
-        )}
-      </div>
+            </Card>
+          )}
+        </div>
+      </EntitlementGuard>
     </DashboardLayout>
   );
 }

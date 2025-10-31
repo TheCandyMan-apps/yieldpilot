@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Activity, TrendingUp, Map, AlertTriangle, Sparkles, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { EntitlementGuard } from '@/components/EntitlementGuard';
+import { PREMIUM_FEATURES } from '@/lib/entitlements';
 
 interface AIHealth {
   status: string;
