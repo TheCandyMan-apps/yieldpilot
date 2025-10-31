@@ -13,15 +13,15 @@ const tierConfig = {
     icon: null,
     className: "bg-muted text-muted-foreground",
   },
-  starter: {
-    label: "Starter",
-    icon: Zap,
-    className: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  },
   pro: {
     label: "Pro",
     icon: Crown,
     className: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+  },
+  enterprise: {
+    label: "Enterprise",
+    icon: Rocket,
+    className: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   },
   team: {
     label: "Team",

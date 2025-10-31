@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Check, Loader2 } from "lucide-react";
+import { CreditCard, Check, Loader2, FileText, Crown, Zap, Users, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -12,15 +13,15 @@ import { SubscriptionTier } from "@/lib/subscriptionHelpers";
 const SUBSCRIPTION_TIERS = {
   pro: {
     name: "Pro",
-    price: "£29",
-    priceId: "price_1SLpPpAWv4rktmqkpaH3qBnm",
-    productId: "prod_TIQGr19KW6WSf2",
+    price: "£39",
+    priceId: "price_1SO87xAWv4rktmqksewfIGra",
+    productId: "prod_TKnjtL7SEh4si6",
   },
-  investor: {
-    name: "Investor",
-    price: "£99",
-    priceId: "price_1SLpQ8AWv4rktmqkOqgFM8cg",
-    productId: "prod_TIQG8NQ9FVZHVD",
+  enterprise: {
+    name: "Enterprise",
+    price: "£149",
+    priceId: "price_1SO8XVAWv4rktmqk9BNILyOP",
+    productId: "prod_TKo9PjfjAujttR",
   },
   team: {
     name: "Team",
@@ -30,12 +31,19 @@ const SUBSCRIPTION_TIERS = {
   },
 };
 
+const AI_REPORT = {
+  name: "AI Lease Report",
+  price: "£9.99",
+  priceId: "price_1SO8pTAWv4rktmqkdNzQsgz5",
+  productId: "prod_TKoSPzjpFLy9YR",
+};
+
 const Billing = () => {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
-  const [usageStats, setUsageStats] = useState<{ ingests_used: number; exports_used: number } | null>(null);
+  const [usageStats, setUsageStats] = useState<{ ingests_used: number; exports_used: number; lease_scans: number }>({ ingests_used: 0, exports_used: 0, lease_scans: 0 });
 
   const checkSubscription = async () => {
     try {
@@ -62,7 +70,17 @@ const Billing = () => {
           .gte("period_start", periodStart.toISOString())
           .maybeSingle();
         
-        setUsageStats(usage || { ingests_used: 0, exports_used: 0 });
+        const { count: scanCount } = await supabase
+          .from("lease_scan_jobs")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", periodStart.toISOString());
+        
+        setUsageStats({ 
+          ingests_used: usage?.ingests_used || 0, 
+          exports_used: usage?.exports_used || 0,
+          lease_scans: scanCount || 0,
+        });
       }
     } catch (error: any) {
       console.error("Error checking subscription:", error);
@@ -123,49 +141,49 @@ const Billing = () => {
       price: "£0",
       features: [
         "5 property analyses/month",
-        "1 AI forecast/day",
-        "Basic deal feed access",
-        "Investment simulator",
+        "2 exports/month",
+        "Basic deal feed",
         "Market insights",
+        "1 lease scan/month",
       ],
       priceId: null,
     },
     {
       name: "Pro",
-      price: "£29",
+      price: "£39",
       features: [
-        "Unlimited property analyses",
-        "10 AI forecasts/day",
-        "AI Copilot assistant",
+        "50 property analyses/month",
+        "20 exports/month",
         "Full deal feed access",
-        "Priority alerts",
-        "Advanced analytics",
-        "Export to PDF",
-        "Email support",
+        "Saved searches & alerts",
+        "10 lease scans/month",
+        "Priority email support",
       ],
       priceId: SUBSCRIPTION_TIERS.pro.priceId,
+      popular: true,
     },
     {
-      name: "Investor",
-      price: "£99",
+      name: "Enterprise",
+      price: "£149",
       features: [
-        "Everything in Pro",
-        "Unlimited AI forecasts",
-        "Portfolio tracking",
+        "500 property analyses/month",
+        "200 exports/month",
+        "Advanced analytics & insights",
+        "Priority alerts",
+        "Unlimited lease scans",
         "Team collaboration (3 users)",
         "API access",
-        "White-label reports",
-        "Priority support",
       ],
-      priceId: SUBSCRIPTION_TIERS.investor.priceId,
+      priceId: SUBSCRIPTION_TIERS.enterprise.priceId,
     },
     {
       name: "Team",
       price: "£249",
       features: [
-        "Everything in Investor",
+        "Unlimited analyses & exports",
+        "Unlimited lease scans",
         "Unlimited team members",
-        "Advanced team permissions",
+        "White-label reports",
         "Dedicated account manager",
         "Custom integrations",
         "SLA guarantee",
@@ -222,22 +240,38 @@ const Billing = () => {
             </CardContent>
           </Card>
 
-          {usageStats && (
-            <UsageProgress
-              ingestsUsed={usageStats.ingests_used}
-              ingestsLimit={
-                subscriptionTier === "free" ? 5 :
-                subscriptionTier === "starter" ? 50 :
-                subscriptionTier === "pro" ? 500 : -1
-              }
-              exportsUsed={usageStats.exports_used}
-              exportsLimit={
-                subscriptionTier === "free" ? 2 :
-                subscriptionTier === "starter" ? 20 :
-                subscriptionTier === "pro" ? 200 : -1
-              }
-            />
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Usage This Month</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <UsageProgress
+                ingestsUsed={usageStats.ingests_used}
+                ingestsLimit={
+                  subscriptionTier === "free" ? 5 :
+                  subscriptionTier === "pro" ? 50 :
+                  subscriptionTier === "enterprise" ? 500 : -1
+                }
+                exportsUsed={usageStats.exports_used}
+                exportsLimit={
+                  subscriptionTier === "free" ? 2 :
+                  subscriptionTier === "pro" ? 20 :
+                  subscriptionTier === "enterprise" ? 200 : -1
+                }
+              />
+              <div className="pt-2">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Lease Scans</span>
+                  <span className="font-medium">
+                    {usageStats.lease_scans} / {
+                      subscriptionTier === "free" ? "1" :
+                      subscriptionTier === "pro" ? "10" : "∞"
+                    }
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-muted/50">
@@ -250,17 +284,28 @@ const Billing = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => {
             const isCurrent = plan.name.toLowerCase() === subscriptionTier;
+            const Icon = plan.name === "Pro" ? Crown : plan.name === "Enterprise" ? Rocket : plan.name === "Team" ? Users : Zap;
+            
             return (
-              <Card key={plan.name} className={isCurrent ? "border-primary" : ""}>
+              <Card 
+                key={plan.name} 
+                className={`relative ${
+                  (plan as any).popular ? "border-primary shadow-lg" : ""
+                } ${isCurrent ? "ring-2 ring-primary" : ""}`}
+              >
+                {(plan as any).popular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    Most Popular
+                  </Badge>
+                )}
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {plan.name}
+                  <div className="flex items-center justify-between mb-2">
+                    <Icon className="h-6 w-6 text-primary" />
                     {isCurrent && (
-                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                        Current
-                      </span>
+                      <Badge variant="secondary">Current</Badge>
                     )}
-                  </CardTitle>
+                  </div>
+                  <CardTitle>{plan.name}</CardTitle>
                   <CardDescription>
                     <span className="text-3xl font-bold text-foreground">
                       {plan.price}
@@ -271,17 +316,17 @@ const Billing = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-3 mb-6">
+                  <ul className="space-y-2 mb-6">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start text-sm">
-                        <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <Button
                     className="w-full"
-                    variant={isCurrent ? "outline" : "default"}
+                    variant={(plan as any).popular ? "default" : "outline"}
                     disabled={isCurrent || loading || checkingStatus || !plan.priceId}
                     onClick={() => plan.priceId && handleUpgrade(plan.priceId)}
                   >
@@ -304,25 +349,34 @@ const Billing = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <CreditCard className="h-5 w-5 mr-2" />
-              Secure Payment Processing
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Pay-Per-Report
             </CardTitle>
             <CardDescription>
-              All plans include secure, encrypted payment processing
+              Need a one-time lease analysis? Purchase individual AI reports
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              We accept all major credit cards and process payments securely through industry-standard encryption.
-            </p>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>✓ 256-bit SSL encryption</span>
-              <span>✓ PCI compliant</span>
-              <span>✓ Cancel anytime</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg">{AI_REPORT.name}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  AI-powered lease analysis with risk scoring, ROI adjustment, and recommendations
+                </p>
+                <p className="text-2xl font-bold">{AI_REPORT.price}</p>
+              </div>
+              <div className="text-sm text-muted-foreground max-w-xs">
+                Available when uploading a lease in the Lease Scanner
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <div className="text-center text-sm text-muted-foreground py-4">
+          <p>🔒 Secure payment processing by Stripe</p>
+          <p className="mt-1">Cancel anytime. No hidden fees.</p>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -40,9 +40,12 @@ serve(async (req) => {
 
     // Map product IDs to tiers
     const tierMap: Record<string, string> = {
-      "prod_TIQGr19KW6WSf2": "pro",
-      "prod_TIQG8NQ9FVZHVD": "investor",
+      "prod_TKnjtL7SEh4si6": "pro",
+      "prod_TKo9PjfjAujttR": "enterprise",
       "prod_TIQPO5z7ZmKw3Q": "team",
+      // Legacy products (keeping for existing subscribers)
+      "prod_TIQGr19KW6WSf2": "pro",
+      "prod_TIQG8NQ9FVZHVD": "enterprise",
     };
 
     switch (event.type) {

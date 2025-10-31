@@ -7,16 +7,16 @@ export interface PlanLimits {
 
 export interface PlanLimitsMap {
   free: PlanLimits;
-  starter: PlanLimits;
   pro: PlanLimits;
+  enterprise: PlanLimits;
   team: PlanLimits;
   [key: string]: PlanLimits;
 }
 
 const DEFAULT_LIMITS: PlanLimitsMap = {
   free: { ingests: 5, exports: 2 },
-  starter: { ingests: 50, exports: 20 },
-  pro: { ingests: 500, exports: 200 },
+  pro: { ingests: 50, exports: 20 },
+  enterprise: { ingests: 500, exports: 200 },
   team: { ingests: -1, exports: -1 },
 };
 

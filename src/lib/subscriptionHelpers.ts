@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type SubscriptionTier = "free" | "starter" | "pro" | "team";
+export type SubscriptionTier = "free" | "pro" | "enterprise" | "team";
 
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
@@ -46,7 +46,7 @@ export function hasFeatureAccess(
   userTier: SubscriptionTier,
   requiredTier: SubscriptionTier
 ): boolean {
-  const tierHierarchy: SubscriptionTier[] = ["free", "starter", "pro", "team"];
+  const tierHierarchy: SubscriptionTier[] = ["free", "pro", "enterprise", "team"];
   const userLevel = tierHierarchy.indexOf(userTier);
   const requiredLevel = tierHierarchy.indexOf(requiredTier);
   return userLevel >= requiredLevel;
@@ -58,28 +58,32 @@ export function hasFeatureAccess(
 export function getTierFeatures(tier: SubscriptionTier): string[] {
   const features: Record<SubscriptionTier, string[]> = {
     free: [
-      "5 property imports/month",
+      "5 property analyses/month",
       "2 exports/month",
       "Basic deal feed",
       "Market insights",
+      "1 lease scan/month",
     ],
-    starter: [
-      "50 property imports/month",
+    pro: [
+      "50 property analyses/month",
       "20 exports/month",
       "Full deal feed access",
       "Saved searches",
       "Email alerts",
+      "10 lease scans/month",
     ],
-    pro: [
-      "500 property imports/month",
+    enterprise: [
+      "500 property analyses/month",
       "200 exports/month",
       "Advanced analytics",
       "Priority alerts",
+      "Unlimited lease scans",
       "Team collaboration (3 users)",
     ],
     team: [
-      "Unlimited imports",
+      "Unlimited analyses",
       "Unlimited exports",
+      "Unlimited lease scans",
       "Unlimited team members",
       "API access",
       "White-label reports",
