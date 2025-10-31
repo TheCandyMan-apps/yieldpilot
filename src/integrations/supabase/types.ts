@@ -2819,6 +2819,16 @@ export type Database = {
         Args: { _new_tier: string; _user_id: string }
         Returns: boolean
       }
+      get_global_yield_comparison: {
+        Args: never
+        Returns: {
+          avg_adjusted_yield: number
+          avg_standard_yield: number
+          country: string
+          deal_count: number
+          yield_gap: number
+        }[]
+      }
       get_preview_deal_ids: {
         Args: never
         Returns: {

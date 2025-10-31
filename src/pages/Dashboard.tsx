@@ -11,6 +11,8 @@ import AnalysisResults from "@/components/AnalysisResults";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import { Link } from "react-router-dom";
 import { SmartRecommendations } from "@/components/ai/SmartRecommendations";
+import { GlobalYieldExplorer } from "@/components/dashboard/GlobalYieldExplorer";
+import { isEnabled } from "@/config/flags";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -187,6 +189,11 @@ const Dashboard = () => {
             </Card>
           </Link>
         </div>
+
+        {/* Global Yield Explorer */}
+        {isEnabled('realityMode') && (
+          <GlobalYieldExplorer />
+        )}
 
         {/* Smart Recommendations */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
