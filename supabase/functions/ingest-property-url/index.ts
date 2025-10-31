@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { checkRateLimit, getRateLimitKey, getClientIp } from '../_shared/rate-limiter.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, parseJsonBody } from '../_shared/api-helpers.ts';
-import { validateProperties } from './validation.ts';
+import { validateProperties } from '../_shared/validation.ts';
 
 interface IngestRequest {
   url: string;

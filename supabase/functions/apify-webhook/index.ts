@@ -1,6 +1,6 @@
 // Webhook endpoint for Apify to call when scraping is complete
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
-import { validateProperties } from "../ingest-property-url/validation.ts";
+import { validateProperties } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
