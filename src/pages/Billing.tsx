@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { UsageProgress } from "@/components/UsageProgress";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { SubscriptionTier } from "@/lib/subscriptionHelpers";
+import { getEntitlements, type Entitlement } from "@/lib/entitlements";
+import { STRIPE_PRODUCTS } from "@/lib/stripe-config";
 
 const SUBSCRIPTION_TIERS = {
   pro: {
@@ -41,47 +43,41 @@ const AI_REPORT = {
 const Billing = () => {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
   const [usageStats, setUsageStats] = useState<{ ingests_used: number; exports_used: number; lease_scans: number }>({ ingests_used: 0, exports_used: 0, lease_scans: 0 });
 
   const checkSubscription = async () => {
     try {
       setCheckingStatus(true);
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      
-      if (error) throw error;
-      
-      if (data) {
-        setSubscriptionTier(data.subscription_tier || "free");
-        setSubscriptionEnd(data.subscription_end);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get entitlements
+      const ent = await getEntitlements(user.id);
+      setEntitlement(ent);
 
       // Fetch usage stats
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const now = new Date();
-        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        
-        const { data: usage } = await supabase
-          .from("usage_counters")
-          .select("ingests_used, exports_used")
-          .eq("user_id", user.id)
-          .gte("period_start", periodStart.toISOString())
-          .maybeSingle();
-        
-        const { count: scanCount } = await supabase
-          .from("lease_scan_jobs")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .gte("created_at", periodStart.toISOString());
-        
-        setUsageStats({ 
-          ingests_used: usage?.ingests_used || 0, 
-          exports_used: usage?.exports_used || 0,
-          lease_scans: scanCount || 0,
-        });
-      }
+      const now = new Date();
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const { data: usage } = await supabase
+        .from("usage_counters")
+        .select("ingests_used, exports_used")
+        .eq("user_id", user.id)
+        .gte("period_start", periodStart.toISOString())
+        .maybeSingle();
+      
+      const { count: scanCount } = await supabase
+        .from("lease_scan_jobs")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", periodStart.toISOString());
+      
+      setUsageStats({ 
+        ingests_used: usage?.ingests_used || 0, 
+        exports_used: usage?.exports_used || 0,
+        lease_scans: scanCount || 0,
+      });
     } catch (error: any) {
       console.error("Error checking subscription:", error);
     } finally {
@@ -159,11 +155,11 @@ const Billing = () => {
         "10 lease scans/month",
         "Priority email support",
       ],
-      priceId: SUBSCRIPTION_TIERS.pro.priceId,
+      priceId: STRIPE_PRODUCTS.pro_monthly.priceId,
       popular: true,
     },
     {
-      name: "Enterprise",
+      name: "Investor",
       price: "£149",
       features: [
         "500 property analyses/month",
@@ -174,10 +170,10 @@ const Billing = () => {
         "Team collaboration (3 users)",
         "API access",
       ],
-      priceId: SUBSCRIPTION_TIERS.enterprise.priceId,
+      priceId: STRIPE_PRODUCTS.investor_monthly.priceId,
     },
     {
-      name: "Team",
+      name: "Deal Lab",
       price: "£249",
       features: [
         "Unlimited analyses & exports",
@@ -188,7 +184,7 @@ const Billing = () => {
         "Custom integrations",
         "SLA guarantee",
       ],
-      priceId: SUBSCRIPTION_TIERS.team.priceId,
+      priceId: STRIPE_PRODUCTS.deal_lab_monthly.priceId,
     },
   ];
 
@@ -210,10 +206,10 @@ const Billing = () => {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
                     <div className="flex items-center gap-2">
-                      <SubscriptionBadge tier={subscriptionTier as SubscriptionTier} />
+                      <SubscriptionBadge tier={(entitlement?.plan || 'free') as SubscriptionTier} />
                     </div>
                   </div>
-                  {subscriptionTier !== "free" ? (
+                  {entitlement?.plan && entitlement.plan !== "free" ? (
                     <Button 
                       onClick={handleManageSubscription} 
                       disabled={loading || checkingStatus}
@@ -226,14 +222,14 @@ const Billing = () => {
                       )}
                     </Button>
                   ) : (
-                    <Button onClick={() => handleUpgrade(SUBSCRIPTION_TIERS.pro.priceId)} disabled={loading}>
+                    <Button onClick={() => handleUpgrade(STRIPE_PRODUCTS.pro_monthly.priceId)} disabled={loading}>
                       Upgrade
                     </Button>
                   )}
                 </div>
-                {subscriptionEnd && (
+                {entitlement?.expiresAt && (
                   <p className="text-sm text-muted-foreground">
-                    Renews on {new Date(subscriptionEnd).toLocaleDateString()}
+                    Renews on {new Date(entitlement.expiresAt).toLocaleDateString()}
                   </p>
                 )}
               </div>
@@ -248,15 +244,15 @@ const Billing = () => {
               <UsageProgress
                 ingestsUsed={usageStats.ingests_used}
                 ingestsLimit={
-                  subscriptionTier === "free" ? 5 :
-                  subscriptionTier === "pro" ? 50 :
-                  subscriptionTier === "enterprise" ? 500 : -1
+                  entitlement?.plan === "free" ? 5 :
+                  entitlement?.plan === "pro" ? 50 :
+                  entitlement?.plan === "investor" ? 500 : -1
                 }
                 exportsUsed={usageStats.exports_used}
                 exportsLimit={
-                  subscriptionTier === "free" ? 2 :
-                  subscriptionTier === "pro" ? 20 :
-                  subscriptionTier === "enterprise" ? 200 : -1
+                  entitlement?.plan === "free" ? 2 :
+                  entitlement?.plan === "pro" ? 20 :
+                  entitlement?.plan === "investor" ? 200 : -1
                 }
               />
               <div className="pt-2">
@@ -264,8 +260,8 @@ const Billing = () => {
                   <span className="text-muted-foreground">Lease Scans</span>
                   <span className="font-medium">
                     {usageStats.lease_scans} / {
-                      subscriptionTier === "free" ? "1" :
-                      subscriptionTier === "pro" ? "10" : "∞"
+                      entitlement?.plan === "free" ? "1" :
+                      entitlement?.plan === "pro" ? "10" : "∞"
                     }
                   </span>
                 </div>
@@ -283,8 +279,8 @@ const Billing = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => {
-            const isCurrent = plan.name.toLowerCase() === subscriptionTier;
-            const Icon = plan.name === "Pro" ? Crown : plan.name === "Enterprise" ? Rocket : plan.name === "Team" ? Users : Zap;
+            const isCurrent = plan.name.toLowerCase() === entitlement?.plan;
+            const Icon = plan.name === "Pro" ? Crown : plan.name === "Investor" ? Rocket : plan.name === "Deal Lab" ? Users : Zap;
             
             return (
               <Card 

@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import { EntitlementGuard } from '@/components/EntitlementGuard';
+import { PREMIUM_FEATURES } from '@/lib/entitlements';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -168,7 +170,8 @@ export default function ApiKeys() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6 max-w-6xl">
+      <EntitlementGuard feature={PREMIUM_FEATURES.API_V2}>
+        <div className="container mx-auto p-6 max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">API Keys</h1>
@@ -339,6 +342,7 @@ export default function ApiKeys() {
           </CardContent>
         </Card>
       </div>
+      </EntitlementGuard>
     </DashboardLayout>
   );
 }
