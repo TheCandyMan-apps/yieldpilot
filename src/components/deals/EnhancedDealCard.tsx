@@ -34,6 +34,7 @@ interface EnhancedDealCardProps {
   onWatchlistToggle: (dealId: string) => void;
   personalizedScore?: number;
   aiInsight?: string;
+  realityMode?: boolean;
 }
 
 export const EnhancedDealCard = ({ 
@@ -41,7 +42,8 @@ export const EnhancedDealCard = ({
   isWatchlisted, 
   onWatchlistToggle,
   personalizedScore,
-  aiInsight 
+  aiInsight,
+  realityMode = false
 }: EnhancedDealCardProps) => {
   const [trackingView, setTrackingView] = useState(false);
 
@@ -115,6 +117,11 @@ export const EnhancedDealCard = ({
               {personalizedScore}/100
             </div>
           )}
+          {realityMode && (
+            <Badge className="bg-amber-500 hover:bg-amber-600 text-white">
+              Adjusted
+            </Badge>
+          )}
           <MarketBadge 
             region={deal.region || "UK"} 
             source={deal.source}
@@ -156,11 +163,15 @@ export const EnhancedDealCard = ({
           </div>
           <div className="text-right">
             {deal.yield_percentage && (
-              <p className="text-lg font-bold text-primary">
-                {deal.yield_percentage.toFixed(1)}%
-              </p>
+              <>
+                <p className="text-lg font-bold text-primary">
+                  {deal.yield_percentage.toFixed(1)}%
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {realityMode ? "Adj. Yield" : "Yield"}
+                </p>
+              </>
             )}
-            <p className="text-xs text-muted-foreground">Yield</p>
           </div>
         </div>
 

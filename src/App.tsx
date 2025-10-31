@@ -48,6 +48,7 @@ const Watchlist = lazy(() => import("./pages/Watchlist"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Methodology = lazy(() => import("./pages/Methodology"));
+const AdjustedRoiMethodology = lazy(() => import("./pages/methodology/AdjustedRoi"));
 const InvestCityPage = lazy(() => import("./pages/seo/InvestCityPage"));
 
 const queryClient = new QueryClient();
@@ -101,6 +102,7 @@ const App = () => (
             <Route path="/deal/:id" element={<DealDetail />} />
             <Route path="/benchmarks" element={<Benchmarks />} />
         <Route path="/methodology" element={<Methodology />} />
+        <Route path="/methodology/adjusted-roi" element={<AdjustedRoiMethodology />} />
         <Route path="/invest/:country/:city" element={<InvestCityPage />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/network" element={<InvestorNetwork />} />

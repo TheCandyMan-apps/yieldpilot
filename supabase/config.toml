@@ -92,3 +92,12 @@ verify_jwt = false
 
 [functions.forecast-portfolio]
 verify_jwt = true
+
+[functions.adjusted-recompute]
+verify_jwt = true
+
+[functions.epc-advisor]
+verify_jwt = true
+
+[functions.strategy-sim]
+verify_jwt = true

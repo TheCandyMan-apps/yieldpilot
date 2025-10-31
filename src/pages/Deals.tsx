@@ -5,12 +5,15 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { EnhancedDealCard } from "@/components/deals/EnhancedDealCard";
 import DealFilters, { FilterValues } from "@/components/deals/DealFilters";
 import { LocationSearch } from "@/components/deals/LocationSearch";
+import { RealityModeToggle } from "@/components/deals/RealityModeToggle";
+import { AdjustedFilters } from "@/components/deals/AdjustedFilters";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Lock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExportButton } from "@/components/ExportButton";
+import { FLAGS } from "@/config/flags";
 
 interface Deal {
   id: string;
@@ -39,6 +42,9 @@ const Deals = () => {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [realityMode, setRealityMode] = useState(false);
+  const [minAdjustedYield, setMinAdjustedYield] = useState(0);
+  const [strategyFilter, setStrategyFilter] = useState('all');
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -422,6 +428,24 @@ const Deals = () => {
         {/* Filters */}
         <DealFilters onFilterChange={applyFilters} />
 
+        {/* Reality Mode & Adjusted Filters */}
+        {FLAGS.realityMode && isAuthenticated && (
+          <div className="space-y-4">
+            <RealityModeToggle
+              enabled={realityMode}
+              onChange={setRealityMode}
+            />
+            {realityMode && (
+              <AdjustedFilters
+                minAdjustedYield={minAdjustedYield}
+                onMinAdjustedYieldChange={setMinAdjustedYield}
+                strategyFilter={strategyFilter}
+                onStrategyFilterChange={setStrategyFilter}
+              />
+            )}
+          </div>
+        )}
+
         {/* No matches notice for location */}
         {initialLocation && (() => {
           const hasMatches = deals.some((d) => matchesLocation(d, initialLocation));
@@ -469,6 +493,7 @@ const Deals = () => {
                   deal={deal}
                   isWatchlisted={watchlistedIds.has(deal.id)}
                   onWatchlistToggle={handleWatchlistToggle}
+                  realityMode={realityMode}
                 />
               ))}
             </div>

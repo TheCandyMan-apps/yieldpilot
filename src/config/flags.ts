@@ -10,6 +10,10 @@ export const FLAGS = {
   showProvenance: true,
   enableApiKeys: true,
   enableAdvancedFilters: true,
+  // Yield Intelligence Platform
+  realityMode: true,
+  epcAdvisor: true,
+  strategySim: true,
 } as const;
 
 export type FlagKey = keyof typeof FLAGS;
