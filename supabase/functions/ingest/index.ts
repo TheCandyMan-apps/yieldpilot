@@ -121,8 +121,16 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('[ingest] Error:', error);
+    const isDev = Deno.env.get('ENVIRONMENT') === 'development';
+    const errorMessage = isDev && error instanceof Error 
+      ? error.message 
+      : 'Internal server error processing ingestion request';
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        error: errorMessage,
+        code: 'ERR_INGEST_FAILED'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

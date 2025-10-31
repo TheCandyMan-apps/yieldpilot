@@ -126,7 +126,15 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('API v2 error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const isDev = Deno.env.get('ENVIRONMENT') === 'development';
+    const errorMessage = isDev && error?.message 
+      ? error.message 
+      : 'Internal server error processing request';
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      code: 'ERR_API_REQUEST_FAILED'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

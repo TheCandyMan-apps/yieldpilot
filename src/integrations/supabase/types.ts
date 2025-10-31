@@ -87,6 +87,13 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "alert_matches_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       alerts: {
@@ -514,6 +521,13 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "custom_fields_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_comments: {
@@ -549,6 +563,13 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deal_comments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_interactions: {
@@ -582,6 +603,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_interactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -660,6 +688,13 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deal_pipeline_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_summaries: {
@@ -714,6 +749,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_summaries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -1289,6 +1331,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_reports_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -1972,6 +2021,13 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "price_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -2320,6 +2376,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renovation_estimates_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -2684,11 +2747,30 @@ export type Database = {
             referencedRelation: "deals_feed"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "watchlist_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      v_public_deal_preview: {
+        Row: {
+          bedrooms: number | null
+          city: string | null
+          created_at: string | null
+          id: string | null
+          postcode: string | null
+          price: number | null
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          score_band: Database["public"]["Enums"]["investment_score"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_forecast_limit: {
