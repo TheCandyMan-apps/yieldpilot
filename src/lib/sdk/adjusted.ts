@@ -68,18 +68,40 @@ export interface StrategySimResponse {
 
 /**
  * Fetch adjusted metrics for a listing
+ * Note: Uses raw query until types are regenerated
  */
 export async function getAdjustedMetrics(listingId: string): Promise<AdjustedMetrics | null> {
-  const { data, error } = await supabase.rpc('get_adjusted_metrics', {
-    p_listing_id: listingId
-  });
+  try {
+    // Query the view directly using from() with type assertion
+    const { data, error } = await supabase
+      .from('listings' as any) // Workaround until types regenerate
+      .select(`
+        id,
+        adjusted:v_adjusted_metrics!inner(
+          listing_id,
+          adjusted_net_yield_pct,
+          after_tax_cashflow,
+          tax_due,
+          epc_upgrade_annual,
+          score_adjusted,
+          explain_json
+        )
+      `)
+      .eq('id', listingId)
+      .maybeSingle();
 
-  if (error) {
-    console.error('Error fetching adjusted metrics:', error);
+    if (error || !data) {
+      console.error('Error fetching adjusted metrics:', error);
+      return null;
+    }
+
+    // Extract the nested data
+    const adjustedData = (data as any).adjusted;
+    return adjustedData as AdjustedMetrics;
+  } catch (err) {
+    console.error('Exception fetching adjusted metrics:', err);
     return null;
   }
-
-  return data as AdjustedMetrics;
 }
 
 /**
