@@ -53,6 +53,7 @@ const InvestCityPage = lazy(() => import("./pages/seo/InvestCityPage"));
 const LeaseScanner = lazy(() => import("./pages/LeaseScanner"));
 const Enfranchisement = lazy(() => import("./pages/Enfranchisement"));
 const StressTesting = lazy(() => import("./pages/StressTesting"));
+const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,7 @@ const App = () => (
             <Route path="/offmarket" element={<OffMarket />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/checkout-success" element={<CheckoutSuccess />} />
             <Route path="/install" element={<Install />} />
             <Route path="/debug/apify" element={<ApifyDebug />} />
             <Route path="/admin/jobs" element={<AdminJobs />} />
