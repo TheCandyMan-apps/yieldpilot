@@ -1342,6 +1342,295 @@ export type Database = {
           },
         ]
       }
+      lease_risk_flags: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          impact_on_value: number | null
+          lease_term_id: string
+          remediation_advice: string | null
+          remediation_cost: number | null
+          risk_type: string
+          severity: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          impact_on_value?: number | null
+          lease_term_id: string
+          remediation_advice?: string | null
+          remediation_cost?: number | null
+          risk_type: string
+          severity: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          impact_on_value?: number | null
+          lease_term_id?: string
+          remediation_advice?: string | null
+          remediation_cost?: number | null
+          risk_type?: string
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_risk_flags_lease_term_id_fkey"
+            columns: ["lease_term_id"]
+            isOneToOne: false
+            referencedRelation: "lease_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_roi_metrics: {
+        Row: {
+          adjusted_roi_percentage: number | null
+          created_at: string
+          enfranchisement_eligible: boolean | null
+          estimated_enfranchisement_cost: number | null
+          estimated_value_impact: number | null
+          ground_rent_forecast: Json | null
+          ground_rent_risk_score: number | null
+          id: string
+          is_mortgageable: boolean | null
+          lease_extension_cost_estimate: number | null
+          lease_length_risk_score: number | null
+          lease_term_id: string
+          mortgageability_notes: string | null
+          mortgageability_risk_score: number | null
+          overall_risk_score: string
+          property_id: string | null
+          restrictions_risk_score: number | null
+          risk_score_numeric: number
+          roi_adjustment_percentage: number | null
+          service_charge_forecast: Json | null
+          service_charge_risk_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          adjusted_roi_percentage?: number | null
+          created_at?: string
+          enfranchisement_eligible?: boolean | null
+          estimated_enfranchisement_cost?: number | null
+          estimated_value_impact?: number | null
+          ground_rent_forecast?: Json | null
+          ground_rent_risk_score?: number | null
+          id?: string
+          is_mortgageable?: boolean | null
+          lease_extension_cost_estimate?: number | null
+          lease_length_risk_score?: number | null
+          lease_term_id: string
+          mortgageability_notes?: string | null
+          mortgageability_risk_score?: number | null
+          overall_risk_score: string
+          property_id?: string | null
+          restrictions_risk_score?: number | null
+          risk_score_numeric: number
+          roi_adjustment_percentage?: number | null
+          service_charge_forecast?: Json | null
+          service_charge_risk_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adjusted_roi_percentage?: number | null
+          created_at?: string
+          enfranchisement_eligible?: boolean | null
+          estimated_enfranchisement_cost?: number | null
+          estimated_value_impact?: number | null
+          ground_rent_forecast?: Json | null
+          ground_rent_risk_score?: number | null
+          id?: string
+          is_mortgageable?: boolean | null
+          lease_extension_cost_estimate?: number | null
+          lease_length_risk_score?: number | null
+          lease_term_id?: string
+          mortgageability_notes?: string | null
+          mortgageability_risk_score?: number | null
+          overall_risk_score?: string
+          property_id?: string | null
+          restrictions_risk_score?: number | null
+          risk_score_numeric?: number
+          roi_adjustment_percentage?: number | null
+          service_charge_forecast?: Json | null
+          service_charge_risk_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_roi_metrics_lease_term_id_fkey"
+            columns: ["lease_term_id"]
+            isOneToOne: false
+            referencedRelation: "lease_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_roi_metrics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_roi_metrics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_scan_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_url: string
+          id: string
+          property_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_scan_jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_scan_jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_terms: {
+        Row: {
+          alteration_restrictions: string | null
+          created_at: string
+          ground_rent_annual: number | null
+          ground_rent_escalation_type: string | null
+          ground_rent_review_period: number | null
+          id: string
+          insurance_responsibility: string | null
+          lease_end_date: string | null
+          lease_start_date: string | null
+          pet_clause: string | null
+          property_id: string | null
+          raw_extracted_data: Json | null
+          repair_obligations: string | null
+          scan_job_id: string
+          service_charge_annual: number | null
+          subletting_allowed: boolean | null
+          subletting_restrictions: string | null
+          updated_at: string
+          use_restrictions: string | null
+          user_id: string
+          years_remaining: number | null
+        }
+        Insert: {
+          alteration_restrictions?: string | null
+          created_at?: string
+          ground_rent_annual?: number | null
+          ground_rent_escalation_type?: string | null
+          ground_rent_review_period?: number | null
+          id?: string
+          insurance_responsibility?: string | null
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          pet_clause?: string | null
+          property_id?: string | null
+          raw_extracted_data?: Json | null
+          repair_obligations?: string | null
+          scan_job_id: string
+          service_charge_annual?: number | null
+          subletting_allowed?: boolean | null
+          subletting_restrictions?: string | null
+          updated_at?: string
+          use_restrictions?: string | null
+          user_id: string
+          years_remaining?: number | null
+        }
+        Update: {
+          alteration_restrictions?: string | null
+          created_at?: string
+          ground_rent_annual?: number | null
+          ground_rent_escalation_type?: string | null
+          ground_rent_review_period?: number | null
+          id?: string
+          insurance_responsibility?: string | null
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          pet_clause?: string | null
+          property_id?: string | null
+          raw_extracted_data?: Json | null
+          repair_obligations?: string | null
+          scan_job_id?: string
+          service_charge_annual?: number | null
+          subletting_allowed?: boolean | null
+          subletting_restrictions?: string | null
+          updated_at?: string
+          use_restrictions?: string | null
+          user_id?: string
+          years_remaining?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_terms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "deals_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_terms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_deal_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_terms_scan_job_id_fkey"
+            columns: ["scan_job_id"]
+            isOneToOne: false
+            referencedRelation: "lease_scan_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_metrics: {
         Row: {
           assumptions: Json | null

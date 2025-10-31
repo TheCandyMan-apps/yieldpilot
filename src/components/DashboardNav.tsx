@@ -18,7 +18,8 @@ import {
   Plug,
   Star,
   KanbanSquare,
-  ShoppingBag
+  ShoppingBag,
+  FileSearch
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,7 @@ export function DashboardNav() {
   ];
 
   const adminNav = [
+    { path: "/lease-scanner", label: "Lease Scanner", icon: FileSearch },
     { path: "/integrations", label: "Integrations", icon: Plug },
     { path: "/forecast-usage", label: "AI Usage", icon: Activity },
     { path: "/ai-telemetry", label: "AI Telemetry", icon: Brain },

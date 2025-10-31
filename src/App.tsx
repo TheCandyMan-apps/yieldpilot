@@ -50,6 +50,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const Methodology = lazy(() => import("./pages/Methodology"));
 const AdjustedRoiMethodology = lazy(() => import("./pages/methodology/AdjustedRoi"));
 const InvestCityPage = lazy(() => import("./pages/seo/InvestCityPage"));
+const LeaseScanner = lazy(() => import("./pages/LeaseScanner"));
 
 const queryClient = new QueryClient();
 
@@ -123,6 +124,7 @@ const App = () => (
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/lease-scanner" element={<LeaseScanner />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

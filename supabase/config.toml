@@ -72,9 +72,6 @@ verify_jwt = false
 [functions.api-v2-metrics]
 verify_jwt = false
 
-[functions.forecast]
-verify_jwt = true
-
 [functions.offmarket]
 verify_jwt = true
 
@@ -82,9 +79,6 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.riskparse]
-verify_jwt = true
-
-[functions.copilot-advisor]
 verify_jwt = true
 
 [functions.health-ai]
@@ -100,4 +94,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.strategy-sim]
+verify_jwt = true
+
+[functions.scan-lease]
 verify_jwt = true
