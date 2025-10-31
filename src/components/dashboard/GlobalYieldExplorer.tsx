@@ -8,11 +8,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Globe, TrendingUp, TrendingDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 
 interface CountryYieldData {
   country: string;
@@ -48,12 +47,7 @@ export function GlobalYieldExplorer() {
     );
   }
 
-  const chartData = yieldData?.map(d => ({
-    name: d.country,
-    Standard: d.avg_standard_yield,
-    Adjusted: d.avg_adjusted_yield,
-    Gap: d.yield_gap,
-  })) || [];
+  const maxYield = Math.max(...(yieldData?.map(d => d.avg_standard_yield) || [5]));
 
   return (
     <Card>
@@ -62,7 +56,7 @@ export function GlobalYieldExplorer() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              Global Yield Intelligence
+              Regional Yield Intelligence
             </CardTitle>
             <CardDescription>
               Compare adjusted vs. standard yields across markets
@@ -72,64 +66,59 @@ export function GlobalYieldExplorer() {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="chart" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="chart">Chart View</TabsTrigger>
-            <TabsTrigger value="table">Table View</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="chart" className="mt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis label={{ value: 'Yield %', angle: -90, position: 'insideLeft' }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="Standard" fill="hsl(var(--primary))" />
-                <Bar dataKey="Adjusted" fill="hsl(var(--secondary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </TabsContent>
-
-          <TabsContent value="table" className="mt-4">
-            <div className="space-y-2">
-              {yieldData?.map((country) => (
-                <div
-                  key={country.country}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="font-medium">{country.country}</div>
-                    <Badge variant="outline" className="text-xs">
-                      {country.deal_count} deals
-                    </Badge>
+        <div className="space-y-4">
+          {yieldData?.map((city) => (
+            <div key={city.country} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{city.country}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {city.deal_count} deals
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="text-right">
+                    <span className="text-muted-foreground">Standard: </span>
+                    <span className="font-semibold">{city.avg_standard_yield.toFixed(1)}%</span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Standard</div>
-                      <div className="font-semibold">{country.avg_standard_yield.toFixed(2)}%</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Adjusted</div>
-                      <div className="font-semibold">{country.avg_adjusted_yield.toFixed(2)}%</div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {country.yield_gap < 0 ? (
-                        <TrendingDown className="h-4 w-4 text-destructive" />
-                      ) : (
-                        <TrendingUp className="h-4 w-4 text-success" />
-                      )}
-                      <span className={country.yield_gap < 0 ? 'text-destructive' : 'text-success'}>
-                        {Math.abs(country.yield_gap).toFixed(2)}%
-                      </span>
-                    </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground">Adjusted: </span>
+                    <span className="font-semibold">{city.avg_adjusted_yield.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {city.yield_gap < 0 ? (
+                      <TrendingDown className="h-4 w-4 text-destructive" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={city.yield_gap < 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                      {city.yield_gap.toFixed(1)}%
+                    </span>
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Progress 
+                    value={(city.avg_standard_yield / maxYield) * 100} 
+                    className="h-2"
+                  />
+                </div>
+                <div>
+                  <Progress 
+                    value={(city.avg_adjusted_yield / maxYield) * 100} 
+                    className="h-2 [&>div]:bg-secondary"
+                  />
+                </div>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          ))}
+          {!yieldData?.length && (
+            <div className="text-center py-8 text-muted-foreground">
+              No data available. Add deals to see regional comparisons.
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
