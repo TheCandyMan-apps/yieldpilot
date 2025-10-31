@@ -31,12 +31,13 @@ import {
 interface ApiKey {
   id: string;
   name: string;
-  key: string;
-  scopes: string[];
-  rate_limit: number;
+  key_hash: string;
+  key_prefix: string;
   is_active: boolean;
   last_used_at: string | null;
   created_at: string;
+  user_id: string;
+  rate_limit_per_min: number;
 }
 
 export default function ApiKeys() {
@@ -84,22 +85,32 @@ export default function ApiKeys() {
     return key;
   };
 
+  const sha256 = async (message: string) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const createApiKey = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const key = generateApiKey();
+      const keyHash = await sha256(key);
+      const keyPrefix = key.substring(0, 10);
 
       const { error } = await supabase
         .from('api_keys')
         .insert({
           user_id: user.id,
           name: newKeyName,
-          key: key,
-          scopes: ['read:deals'],
-          rate_limit: 1000,
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
           is_active: true,
+          rate_limit_per_min: 60,
         });
 
       if (error) throw error;
@@ -154,9 +165,6 @@ export default function ApiKeys() {
     }
   };
 
-  const maskKey = (key: string) => {
-    return `${key.substring(0, 10)}...${key.substring(key.length - 4)}`;
-  };
 
   return (
     <DashboardLayout>
@@ -269,19 +277,11 @@ export default function ApiKeys() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <code className="bg-muted px-2 py-1 rounded font-mono">
-                          {maskKey(apiKey.key)}
+                          {apiKey.key_prefix}...
                         </code>
-                        <Button
-                          onClick={() => copyToClipboard(apiKey.key)}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>Rate limit: {apiKey.rate_limit}/hour</span>
-                        <span>Scopes: {apiKey.scopes.join(', ')}</span>
+                        <span>Rate limit: {apiKey.rate_limit_per_min}/min</span>
                         <span>
                           Last used:{' '}
                           {apiKey.last_used_at

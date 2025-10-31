@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          changes: Json | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       alert_matches: {
         Row: {
           alert_id: string
@@ -138,36 +174,77 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
-          key: string
+          key_hash: string
+          key_prefix: string
           last_used_at: string | null
-          name: string | null
-          rate_limit: number | null
-          scopes: string[] | null
-          user_id: string | null
+          name: string
+          rate_limit_per_min: number | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          key: string
+          key_hash: string
+          key_prefix: string
           last_used_at?: string | null
-          name?: string | null
-          rate_limit?: number | null
-          scopes?: string[] | null
-          user_id?: string | null
+          name: string
+          rate_limit_per_min?: number | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          key?: string
+          key_hash?: string
+          key_prefix?: string
           last_used_at?: string | null
-          name?: string | null
-          rate_limit?: number | null
-          scopes?: string[] | null
-          user_id?: string | null
+          name?: string
+          rate_limit_per_min?: number | null
+          user_id?: string
         }
         Relationships: []
+      }
+      api_usage: {
+        Row: {
+          api_key_id: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          method: string
+          response_time_ms: number | null
+          status_code: number
+          user_id: string | null
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          method: string
+          response_time_ms?: number | null
+          status_code: number
+          user_id?: string | null
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          method?: string
+          response_time_ms?: number | null
+          status_code?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_logs: {
         Row: {
@@ -1413,6 +1490,36 @@ export type Database = {
           postcode_prefix?: string | null
           sample_size?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      metered_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          period_month: string
+          quantity: number | null
+          resource_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          period_month?: string
+          quantity?: number | null
+          resource_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          period_month?: string
+          quantity?: number | null
+          resource_type?: string
+          user_id?: string
         }
         Relationships: []
       }
