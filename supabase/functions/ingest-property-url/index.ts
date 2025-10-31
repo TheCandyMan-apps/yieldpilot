@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { checkRateLimit, getRateLimitKey, getClientIp } from '../_shared/rate-limiter.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, parseJsonBody } from '../_shared/api-helpers.ts';
+import { validateProperties } from './validation.ts';
 
 interface IngestRequest {
   url: string;
@@ -338,12 +339,18 @@ async function fetchDatasetItems(
       };
     }
     
+    // Validate items before returning
+    const { valid, invalid } = validateProperties(items);
+    
     console.log(JSON.stringify({
-      event: 'dataset_fetched',
-      itemCount: items.length
+      event: 'dataset_fetched_and_validated',
+      totalItems: items.length,
+      validItems: valid.length,
+      invalidItems: invalid.length
     }));
     
-    return items;
+    // Return only valid items
+    return valid;
     
   } catch (error) {
     return {

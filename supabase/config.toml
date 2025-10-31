@@ -1,10 +1,10 @@
 project_id = "rgckrmuuathxrpohacds"
 
 [functions.analyze-deal]
-verify_jwt = false
+verify_jwt = true
 
 [functions.calculate-deal]
-verify_jwt = false
+verify_jwt = true
 
 [functions.check-saved-searches]
 verify_jwt = false

@@ -1,10 +1,34 @@
 // Webhook endpoint for Apify to call when scraping is complete
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { validateProperties } from "../ingest-property-url/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-apify-signature',
 };
+
+// HMAC signature verification
+async function verifyApifySignature(body: string, signature: string, secret: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  
+  const signatureBuffer = Uint8Array.from(
+    signature.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+  );
+  
+  return await crypto.subtle.verify(
+    'HMAC',
+    key,
+    signatureBuffer,
+    encoder.encode(body)
+  );
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,6 +37,7 @@ Deno.serve(async (req) => {
 
   try {
     const APIFY_API_KEY = Deno.env.get('APIFY_API_KEY');
+    const APIFY_WEBHOOK_SECRET = Deno.env.get('APIFY_WEBHOOK_SECRET');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -20,9 +45,40 @@ Deno.serve(async (req) => {
       throw new Error('APIFY_API_KEY not configured');
     }
 
+    if (!APIFY_WEBHOOK_SECRET) {
+      console.warn('⚠️ APIFY_WEBHOOK_SECRET not configured - webhook signature verification disabled');
+    }
+
+    // Verify webhook signature if secret is configured
+    if (APIFY_WEBHOOK_SECRET) {
+      const signature = req.headers.get('x-apify-signature');
+      const body = await req.text();
+      
+      if (!signature) {
+        return new Response(
+          JSON.stringify({ error: 'Missing webhook signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const isValid = await verifyApifySignature(body, signature, APIFY_WEBHOOK_SECRET);
+      if (!isValid) {
+        console.error('❌ Invalid webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'Invalid webhook signature' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('✅ Webhook signature verified');
+      var raw = JSON.parse(body);
+    } else {
+      var raw = await req.json();
+    }
+
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Extract source and location from query params
+    // Extract and validate source from query params
     const url = new URL(req.url);
     const source = url.searchParams.get('source');
     const location = url.searchParams.get('location');
@@ -30,11 +86,12 @@ Deno.serve(async (req) => {
 
     console.log(`📥 Webhook called: source=${source}, location=${location}, userId=${userId}`);
 
-    if (!source) {
-      throw new Error('source query parameter is required');
+    // Validate source against whitelist
+    const ALLOWED_SOURCES = ['rightmove', 'zoopla'];
+    if (!source || !ALLOWED_SOURCES.includes(source)) {
+      throw new Error(`Invalid source. Must be one of: ${ALLOWED_SOURCES.join(', ')}`);
     }
 
-    const raw = await req.json();
     console.log('📥 Webhook payload received:', JSON.stringify(raw, null, 2));
     
     // Extract runId and datasetId from Apify's native webhook payload
@@ -84,8 +141,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Transform data based on source
-    const dealsToInsert = properties.map((prop: any) => {
+    // Transform data based on source - with validation
+    const { valid: validDeals, invalid: invalidDeals } = validateProperties(properties);
+    
+    console.log(`Validation: ${validDeals.length} valid, ${invalidDeals.length} invalid out of ${properties.length} total`);
+    
+    const dealsToInsert = validDeals.map((prop: any) => {
       if (source === 'rightmove') {
         const address = prop.address?.displayAddress || prop.propertyAddress || 'Unknown Address';
         const extractedCity = extractCityFromAddress(address, prop.address?.town, prop.address?.city);
@@ -138,10 +199,10 @@ Deno.serve(async (req) => {
       }
     });
 
-    const validDeals = dealsToInsert.filter((deal: any) => deal.price > 0 && deal.property_address !== 'Unknown Address');
-    console.log(`Valid properties: ${validDeals.length}/${dealsToInsert.length}`);
+    const finalDeals = dealsToInsert.filter((deal: any) => deal.price > 0 && deal.property_address !== 'Unknown Address');
+    console.log(`Final valid properties: ${finalDeals.length}/${dealsToInsert.length}`);
 
-    if (validDeals.length === 0) {
+    if (finalDeals.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: 'No valid properties after filtering', count: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -151,17 +212,17 @@ Deno.serve(async (req) => {
     // Insert into database
     const { error: insertError } = await supabase
       .from('deals_feed')
-      .insert(validDeals);
+      .insert(finalDeals);
 
     if (insertError) {
       console.error('Database insertion error:', insertError);
       throw insertError;
     }
 
-    console.log(`✅ Imported ${validDeals.length} deals from ${source}`);
+    console.log(`✅ Imported ${finalDeals.length} deals from ${source}`);
 
     return new Response(
-      JSON.stringify({ success: true, count: validDeals.length, source }),
+      JSON.stringify({ success: true, count: finalDeals.length, source }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
