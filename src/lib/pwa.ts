@@ -3,7 +3,8 @@ import { Workbox } from 'workbox-window';
 let wb: Workbox | undefined;
 
 export function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
+  // Only register service worker in production to avoid dev MIME type errors
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
     wb = new Workbox('/sw.js');
 
     wb.addEventListener('installed', (event) => {
