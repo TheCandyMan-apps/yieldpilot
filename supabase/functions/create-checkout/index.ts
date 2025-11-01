@@ -21,7 +21,7 @@ serve(async (req) => {
     const { priceId, quantity = 1, mode = "subscription", metadata = {} } = await req.json();
     
     if (!priceId) {
-      throw new Error("Price ID is required");
+      throw new Error("priceId is required");
     }
 
     console.log("[CREATE-CHECKOUT] Starting checkout:", { priceId, quantity, mode });
