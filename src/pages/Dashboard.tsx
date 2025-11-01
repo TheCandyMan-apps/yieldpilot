@@ -151,7 +151,7 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowForm(true)}>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <PlusCircle className="h-5 w-5 mr-2" />
@@ -162,7 +162,7 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">
+              <Button className="w-full" onClick={() => setShowForm(true)}>
                 Start New Analysis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
