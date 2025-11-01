@@ -31,7 +31,7 @@ const tierConfig = {
 };
 
 export function SubscriptionBadge({ tier, variant }: SubscriptionBadgeProps) {
-  const config = tierConfig[tier];
+  const config = tierConfig[tier] || tierConfig.free;
   const Icon = config.icon;
 
   return (
