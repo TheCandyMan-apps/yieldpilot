@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, 
@@ -21,6 +21,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getEntitlements } from "@/lib/entitlements";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
+import type { SubscriptionTier } from "@/lib/subscriptionHelpers";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -28,9 +31,26 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userPlan, setUserPlan] = useState<SubscriptionTier>("free");
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserEmail(user.email || "");
+      const entitlements = await getEntitlements(user.id);
+      if (entitlements) {
+        setUserPlan(entitlements.plan as SubscriptionTier);
+      }
+    }
+  };
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -123,8 +143,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Investor</p>
-                <p className="text-xs text-muted-foreground truncate">Free Plan</p>
+                <p className="text-sm font-medium truncate">{userEmail.split("@")[0] || "Investor"}</p>
+                <div className="mt-1">
+                  <SubscriptionBadge tier={userPlan} variant="secondary" />
+                </div>
               </div>
             </div>
             <Button
