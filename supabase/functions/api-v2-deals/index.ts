@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { ApiQueryParamsSchema, createErrorResponse } from "../_shared/api-validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,11 +67,28 @@ serve(async (req) => {
       .eq('key_hash', hashedKey);
 
     const url = new URL(req.url);
-    const region = url.searchParams.get('region');
-    const minYield = url.searchParams.get('minYield');
-    const maxPrice = url.searchParams.get('maxPrice');
-    const propertyType = url.searchParams.get('propertyType');
-    const limit = parseInt(url.searchParams.get('limit') || '50');
+    
+    // Validate query parameters
+    const paramValidation = ApiQueryParamsSchema.safeParse({
+      region: url.searchParams.get('region'),
+      minYield: url.searchParams.get('minYield'),
+      maxPrice: url.searchParams.get('maxPrice'),
+      propertyType: url.searchParams.get('propertyType'),
+      limit: url.searchParams.get('limit') || '50',
+    });
+
+    if (!paramValidation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid parameters', 
+          details: paramValidation.error.errors,
+          code: 'ERR_INVALID_PARAMS'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { region, minYield, maxPrice, propertyType, limit = 50 } = paramValidation.data;
 
     // Build query
     let query = supabaseClient
@@ -108,7 +126,7 @@ serve(async (req) => {
     }
 
     if (maxPrice) {
-      query = query.lte('price', parseFloat(maxPrice));
+      query = query.lte('price', maxPrice);
     }
 
     const { data: deals, error: dealsError } = await query;
@@ -118,12 +136,11 @@ serve(async (req) => {
     // Filter by yield if specified
     let filteredDeals = deals;
     if (minYield) {
-      const minYieldNum = parseFloat(minYield);
       filteredDeals = deals.filter(deal => {
         const metrics = Array.isArray(deal.listing_metrics) 
           ? deal.listing_metrics[0] 
           : deal.listing_metrics;
-        return metrics && metrics.net_yield_pct >= minYieldNum;
+        return metrics && metrics.net_yield_pct >= minYield;
       });
     }
 
@@ -135,19 +152,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error: any) {
-    console.error('API v2 error:', error);
-    const isDev = Deno.env.get('ENVIRONMENT') === 'development';
-    const errorMessage = isDev && error?.message 
-      ? error.message 
-      : 'Internal server error processing request';
-    
-    return new Response(JSON.stringify({ 
-      error: errorMessage,
-      code: 'ERR_API_REQUEST_FAILED'
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  } catch (error) {
+    return createErrorResponse(error, 500, corsHeaders);
   }
 });

@@ -1,10 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createErrorResponse } from "../_shared/api-validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 };
+
+// SHA-256 hash function
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,11 +35,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify API key
+    // Hash the API key for comparison
+    const hashedKey = await sha256(apiKey);
+
+    // Verify API key using hash
     const { data: keyData, error: keyError } = await supabaseClient
       .from('api_keys')
       .select('user_id, is_active, scopes')
-      .eq('key', apiKey)
+      .eq('key_hash', hashedKey)
       .single();
 
     if (keyError || !keyData || !keyData.is_active) {
@@ -52,11 +64,13 @@ serve(async (req) => {
     const pathParts = url.pathname.split('/');
     const listingId = pathParts[pathParts.length - 1];
 
-    if (!listingId) {
-      return new Response(JSON.stringify({ error: 'Listing ID required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!listingId || !uuidRegex.test(listingId)) {
+      return new Response(
+        JSON.stringify({ error: 'Valid listing ID required', code: 'ERR_INVALID_ID' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { data: listing, error: listingError } = await supabaseClient
@@ -82,11 +96,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error: any) {
-    console.error('API v2 metrics error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  } catch (error) {
+    return createErrorResponse(error, 500, corsHeaders);
   }
 });

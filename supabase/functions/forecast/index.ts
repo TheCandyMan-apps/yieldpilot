@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logger, generateRequestId } from "../_shared/log.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { ForecastParamsSchema, createErrorResponse } from "../_shared/api-validation.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,14 +64,26 @@ serve(async (req) => {
       });
     }
 
-    const { listingId, horizon = '24m' } = await req.json();
+    const body = await req.json();
+    
+    // Validate input parameters
+    const paramValidation = ForecastParamsSchema.safeParse({
+      listingId: body.listingId,
+      horizon: body.horizon || '24m',
+    });
 
-    if (!listingId) {
-      return new Response(JSON.stringify({ error: 'listingId required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (!paramValidation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid parameters', 
+          details: paramValidation.error.errors,
+          code: 'ERR_INVALID_PARAMS'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { listingId, horizon } = paramValidation.data;
 
     // Check cache first
     const { data: cachedForecast } = await supabase
@@ -246,11 +259,7 @@ Format as JSON: { "yieldLow": 0, "yieldMid": 0, "yieldHigh": 0, "appreciation": 
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Forecast error', { error: errorMessage }, requestId);
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    logger.error('Forecast error', { error: error instanceof Error ? error.message : String(error) }, requestId);
+    return createErrorResponse(error, 500, corsHeaders);
   }
 });
