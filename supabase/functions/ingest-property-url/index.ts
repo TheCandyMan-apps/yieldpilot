@@ -370,18 +370,46 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // SECURITY: Require authentication
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return errorResponse('Authentication required', 401);
+    }
+
+    // Validate user session
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return errorResponse('Invalid authentication token', 401);
+    }
+
+    // SECURITY: Validate user has premium tier for ingestion
+    const { data: entitlement } = await supabase
+      .from('user_entitlements')
+      .select('plan, expires_at')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!entitlement || entitlement.plan === 'free') {
+      return errorResponse('Premium subscription required for property ingestion', 403);
+    }
+
+    if (entitlement.expires_at && new Date(entitlement.expires_at) < new Date()) {
+      return errorResponse('Subscription expired', 403);
+    }
+
     // Rate limiting check
     const ip = getClientIp(req);
-    const authHeader = req.headers.get('authorization');
-    
-    // Extract user ID from auth header if present
-    let userId: string | null = null;
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      userId = `token:${token.slice(0, 20)}`;
-    }
-    
-    const rateLimitKey = getRateLimitKey(userId, ip);
+    const rateLimitKey = getRateLimitKey(user.id, ip);
     const rateLimit = await checkRateLimit(rateLimitKey);
     
     if (!rateLimit.allowed) {

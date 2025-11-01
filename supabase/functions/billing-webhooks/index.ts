@@ -24,6 +24,17 @@ serve(async (req) => {
   }
 
   try {
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    
+    // CRITICAL: Fail fast if webhook secret not configured
+    if (!webhookSecret) {
+      log("FATAL ERROR: STRIPE_WEBHOOK_SECRET not configured");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -34,16 +45,40 @@ serve(async (req) => {
     );
 
     const signature = req.headers.get("stripe-signature");
-    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     
-    if (!signature || !webhookSecret) {
-      throw new Error("Missing signature or webhook secret");
+    if (!signature) {
+      log("ERROR: Missing stripe-signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     const body = await req.text();
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
     log("Event received", { type: event.type, id: event.id });
+
+    // IDEMPOTENCY CHECK: Prevent processing same event twice
+    const { data: existingEvent } = await supabase
+      .from("stripe_webhook_events")
+      .select("id")
+      .eq("event_id", event.id)
+      .single();
+
+    if (existingEvent) {
+      log("Event already processed (idempotent)", { eventId: event.id });
+      return new Response(JSON.stringify({ received: true, status: "duplicate" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Record event as processed
+    await supabase.from("stripe_webhook_events").insert({
+      event_id: event.id,
+      event_type: event.type,
+    });
 
     function getTierFromProductId(productId: string): string {
       return PLAN_MAPPING[productId] || "free";

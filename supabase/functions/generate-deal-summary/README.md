@@ -103,7 +103,10 @@ const { data } = await supabase.functions.invoke('generate-deal-summary', {
 ### Calling from Frontend
 ```typescript
 const { data, error } = await supabase.functions.invoke('generate-deal-summary', {
-  body: { deal: dealObject }
+  body: { deal: dealObject },
+  headers: {
+    Authorization: `Bearer ${session.access_token}` // Required
+  }
 });
 
 if (data?.success) {
@@ -115,8 +118,11 @@ if (data?.success) {
 ### Edge Function Configuration
 ```toml
 [functions.generate-deal-summary]
-verify_jwt = false  # Public endpoint
+# Authentication required as of security update
+# verify_jwt defaults to true
 ```
+
+**IMPORTANT**: This function now requires authentication. All requests must include a valid user JWT token.
 
 ## Error Handling
 
