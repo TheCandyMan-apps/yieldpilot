@@ -56,6 +56,12 @@ const StressTesting = lazy(() => import("./pages/StressTesting"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const ReportViewer = lazy(() => import("./pages/ReportViewer"));
 
+// Legal pages
+const Privacy = lazy(() => import("./pages/legal/Privacy"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
+const Security = lazy(() => import("./pages/legal/Security"));
+const CompliancePage = lazy(() => import("./pages/legal/Compliance"));
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -133,6 +139,11 @@ const App = () => (
             <Route path="/enfranchisement" element={<Enfranchisement />} />
             <Route path="/stress-testing/:id" element={<StressTesting />} />
             <Route path="/reports/:id" element={<ReportViewer />} />
+            {/* Legal pages */}
+            <Route path="/legal/privacy" element={<Privacy />} />
+            <Route path="/legal/terms" element={<Terms />} />
+            <Route path="/legal/security" element={<Security />} />
+            <Route path="/legal/compliance" element={<CompliancePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

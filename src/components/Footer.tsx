@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -24,8 +25,8 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
               <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="/deals" className="hover:text-primary transition-colors">Deal Feed</a></li>
-              <li><a href="/simulator" className="hover:text-primary transition-colors">Simulator</a></li>
+              <li><Link to="/deals" className="hover:text-primary transition-colors">Deal Feed</Link></li>
+              <li><Link to="/simulator" className="hover:text-primary transition-colors">Simulator</Link></li>
             </ul>
           </div>
 
@@ -34,9 +35,9 @@ const Footer = () => {
             <h3 className="font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#about" className="hover:text-primary transition-colors">About</a></li>
-              <li><a href="/insights" className="hover:text-primary transition-colors">Market Insights</a></li>
-              <li><a href="/portfolio" className="hover:text-primary transition-colors">Portfolio</a></li>
-              <li><a href="/community" className="hover:text-primary transition-colors">Community</a></li>
+              <li><Link to="/insights" className="hover:text-primary transition-colors">Market Insights</Link></li>
+              <li><Link to="/portfolio" className="hover:text-primary transition-colors">Portfolio</Link></li>
+              <li><Link to="/community" className="hover:text-primary transition-colors">Community</Link></li>
             </ul>
           </div>
 
@@ -44,10 +45,10 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Compliance</a></li>
+              <li><Link to="/legal/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/legal/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/legal/security" className="hover:text-primary transition-colors">Security</Link></li>
+              <li><Link to="/legal/compliance" className="hover:text-primary transition-colors">Compliance</Link></li>
             </ul>
           </div>
         </div>

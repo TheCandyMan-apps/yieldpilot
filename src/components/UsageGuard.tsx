@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import { checkUsageLimit } from "@/lib/planLimits";
+import { Link } from "react-router-dom";
 
 interface UsageGuardProps {
   type: "ingests" | "exports";
@@ -63,7 +64,7 @@ export function UsageGuard({ type, children, onBlock }: UsageGuardProps) {
           plan to continue.
         </AlertDescription>
         <Button className="mt-4" asChild>
-          <a href="/billing">Upgrade Plan</a>
+          <Link to="/billing">Upgrade Plan</Link>
         </Button>
       </Alert>
     );
