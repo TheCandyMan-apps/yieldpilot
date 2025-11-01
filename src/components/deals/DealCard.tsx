@@ -36,11 +36,11 @@ interface DealCardProps {
 }
 
 const scoreColors = {
-  A: "bg-green-500 hover:bg-green-600",
-  B: "bg-blue-500 hover:bg-blue-600",
-  C: "bg-yellow-500 hover:bg-yellow-600",
-  D: "bg-orange-500 hover:bg-orange-600",
-  E: "bg-red-500 hover:bg-red-600",
+  A: "bg-success hover:bg-success/90",
+  B: "bg-primary hover:bg-primary/90",
+  C: "bg-secondary hover:bg-secondary/90",
+  D: "bg-accent hover:bg-accent/90",
+  E: "bg-destructive hover:bg-destructive/90",
 };
 
 const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardProps) => {
@@ -151,7 +151,7 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
         <button
           onClick={handleWatchlistToggle}
           disabled={isLoading}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white transition-colors disabled:opacity-50"
+          className="absolute top-3 right-3 p-2 rounded-full bg-card/90 hover:bg-card transition-colors disabled:opacity-50 shadow-md"
         >
           <Heart
             className={`h-5 w-5 ${
@@ -162,7 +162,7 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
         <div className="absolute top-3 left-3 flex gap-2">
           {deal.investment_score && (
             <Badge
-              className={`${scoreColors[deal.investment_score]} text-white font-bold`}
+              className={`${scoreColors[deal.investment_score]} font-bold`}
             >
               Score: {deal.investment_score}
             </Badge>
@@ -172,7 +172,7 @@ const DealCard = ({ deal, isWatchlisted = false, onWatchlistToggle }: DealCardPr
             source={deal.source}
           />
           {userTier === 'free' && (
-            <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+            <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
               <Lock className="h-3 w-3 mr-1" />
               Pro
             </Badge>

@@ -36,10 +36,10 @@ export function PropertyComparison({
   };
 
   const getScoreColor = (score?: number) => {
-    if (!score) return "bg-gray-500";
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
-    return "bg-red-500";
+    if (!score) return "bg-muted text-muted-foreground";
+    if (score >= 80) return "bg-success text-success-foreground";
+    if (score >= 60) return "bg-secondary text-secondary-foreground";
+    return "bg-destructive text-destructive-foreground";
   };
 
   return (
@@ -116,7 +116,7 @@ export function PropertyComparison({
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Score</span>
                     <Badge
-                      className={`${getScoreColor(property.score)} text-white`}
+                      className={getScoreColor(property.score)}
                     >
                       {property.score}/100
                     </Badge>

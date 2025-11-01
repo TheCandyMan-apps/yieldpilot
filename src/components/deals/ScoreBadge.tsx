@@ -23,10 +23,10 @@ export const ScoreBadge = ({
   showTooltip = true 
 }: ScoreBadgeProps) => {
   const getScoreColor = (s: number) => {
-    if (s >= 80) return "bg-green-500 text-white";
-    if (s >= 60) return "bg-yellow-500 text-white";
-    if (s >= 40) return "bg-orange-500 text-white";
-    return "bg-red-500 text-white";
+    if (s >= 80) return "bg-success text-success-foreground";
+    if (s >= 60) return "bg-secondary text-secondary-foreground";
+    if (s >= 40) return "bg-accent text-accent-foreground";
+    return "bg-destructive text-destructive-foreground";
   };
 
   const getScoreLabel = (s: number) => {

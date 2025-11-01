@@ -64,10 +64,10 @@ export function DealCardV3({
     score >= 45 ? 'D' : 'F';
   
   const scoreBadgeColor = 
-    scoreBand === 'A+' || scoreBand === 'A' ? 'bg-emerald-500' :
-    scoreBand === 'B' ? 'bg-blue-500' :
-    scoreBand === 'C' ? 'bg-amber-500' :
-    'bg-gray-500';
+    scoreBand === 'A+' || scoreBand === 'A' ? 'bg-success text-success-foreground' :
+    scoreBand === 'B' ? 'bg-primary text-primary-foreground' :
+    scoreBand === 'C' ? 'bg-secondary text-secondary-foreground' :
+    'bg-muted text-muted-foreground';
 
   const grossYield = listing.metrics?.kpis?.gross_yield_pct;
   const netYield = listing.metrics?.kpis?.net_yield_pct;
@@ -98,7 +98,7 @@ export function DealCardV3({
         
         {/* Score badge overlay */}
         <div className="absolute top-2 left-2">
-          <Badge className={`${scoreBadgeColor} text-white font-bold text-lg px-3 py-1`}>
+          <Badge className={`${scoreBadgeColor} font-bold text-lg px-3 py-1`}>
             {scoreBand}
           </Badge>
         </div>
@@ -108,7 +108,7 @@ export function DealCardV3({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+            className="absolute top-2 right-2 bg-card/80 hover:bg-card shadow-md"
             onClick={(e) => {
               e.stopPropagation();
               onToggleWatchlist();

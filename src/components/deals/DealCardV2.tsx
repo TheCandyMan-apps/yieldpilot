@@ -112,7 +112,7 @@ export const DealCardV2 = ({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md"
+            className="absolute top-2 right-2 bg-card/90 hover:bg-card shadow-md"
             onClick={() => onWatchlistToggle(listing.id)}
           >
             <Heart
@@ -137,7 +137,7 @@ export const DealCardV2 = ({
         <div className="absolute bottom-2 left-2 flex gap-1">
           <Badge variant="secondary" className="text-xs">Zoopla</Badge>
           {enrichment?.epc?.provenance === "mock" && (
-            <Badge variant="outline" className="text-xs bg-white/90">EPC (Est.)</Badge>
+            <Badge variant="outline" className="text-xs bg-card/90">EPC (Est.)</Badge>
           )}
         </div>
       </div>

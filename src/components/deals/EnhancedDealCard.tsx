@@ -74,10 +74,10 @@ export const EnhancedDealCard = ({
   };
 
   const getScoreColor = (score: number | null) => {
-    if (!score) return "bg-gray-100 text-gray-800";
-    if (score >= 80) return "bg-green-100 text-green-800";
-    if (score >= 60) return "bg-yellow-100 text-yellow-800";
-    return "bg-orange-100 text-orange-800";
+    if (!score) return "bg-muted text-muted-foreground";
+    if (score >= 80) return "bg-success text-success-foreground";
+    if (score >= 60) return "bg-secondary text-secondary-foreground";
+    return "bg-accent text-accent-foreground";
   };
 
   return (
@@ -101,7 +101,7 @@ export const EnhancedDealCard = ({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md"
+          className="absolute top-2 right-2 bg-card/90 hover:bg-card shadow-md"
           onClick={() => onWatchlistToggle(deal.id)}
         >
           <Heart
@@ -118,7 +118,7 @@ export const EnhancedDealCard = ({
             </div>
           )}
           {realityMode && (
-            <Badge className="bg-amber-500 hover:bg-amber-600 text-white">
+            <Badge className="bg-secondary text-secondary-foreground">
               Adjusted
             </Badge>
           )}
