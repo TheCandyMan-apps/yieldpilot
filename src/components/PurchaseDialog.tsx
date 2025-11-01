@@ -8,7 +8,7 @@ import { Loader2, FileText } from "lucide-react";
 interface PurchaseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  productType: 'ai_lease_report' | 'due_diligence_pack';
+  productType: 'ai_lease_report' | 'due_diligence_pack' | 'full_report';
   metadata?: Record<string, any>;
 }
 
@@ -37,6 +37,19 @@ const PRODUCT_INFO = {
       "Legal compliance check",
       "Risk assessment",
       "Investment recommendation",
+    ],
+  },
+  full_report: {
+    name: "Full Investment Report",
+    description: "Complete property investment analysis with detailed metrics",
+    price: "£29",
+    priceId: "price_full_report_placeholder",
+    features: [
+      "Detailed risk analysis",
+      "Comparable properties",
+      "5-year forecast",
+      "PDF download",
+      "No watermark",
     ],
   },
 };

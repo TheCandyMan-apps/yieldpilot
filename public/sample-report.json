@@ -1,0 +1,69 @@
+{
+  "deal": {
+    "id": "sample-001",
+    "property_address": "123 High Street, Surrey, GU1 1AA",
+    "city": "Surrey",
+    "postcode": "GU1 1AA",
+    "property_type": "residential",
+    "price": 450000,
+    "estimated_rent": 2200,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "square_feet": 1200,
+    "yield_percentage": 5.87,
+    "roi_percentage": 12.4,
+    "cash_flow_monthly": 450,
+    "investment_score": "good",
+    "image_url": "https://example.com/property.jpg",
+    "listing_url": "https://example.com/listing"
+  },
+  "summary": "This 3-bedroom property in Surrey presents a strong investment opportunity with a gross yield of 5.87% and projected ROI of 12.4%. The location benefits from excellent transport links and strong rental demand. The property requires minimal immediate maintenance and has potential for value-add through light refurbishment. Market analysis suggests stable capital growth of 3-4% annually.",
+  "assumptions": {
+    "deposit_pct": 25,
+    "apr": 5.5,
+    "term_years": 25,
+    "interest_only": true,
+    "voids_pct": 5,
+    "maintenance_pct": 8,
+    "management_pct": 10,
+    "insurance_annual": 450,
+    "stamp_duty": 13750,
+    "legal_fees": 1500,
+    "survey_cost": 800
+  },
+  "forecast": [
+    { "year": 1, "value": 463500, "rental_income": 25080, "net_cashflow": 5400 },
+    { "year": 2, "value": 477405, "rental_income": 25833, "net_cashflow": 5562 },
+    { "year": 3, "value": 491827, "rental_income": 26608, "net_cashflow": 5729 },
+    { "year": 4, "value": 506783, "rental_income": 27407, "net_cashflow": 5902 },
+    { "year": 5, "value": 522287, "rental_income": 28229, "net_cashflow": 6080 }
+  ],
+  "risks": [
+    {
+      "category": "Lease Risk",
+      "severity": "low",
+      "description": "Freehold property with no lease restrictions"
+    },
+    {
+      "category": "Market Risk",
+      "severity": "medium",
+      "description": "Local market showing signs of slowing growth"
+    }
+  ],
+  "comparables": [
+    {
+      "address": "45 Station Road, Surrey",
+      "price": 465000,
+      "bedrooms": 3,
+      "yield": 5.6,
+      "distance_miles": 0.3
+    },
+    {
+      "address": "78 Park Avenue, Surrey",
+      "price": 442000,
+      "bedrooms": 3,
+      "yield": 6.1,
+      "distance_miles": 0.5
+    }
+  ]
+}

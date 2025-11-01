@@ -54,6 +54,7 @@ const LeaseScanner = lazy(() => import("./pages/LeaseScanner"));
 const Enfranchisement = lazy(() => import("./pages/Enfranchisement"));
 const StressTesting = lazy(() => import("./pages/StressTesting"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const ReportViewer = lazy(() => import("./pages/ReportViewer"));
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,7 @@ const App = () => (
             <Route path="/lease-scanner" element={<LeaseScanner />} />
             <Route path="/enfranchisement" element={<Enfranchisement />} />
             <Route path="/stress-testing/:id" element={<StressTesting />} />
+            <Route path="/reports/:id" element={<ReportViewer />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

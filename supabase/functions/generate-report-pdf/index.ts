@@ -41,12 +41,52 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { deal, summary, assumptions, forecast } = await req.json();
+    // Parse request body
+    const { reportId, deal, summary, assumptions, forecast } = await req.json();
 
-    console.log("Generating PDF for deal:", deal.address);
+    // Load branding if available
+    const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: brandingData } = await supabaseClient
+      .from('org_branding')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    // Generate assumptions hash
-    const assumptionsHash = hashAssumptions(assumptions || {});
+    // Check entitlements
+    const { data: entitlements } = await supabaseClient
+      .from('user_entitlements')
+      .select('plan')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const userPlan = entitlements?.plan || 'free';
+    const isPro = userPlan !== 'free';
+
+    // Check if purchased
+    let isPurchased = false;
+    if (reportId) {
+      const { data: metadata } = await supabaseClient
+        .from('investor_reports_metadata')
+        .select('is_purchased')
+        .eq('report_id', reportId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      isPurchased = metadata?.is_purchased || false;
+    }
+
+    const showWatermark = !isPro && !isPurchased;
+
+    // Content hash for integrity
+    const contentString = JSON.stringify({ deal, summary, assumptions, forecast });
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(contentString));
+    const contentHash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    console.log("Generating PDF for deal:", deal?.address || deal?.property_address);
+
+    // Generate version hash
     const versionHash = `v${Date.now().toString(36)}`;
 
     // Create PDF
@@ -55,14 +95,31 @@ serve(async (req) => {
     const pageHeight = doc.internal.pageSize.getHeight();
     let yPos = 20;
 
-    // Header
-    doc.setFillColor(59, 130, 246);
+    // Header with branding
+    if (brandingData?.primary_color) {
+      const hex = brandingData.primary_color.replace('#', '');
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      doc.setFillColor(r, g, b);
+    } else {
+      doc.setFillColor(59, 130, 246);
+    }
     doc.rect(0, 0, pageWidth, 40, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
     doc.text("INVESTMENT DEAL ANALYSIS", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(12);
     doc.text(new Date().toLocaleDateString(), pageWidth / 2, 30, { align: "center" });
+    
+    // Watermark for free/unpurchased
+    if (showWatermark) {
+      doc.setFontSize(80);
+      doc.setTextColor(200, 200, 200);
+      doc.text('DEMO', 105, 150, { align: 'center', angle: 45 });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(12);
+    }
 
     yPos = 50;
 
@@ -73,10 +130,10 @@ serve(async (req) => {
     yPos += 10;
 
     doc.setFontSize(10);
-    doc.text(deal.address || "N/A", 14, yPos);
+    doc.text(deal?.address || deal?.property_address || "N/A", 14, yPos);
     yPos += 5;
 
-    if (deal.city) {
+    if (deal?.city) {
       doc.text(`Location: ${deal.city}`, 14, yPos);
       yPos += 5;
     }
@@ -89,12 +146,12 @@ serve(async (req) => {
     yPos += 10;
 
     const metrics = [
-      ["Property Price", `£${(deal.price || 0).toLocaleString()}`],
-      ["Monthly Rent", `£${(deal.rent || 0).toLocaleString()}`],
-      ["Gross Yield", `${(deal.grossYield || 0).toFixed(2)}%`],
-      ["Net Yield", `${(deal.netYield || 0).toFixed(2)}%`],
-      ["ROI", `${(deal.roi || 0).toFixed(2)}%`],
-      ["Monthly Cashflow", `£${(deal.cashFlow || 0).toLocaleString()}`],
+      ["Property Price", `£${(deal?.price || 0).toLocaleString()}`],
+      ["Monthly Rent", `£${(deal?.estimated_rent || deal?.rent || 0).toLocaleString()}`],
+      ["Gross Yield", `${(deal?.yield_percentage || deal?.grossYield || 0).toFixed(2)}%`],
+      ["Net Yield", `${(deal?.netYield || 0).toFixed(2)}%`],
+      ["ROI", `${(deal?.roi_percentage || deal?.roi || 0).toFixed(2)}%`],
+      ["Monthly Cashflow", `£${(deal?.cash_flow_monthly || deal?.cashFlow || 0).toLocaleString()}`],
     ];
 
     doc.setFontSize(10);
@@ -199,23 +256,20 @@ serve(async (req) => {
     const assumptionsSummary = assumptions
       ? `${assumptions.deposit_pct}% deposit, ${assumptions.apr}% APR, ${assumptions.interest_only ? "IO" : "P&I"}`
       : "Default assumptions";
+    const footerText = brandingData?.footer_text || "Powered by YieldPilot";
 
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(128, 128, 128);
       
-      // Line 1: Generated time and assumptions
-      doc.text(
-        `Generated: ${generatedTime} | Assumptions: ${assumptionsSummary}`,
-        pageWidth / 2,
-        pageHeight - 15,
-        { align: "center" }
-      );
+      // Line 1: Branding and hash
+      doc.text(footerText, 14, pageHeight - 15);
+      doc.text(`Hash: ${contentHash.slice(0, 16)}...`, pageWidth - 14, pageHeight - 15, { align: "right" });
       
-      // Line 2: Version and page
+      // Line 2: Generated time and page
       doc.text(
-        `Version: ${versionHash} | Page ${i} of ${totalPages}`,
+        `Generated: ${new Date().toLocaleDateString()} | ${assumptionsSummary}`,
         pageWidth / 2,
         pageHeight - 10,
         { align: "center" }
@@ -227,7 +281,7 @@ serve(async (req) => {
     const pdfBuffer = new Uint8Array(pdfBlob);
 
     // Upload to storage with content hash
-    const fileName = `${user.id}/${assumptionsHash}-${versionHash}.pdf`;
+    const fileName = `${user.id}/${contentHash.slice(0, 16)}-${versionHash}.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("investment-reports")
       .upload(fileName, pdfBuffer, {
@@ -259,7 +313,7 @@ serve(async (req) => {
         success: true,
         url: signedUrlData.signedUrl,
         fileName,
-        assumptionsHash,
+        contentHash,
         versionHash,
         expiresAt: new Date(Date.now() + 86400 * 1000).toISOString(),
       }),

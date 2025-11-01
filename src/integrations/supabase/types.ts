@@ -1342,6 +1342,53 @@ export type Database = {
           },
         ]
       }
+      investor_reports_metadata: {
+        Row: {
+          content_hash: string
+          created_at: string
+          id: string
+          is_purchased: boolean | null
+          pdf_generated_at: string | null
+          purchased_at: string | null
+          report_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          id?: string
+          is_purchased?: boolean | null
+          pdf_generated_at?: string | null
+          purchased_at?: string | null
+          report_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          id?: string
+          is_purchased?: boolean | null
+          pdf_generated_at?: string | null
+          purchased_at?: string | null
+          report_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_reports_metadata_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "investor_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lease_risk_flags: {
         Row: {
           created_at: string
@@ -1992,6 +2039,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      org_branding: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          org_id: string | null
+          primary_color: string | null
+          updated_at: string
+          user_id: string | null
+          watermark_text: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          org_id?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+          watermark_text?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          org_id?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+          watermark_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_branding_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       org_members: {
         Row: {
