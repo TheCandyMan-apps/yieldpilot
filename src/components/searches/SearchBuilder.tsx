@@ -51,11 +51,11 @@ export function SearchBuilder({ onSave }: SearchBuilderProps) {
       const { error: searchError } = await supabase
         .from('saved_searches')
         .insert({
+          user_id: user.id,
           name: name,
-          criteria: criteria as any,
-          frequency: frequency,
+          filters_json: criteria,
           is_active: true
-        } as any);
+        });
 
       if (searchError) throw searchError;
 
