@@ -445,6 +445,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "compliance_checks_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
         ]
       }
       copilot_conversations: {
@@ -481,6 +488,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
             referencedColumns: ["id"]
           },
         ]
@@ -647,6 +661,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deal_notes_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_pipeline: {
@@ -794,6 +815,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_syndicates_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
             referencedColumns: ["id"]
           },
         ]
@@ -1056,6 +1084,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "forecast_usage_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fx_rates: {
@@ -1206,6 +1241,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_jobs_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
             referencedColumns: ["id"]
           },
         ]
@@ -1747,6 +1789,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "listing_metrics_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
         ]
       }
       listings: {
@@ -2236,6 +2285,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "portfolio_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "portfolio_items_portfolio_id_fkey"
             columns: ["portfolio_id"]
             isOneToOne: false
@@ -2497,6 +2553,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_data_queries_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
             referencedColumns: ["id"]
           },
         ]
@@ -2820,6 +2883,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "referrals_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "referrals_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
@@ -3101,6 +3171,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_matches_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
             referencedColumns: ["id"]
           },
           {
@@ -3455,6 +3532,13 @@ export type Database = {
             referencedRelation: "listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_scenarios_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_investor_deals"
+            referencedColumns: ["id"]
+          },
         ]
       }
       watchlist: {
@@ -3501,6 +3585,35 @@ export type Database = {
       }
     }
     Views: {
+      v_investor_deals: {
+        Row: {
+          address_line1: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string | null
+          country_code: string | null
+          created_at: string | null
+          currency: string | null
+          enrichment: Json | null
+          gross_yield_pct: number | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          kpis: Json | null
+          latitude: number | null
+          listing_url: string | null
+          longitude: number | null
+          net_yield_pct: number | null
+          postcode: string | null
+          price: number | null
+          property_type: string | null
+          region: string | null
+          score: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       v_public_deal_preview: {
         Row: {
           bedrooms: number | null

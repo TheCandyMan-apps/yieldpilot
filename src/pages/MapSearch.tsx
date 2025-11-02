@@ -2,68 +2,48 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
-import { InvestorDeal } from '@/types/db.generated';
+import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+type MapDeal = Database['public']['Views']['v_investor_deals']['Row'];
+
 const MapSearch = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deals, setDeals] = useState<InvestorDeal[]>([]);
+  const [deals, setDeals] = useState<MapDeal[]>([]);
   const navigate = useNavigate();
 
   const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_API_KEY;
 
   const fetchDealsInBounds = async (bounds: mapboxgl.LngLatBounds) => {
     try {
-      // Query listings table with metrics
-      const { data: listings, error: listingsError } = await supabase
-        .from('listings')
-        .select(`
-          *,
-          listing_metrics (
-            gross_rent_month,
-            gross_yield_pct,
-            net_yield_pct,
-            cashflow_monthly,
-            score_numeric,
-            score_band
-          )
-        `)
-        .eq('is_active', true)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
+      // Query v_investor_deals view for properties in bounds
+      const { data: deals, error } = await supabase
+        .from('v_investor_deals')
+        .select('*')
         .gte('latitude', bounds.getSouth())
         .lte('latitude', bounds.getNorth())
         .gte('longitude', bounds.getWest())
         .lte('longitude', bounds.getEast())
         .limit(100);
 
-      if (listingsError) throw listingsError;
+      if (error) throw error;
       
-      // Transform data to match InvestorDeal interface
-      const transformedDeals = listings?.map((listing: any) => ({
-        ...listing,
-        gross_yield_pct: listing.listing_metrics?.[0]?.gross_yield_pct,
-        net_yield_pct: listing.listing_metrics?.[0]?.net_yield_pct,
-        score_numeric: listing.listing_metrics?.[0]?.score_numeric,
-        score_band: listing.listing_metrics?.[0]?.score_band,
-      })) || [];
-      
-      setDeals(transformedDeals);
-      updateMarkers(transformedDeals);
+      setDeals(deals || []);
+      updateMarkers(deals || []);
     } catch (error) {
       console.error('Error fetching deals:', error);
       toast.error('Failed to load properties');
     }
   };
 
-  const updateMarkers = (dealsData: InvestorDeal[]) => {
+  const updateMarkers = (dealsData: MapDeal[]) => {
     // Remove existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
