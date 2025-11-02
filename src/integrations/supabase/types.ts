@@ -2244,6 +2244,62 @@ export type Database = {
           },
         ]
       }
+      portfolio_metrics: {
+        Row: {
+          avg_yield: number | null
+          calculated_at: string | null
+          created_at: string | null
+          diversification_score: number | null
+          geographic_concentration: Json | null
+          id: string
+          portfolio_id: string
+          property_type_mix: Json | null
+          recommendations: Json | null
+          risk_score: number | null
+          total_debt: number | null
+          total_equity: number | null
+          total_value: number | null
+        }
+        Insert: {
+          avg_yield?: number | null
+          calculated_at?: string | null
+          created_at?: string | null
+          diversification_score?: number | null
+          geographic_concentration?: Json | null
+          id?: string
+          portfolio_id: string
+          property_type_mix?: Json | null
+          recommendations?: Json | null
+          risk_score?: number | null
+          total_debt?: number | null
+          total_equity?: number | null
+          total_value?: number | null
+        }
+        Update: {
+          avg_yield?: number | null
+          calculated_at?: string | null
+          created_at?: string | null
+          diversification_score?: number | null
+          geographic_concentration?: Json | null
+          id?: string
+          portfolio_id?: string
+          property_type_mix?: Json | null
+          recommendations?: Json | null
+          risk_score?: number | null
+          total_debt?: number | null
+          total_equity?: number | null
+          total_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_metrics_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_performance: {
         Row: {
           created_at: string | null
@@ -2367,6 +2423,80 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_credits: {
+        Row: {
+          created_at: string | null
+          credit_type: string
+          credits_remaining: number
+          credits_total: number
+          id: string
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credit_type: string
+          credits_remaining?: number
+          credits_total?: number
+          id?: string
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credit_type?: string
+          credits_remaining?: number
+          credits_total?: number
+          id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      premium_data_queries: {
+        Row: {
+          created_at: string | null
+          credits_used: number
+          data_result: Json | null
+          id: string
+          listing_id: string | null
+          query_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_used?: number
+          data_result?: Json | null
+          id?: string
+          listing_id?: string | null
+          query_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_used?: number
+          data_result?: Json | null
+          id?: string
+          listing_id?: string | null
+          query_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_data_queries_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
             referencedColumns: ["id"]
           },
         ]
@@ -2634,6 +2764,69 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      referrals: {
+        Row: {
+          commission_amount: number | null
+          commission_paid: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          listing_id: string | null
+          notes: string | null
+          provider_id: string
+          referral_type: string
+          status: string
+          updated_at: string | null
+          user_id: string
+          user_rebate_amount: number | null
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_paid?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          provider_id: string
+          referral_type: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          user_rebate_amount?: number | null
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_paid?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          provider_id?: string
+          referral_type?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          user_rebate_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regional_benchmarks: {
         Row: {
@@ -2918,6 +3111,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_providers: {
+        Row: {
+          commission_rate: number | null
+          company_name: string
+          contact_name: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          listing_tier: string | null
+          metadata: Json | null
+          phone: string | null
+          provider_type: string
+          rating: number | null
+          regions: string[]
+          review_count: number | null
+          specializations: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          listing_tier?: string | null
+          metadata?: Json | null
+          phone?: string | null
+          provider_type: string
+          rating?: number | null
+          regions?: string[]
+          review_count?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          listing_tier?: string | null
+          metadata?: Json | null
+          phone?: string | null
+          provider_type?: string
+          rating?: number | null
+          regions?: string[]
+          review_count?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
