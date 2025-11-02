@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Check, Loader2, FileText, Crown, Zap, Users, Rocket } from "lucide-react";
+import { CreditCard, Check, Loader2, FileText, Crown, Zap, Users, Rocket, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -341,6 +341,85 @@ const Billing = () => {
               </Card>
             );
           })}
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Premium Add-ons</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Premium Data Credits
+                </CardTitle>
+                <CardDescription>
+                  Unlock ownership, zoning & demographic insights
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£29</p>
+                    <p className="text-sm text-muted-foreground">100 credits (£0.29 per query)</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Land Registry ownership data</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Planning & zoning information</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Local demographics & market data</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_premium_data_credits_placeholder")}>
+                    Purchase Credits
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Portfolio Pro Add-on
+                </CardTitle>
+                <CardDescription>
+                  Advanced analytics for up to 10 properties
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£39</p>
+                    <p className="text-sm text-muted-foreground">per month</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Diversification analysis</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Risk scoring & recommendations</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Performance tracking</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_portfolio_pro_placeholder")}>
+                    Add to Plan
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <Card>

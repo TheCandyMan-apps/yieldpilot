@@ -19,6 +19,7 @@ import { DealSyndicate } from "@/components/deals/DealSyndicate";
 import { DealNotes } from "@/components/deals/DealNotes";
 import { DealComments } from "@/components/deals/DealComments";
 import { CustomFields } from "@/components/deals/CustomFields";
+import { PremiumDataPanel } from "@/components/premium/PremiumDataPanel";
 import { formatCurrency, formatPercentage } from "@/lib/portfolioCalculations";
 import { trackActivity } from "@/lib/activity";
 
@@ -243,8 +244,9 @@ const DealDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="overview">
-              <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
+              <TabsList className="grid grid-cols-5 lg:grid-cols-9 w-full">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="premium">Premium Data</TabsTrigger>
                 <TabsTrigger value="forecast">Forecast</TabsTrigger>
                 <TabsTrigger value="capex">CapEx</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -312,6 +314,13 @@ const DealDetail = () => {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              <TabsContent value="premium">
+                <PremiumDataPanel 
+                  listingId={listing.id}
+                  region={listing.region || listing.city || ""}
+                />
               </TabsContent>
 
               <TabsContent value="forecast">

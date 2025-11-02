@@ -56,6 +56,7 @@ const StressTesting = lazy(() => import("./pages/StressTesting"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const ReportViewer = lazy(() => import("./pages/ReportViewer"));
 const MapSearch = lazy(() => import("./pages/MapSearch"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
 
 // Legal pages
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
@@ -119,6 +120,7 @@ const App = () => (
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/network" element={<InvestorNetwork />} />
             <Route path="/offmarket" element={<OffMarket />} />
+            <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/community" element={<Community />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/checkout-success" element={<CheckoutSuccess />} />
@@ -156,4 +158,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default App;
+export default Sentry.withProfiler(App);

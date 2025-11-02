@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, TrendingUp, AlertTriangle, Building2, DollarSign } from "lucide-react";
 import { ScenarioRunner } from "@/components/portfolio/ScenarioRunner";
+import { EnhancedPortfolioMetrics } from "@/components/premium/EnhancedPortfolioMetrics";
 import { calculatePortfolioSummary, formatCurrency, formatPercentage, getPortfolioHealthScore, getHealthScoreColor } from "@/lib/portfolioCalculations";
 import { Separator } from "@/components/ui/separator";
 
@@ -198,6 +199,7 @@ const PortfolioDetail = () => {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="properties">Properties ({deals.length})</TabsTrigger>
             <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
           </TabsList>
@@ -268,6 +270,10 @@ const PortfolioDetail = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            {id && <EnhancedPortfolioMetrics portfolioId={id} />}
           </TabsContent>
 
           <TabsContent value="properties" className="space-y-4">

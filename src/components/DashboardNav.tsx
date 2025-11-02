@@ -21,7 +21,8 @@ import {
   ShoppingBag,
   FileSearch,
   Calculator,
-  Zap
+  Zap,
+  Store
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export function DashboardNav() {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/deals", label: "Deals", icon: Building2 },
     { path: "/offmarket", label: "Off-Market", icon: ShoppingBag },
+    { path: "/marketplace", label: "Marketplace", icon: Store },
     { path: "/watchlist", label: "Watchlist", icon: Star },
     { path: "/pipeline", label: "Pipeline", icon: KanbanSquare },
     { path: "/portfolio", label: "Portfolio", icon: Briefcase },

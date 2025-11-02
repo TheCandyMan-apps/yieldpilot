@@ -19,6 +19,28 @@ export const STRIPE_PRODUCTS = {
   },
 } as const;
 
+export const STRIPE_ADDONS = {
+  premium_data_credits: {
+    priceId: 'price_premium_data_credits_placeholder',
+    name: 'Premium Data Credits',
+    description: '100 credits for ownership, zoning & demographic data',
+    amount: 2900, // £29.00
+    credits: 100,
+  },
+  portfolio_pro: {
+    priceId: 'price_portfolio_pro_placeholder',
+    name: 'Portfolio Pro Add-on',
+    description: 'Advanced analytics for up to 10 properties',
+    amount: 3900, // £39.00/month
+  },
+  marketplace_featured: {
+    priceId: 'price_marketplace_featured_placeholder',
+    name: 'Marketplace Featured Listing',
+    description: 'Feature your services for 30 days',
+    amount: 14900, // £149.00/month
+  },
+} as const;
+
 export const STRIPE_ONE_TIME = {
   ai_lease_report: {
     priceId: 'price_ai_lease_report_placeholder',
