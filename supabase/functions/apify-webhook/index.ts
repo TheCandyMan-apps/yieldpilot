@@ -46,35 +46,35 @@ Deno.serve(async (req) => {
     }
 
     if (!APIFY_WEBHOOK_SECRET) {
-      console.warn('⚠️ APIFY_WEBHOOK_SECRET not configured - webhook signature verification disabled');
+      console.error('❌ APIFY_WEBHOOK_SECRET not configured');
+      return new Response(
+        JSON.stringify({ error: 'Webhook signature verification not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Verify webhook signature if secret is configured
-    if (APIFY_WEBHOOK_SECRET) {
-      const signature = req.headers.get('x-apify-signature');
-      const body = await req.text();
-      
-      if (!signature) {
-        return new Response(
-          JSON.stringify({ error: 'Missing webhook signature' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const isValid = await verifyApifySignature(body, signature, APIFY_WEBHOOK_SECRET);
-      if (!isValid) {
-        console.error('❌ Invalid webhook signature');
-        return new Response(
-          JSON.stringify({ error: 'Invalid webhook signature' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      console.log('✅ Webhook signature verified');
-      var raw = JSON.parse(body);
-    } else {
-      var raw = await req.json();
+    // Verify webhook signature (required)
+    const signature = req.headers.get('x-apify-signature');
+    if (!signature) {
+      console.error('❌ Missing webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Missing webhook signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const body = await req.text();
+    const isValid = await verifyApifySignature(body, signature, APIFY_WEBHOOK_SECRET);
+    if (!isValid) {
+      console.error('❌ Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid webhook signature' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ Webhook signature verified');
+    const raw = JSON.parse(body);
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 

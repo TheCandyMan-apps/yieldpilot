@@ -64,7 +64,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.health]
-verify_jwt = false
+verify_jwt = true
 
 [functions.api-v2-deals]
 verify_jwt = false
@@ -76,13 +76,13 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.benchmarks]
-verify_jwt = false
+verify_jwt = true
 
 [functions.riskparse]
 verify_jwt = true
 
 [functions.health-ai]
-verify_jwt = false
+verify_jwt = true
 
 [functions.forecast-portfolio]
 verify_jwt = true
