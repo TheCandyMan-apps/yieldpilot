@@ -18,6 +18,12 @@ export function EntitlementGuard({ feature, children, fallback }: EntitlementGua
     checkAccess();
   }, [feature]);
 
+  // Refresh access check when component mounts or when returning from other pages
+  useEffect(() => {
+    const interval = setInterval(checkAccess, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   async function checkAccess() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

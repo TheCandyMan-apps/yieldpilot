@@ -14,10 +14,20 @@ export const STRIPE_PRODUCTS = {
     name: 'Pro Monthly',
     features: ['offmarket', 'stress_testing', 'api_v2', 'ai_assistant'],
   },
+  pro: {
+    priceId: 'price_pro_placeholder',
+    name: 'Pro',
+    features: ['offmarket', 'stress_testing', 'api_v2', 'ai_assistant'],
+  },
   investor_monthly: {
     priceId: 'price_investor_monthly_placeholder',
     name: 'Investor Monthly',
     features: ['offmarket', 'stress_testing', 'api_v2', 'ai_assistant', 'portfolio_analytics', 'deal_lab'],
+  },
+  investor: {
+    priceId: 'price_investor_placeholder',
+    name: 'Investor',
+    features: ['offmarket', 'stress_testing', 'api_v2', 'ai_assistant', 'portfolio_analytics', 'deal_lab', 'ai_telemetry', 'lease_premium'],
   },
   deal_lab_monthly: {
     priceId: 'price_deal_lab_monthly_placeholder',
