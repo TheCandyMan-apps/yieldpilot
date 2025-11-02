@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logger, generateRequestId } from "../_shared/log.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { RiskParseRequestSchema, validateInput } from "../_shared/validation.ts";
+import { createErrorResponse, createAuthError, createValidationError } from "../_shared/error-handler.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,30 +21,26 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return createAuthError();
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user } } = await supabase.auth.getUser(token);
 
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return createAuthError();
     }
 
-    const { listingId, documentType, documentUrl, documentText } = await req.json();
-
-    if (!listingId || !documentType) {
-      return new Response(JSON.stringify({ error: 'listingId and documentType required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Parse and validate input
+    const body = await req.json();
+    const validation = validateInput(RiskParseRequestSchema, body);
+    
+    if (!validation.success) {
+      logger.warn('Validation failed', { error: validation.error }, requestId);
+      return createValidationError(validation.error);
     }
+
+    const { listingId, documentType, documentUrl, documentText } = validation.data;
 
     // Verify listing exists and user has access
     const { data: listing } = await supabase
@@ -165,11 +163,7 @@ Format as JSON: { "riskFlags": [], "trustScore": 0, "summary": "", "fraudIndicat
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Risk parse error', { error: errorMessage }, requestId);
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    logger.error('Risk parse error', { error: error instanceof Error ? error.message : String(error) }, requestId);
+    return createErrorResponse(error, 500, 'ERR_RISK_PARSE_FAILED');
   }
 });

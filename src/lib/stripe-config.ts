@@ -1,5 +1,12 @@
 // Stripe Product and Price Configuration
-// Update these with your actual Stripe Price IDs from the Stripe Dashboard
+// ⚠️ IMPORTANT: Update these with your actual Stripe Price IDs from the Stripe Dashboard
+// These placeholder values will cause payment failures in production!
+// 
+// Steps to configure:
+// 1. Create products in Stripe Dashboard (Products → Create Product)
+// 2. Copy the real price IDs (format: price_xxxxxxxxxxxxx)
+// 3. Replace all placeholder values below
+// 4. Update PLAN_MAPPING in supabase/functions/billing-webhooks/index.ts with real product IDs
 
 export const STRIPE_PRODUCTS = {
   pro_monthly: {
@@ -53,6 +60,19 @@ export const STRIPE_ONE_TIME = {
     amount: 9900, // $99.00
   },
 } as const;
+
+// Validate configuration in production
+if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+  const hasPlaceholders = [
+    ...Object.values(STRIPE_PRODUCTS),
+    ...Object.values(STRIPE_ADDONS),
+    ...Object.values(STRIPE_ONE_TIME)
+  ].some((item: any) => item.priceId?.includes('placeholder'));
+  
+  if (hasPlaceholders) {
+    console.error('⚠️ WARNING: Stripe configuration contains placeholder price IDs. Payment flows will fail.');
+  }
+}
 
 export type SubscriptionPlan = keyof typeof STRIPE_PRODUCTS;
 export type OneTimePurchase = keyof typeof STRIPE_ONE_TIME;

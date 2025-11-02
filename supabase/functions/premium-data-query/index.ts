@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { PremiumDataQuerySchema, validateInput } from "../_shared/validation.ts";
+import { createErrorResponse, createAuthError, createValidationError } from "../_shared/error-handler.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,27 +27,32 @@ serve(async (req) => {
     );
 
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
+    if (!authHeader) {
+      return createAuthError('No authorization header');
+    }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw userError;
+    if (userError) {
+      return createAuthError('Invalid authentication token');
+    }
     
     const user = userData.user;
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      return createAuthError('User not authenticated');
+    }
     logStep('User authenticated', { userId: user.id });
 
-    const { listing_id, query_type } = await req.json();
+    // Parse and validate input
+    const body = await req.json();
+    const validation = validateInput(PremiumDataQuerySchema, body);
     
-    if (!listing_id || !query_type) {
-      throw new Error('listing_id and query_type are required');
+    if (!validation.success) {
+      logStep('Validation failed', { error: validation.error });
+      return createValidationError(validation.error);
     }
 
-    const validTypes = ['ownership', 'zoning', 'demographics', 'planning'];
-    if (!validTypes.includes(query_type)) {
-      throw new Error(`Invalid query_type. Must be one of: ${validTypes.join(', ')}`);
-    }
-
+    const { listing_id, query_type } = validation.data;
     logStep('Query parameters validated', { listing_id, query_type });
 
     // Check user's premium credits
@@ -135,15 +142,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep('ERROR', { message: errorMessage });
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    logStep('ERROR', { message: error instanceof Error ? error.message : String(error) });
+    return createErrorResponse(error, 500, 'ERR_PREMIUM_QUERY_FAILED');
   }
 });
 

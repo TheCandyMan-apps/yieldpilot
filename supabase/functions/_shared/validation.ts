@@ -141,3 +141,69 @@ export function validateProperties(properties: any[]): {
   
   return { valid, invalid };
 }
+
+// ============================================================================
+// Additional validation schemas for edge functions security
+// ============================================================================
+
+// UUID validation
+export const UuidSchema = z.string().uuid({
+  message: 'Invalid UUID format'
+});
+
+// Query type validation for premium data
+export const QueryTypeSchema = z.enum(['ownership', 'zoning', 'demographics', 'planning'], {
+  errorMap: () => ({ message: 'Invalid query type' })
+});
+
+// Document type validation for risk parsing
+export const DocumentTypeSchema = z.enum(['epc', 'survey', 'lease', 'title_deed', 'planning'], {
+  errorMap: () => ({ message: 'Invalid document type' })
+});
+
+// Listing ID validation
+export const ListingIdSchema = z.object({
+  listing_id: UuidSchema,
+});
+
+// Premium data query validation
+export const PremiumDataQuerySchema = z.object({
+  listing_id: UuidSchema,
+  query_type: QueryTypeSchema,
+});
+
+// Risk parse request validation
+export const RiskParseRequestSchema = z.object({
+  listingId: UuidSchema,
+  documentType: DocumentTypeSchema,
+  documentUrl: z.string().url().optional(),
+  documentText: z.string().max(50000).optional(), // 50KB limit
+});
+
+// Stripe webhook event validation (basic structure)
+export const StripeEventSchema = z.object({
+  id: z.string().min(1),
+  type: z.string().min(1),
+  data: z.object({
+    object: z.record(z.unknown())
+  })
+});
+
+// Helper to safely validate and return typed data
+export function validateInput<T>(
+  schema: z.ZodType<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; error: string } {
+  const result = schema.safeParse(data);
+  
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+  
+  // Return sanitized error message (don't leak schema details)
+  const firstError = result.error.errors[0];
+  return {
+    success: false,
+    error: firstError?.message || 'Validation failed'
+  };
+}

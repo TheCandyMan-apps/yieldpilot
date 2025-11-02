@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { createErrorResponse } from '../_shared/error-handler.ts';
 
 const PLAN_MAPPING: Record<string, string> = {
   'prod_pro': 'pro',
@@ -265,11 +266,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    log("ERROR", { message });
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    log("ERROR", { message: error instanceof Error ? error.message : String(error) });
+    return createErrorResponse(error, 400, 'ERR_WEBHOOK_PROCESSING_FAILED');
   }
 });
