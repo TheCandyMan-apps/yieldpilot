@@ -37,7 +37,7 @@ export default function MarketplaceNew() {
   const loadProviders = async () => {
     try {
       setLoading(true);
-      let query = supabase.from("service_providers").select("*");
+      let query = supabase.from("service_providers" as any).select("*");
 
       if (selectedType !== "all") {
         query = query.eq("provider_type", selectedType);
@@ -78,7 +78,7 @@ export default function MarketplaceNew() {
       }
 
       const { data, error } = await supabase
-        .from("marketplace_referrals")
+        .from("referrals" as any)
         .insert([{
           user_id: user.id,
           provider_id: providerId,
@@ -299,7 +299,7 @@ function BecomeProviderForm({ onSuccess }: { onSuccess: () => void }) {
         return;
       }
 
-      const { error } = await supabase.from("service_providers").insert([{
+      const { error } = await supabase.from("service_providers" as any).insert([{
         ...formData,
         user_id: user.id,
       }]);
