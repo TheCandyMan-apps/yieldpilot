@@ -36,13 +36,18 @@ serve(async (req) => {
       });
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single();
+    // Check entitlements for offmarket feature
+    const { data: entitlement } = await supabase
+      .from('user_entitlements')
+      .select('features, expires_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (!profile || !['pro', 'investor_plus', 'enterprise'].includes(profile.subscription_tier)) {
+    const isActive = !entitlement?.expires_at || new Date(entitlement.expires_at) > new Date();
+    const hasFeature = entitlement?.features && 
+      (entitlement.features as Record<string, boolean>)['offmarket'] === true;
+
+    if (!isActive || !hasFeature) {
       return new Response(JSON.stringify({ error: 'Premium subscription required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
