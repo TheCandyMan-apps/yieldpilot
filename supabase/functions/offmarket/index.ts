@@ -36,18 +36,19 @@ serve(async (req) => {
       });
     }
 
-    // Check entitlements for offmarket feature
-    const { data: entitlement } = await supabase
-      .from('user_entitlements')
-      .select('features, expires_at')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // Check entitlements using database function (considers plan and expiry)
+    const { data: hasAccess, error: entitlementError } = await supabase
+      .rpc('has_entitlement', { _user_id: user.id, _feature: 'offmarket' });
 
-    const isActive = !entitlement?.expires_at || new Date(entitlement.expires_at) > new Date();
-    const hasFeature = entitlement?.features && 
-      (entitlement.features as Record<string, boolean>)['offmarket'] === true;
+    if (entitlementError) {
+      logger.error('Entitlement check failed', { error: String(entitlementError) }, requestId);
+      return new Response(JSON.stringify({ error: 'Entitlement check failed' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-    if (!isActive || !hasFeature) {
+    if (!hasAccess) {
       return new Response(JSON.stringify({ error: 'Premium subscription required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
