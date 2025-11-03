@@ -48,7 +48,25 @@ serve(async (req) => {
       });
     }
 
-    if (!hasAccess) {
+    let access = !!hasAccess;
+    if (!access) {
+      // Fallback: direct entitlement check in case RPC logic is out of sync
+      const { data: entitlement, error: entErr } = await supabase
+        .from('user_entitlements')
+        .select('features, expires_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!entErr && entitlement) {
+        const active = !entitlement.expires_at || new Date(entitlement.expires_at) > new Date();
+        const features = entitlement.features as Record<string, boolean>;
+        access = active && !!features?.offmarket;
+      } else if (entErr) {
+        logger.warn('Fallback entitlement check failed', { error: String(entErr) }, requestId);
+      }
+    }
+
+    if (!access) {
       return new Response(JSON.stringify({ error: 'Premium subscription required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
