@@ -118,7 +118,15 @@ const Billing = () => {
       setLoading(true);
       const { data, error } = await supabase.functions.invoke("customer-portal");
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a "no customer" error
+        if (error.message?.includes("No subscription found") || error.message?.includes("NO_CUSTOMER")) {
+          toast.error("Please subscribe to a plan first to manage your subscription");
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       if (data?.url) {
         window.open(data.url, "_blank");
