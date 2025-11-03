@@ -344,8 +344,8 @@ const Billing = () => {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold mb-4">Premium Add-ons</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <h2 className="text-2xl font-bold mb-4">Premium Add-ons & Services</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -419,34 +419,264 @@ const Billing = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Due Diligence Pack
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive property analysis report
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£99</p>
+                    <p className="text-sm text-muted-foreground">one-time purchase</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Comparable properties analysis</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Legal checks & title review</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Detailed ROI modelling</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_due_diligence_pack_placeholder")}>
+                    Purchase Pack
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Tenant Screening
+                </CardTitle>
+                <CardDescription>
+                  Professional background checks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-2xl font-bold">£29 - £49</p>
+                    <p className="text-sm text-muted-foreground">per screening</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Credit history check</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Employment verification</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Reference validation</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_tenant_screening_basic_placeholder")}>
+                    Order Screening
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Marketplace Featured
+                </CardTitle>
+                <CardDescription>
+                  Promote your services to investors
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£149</p>
+                    <p className="text-sm text-muted-foreground">per month</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Top placement in marketplace</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Analytics & insights</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Priority referrals</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => window.location.href = "/marketplace"}>
+                    Learn More
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  AI Lease Report
+                </CardTitle>
+                <CardDescription>
+                  One-time AI-powered lease analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">{AI_REPORT.price}</p>
+                    <p className="text-sm text-muted-foreground">one-time purchase</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>AI risk scoring</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>ROI adjustment analysis</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Detailed recommendations</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">
+                    Available in Lease Scanner
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Pay-Per-Report
-            </CardTitle>
-            <CardDescription>
-              Need a one-time lease analysis? Purchase individual AI reports
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">{AI_REPORT.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  AI-powered lease analysis with risk scoring, ROI adjustment, and recommendations
-                </p>
-                <p className="text-2xl font-bold">{AI_REPORT.price}</p>
-              </div>
-              <div className="text-sm text-muted-foreground max-w-xs">
-                Available when uploading a lease in the Lease Scanner
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-2xl font-bold mb-4">API & Licensing</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Starter API</CardTitle>
+                <CardDescription>
+                  For small applications & testing
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£99</p>
+                    <p className="text-sm text-muted-foreground">per month</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>1,000 API calls/month</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Basic analytics access</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Email support</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_api_starter_placeholder")}>
+                    Get Started
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary">
+              <CardHeader>
+                <Badge className="w-fit mb-2">Popular</Badge>
+                <CardTitle>Professional API</CardTitle>
+                <CardDescription>
+                  For growing businesses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£299</p>
+                    <p className="text-sm text-muted-foreground">per month</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>10,000 API calls/month</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Full analytics & forecasting</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Priority support</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_api_professional_placeholder")}>
+                    Get Started
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Enterprise API</CardTitle>
+                <CardDescription>
+                  For banks & institutions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-3xl font-bold">£999</p>
+                    <p className="text-sm text-muted-foreground">per month</p>
+                  </div>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Unlimited API calls</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Custom integrations</span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
+                      <span>Dedicated support</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" onClick={() => handleUpgrade("price_api_enterprise_placeholder")}>
+                    Contact Sales
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         <div className="text-center text-sm text-muted-foreground py-4">
           <p>🔒 Secure payment processing by Stripe</p>

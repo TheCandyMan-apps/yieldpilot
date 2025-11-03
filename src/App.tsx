@@ -56,7 +56,7 @@ const StressTesting = lazy(() => import("./pages/StressTesting"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const ReportViewer = lazy(() => import("./pages/ReportViewer"));
 const MapSearch = lazy(() => import("./pages/MapSearch"));
-const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Marketplace = lazy(() => import("./pages/MarketplaceNew"));
 
 // Legal pages
 const Privacy = lazy(() => import("./pages/legal/Privacy"));

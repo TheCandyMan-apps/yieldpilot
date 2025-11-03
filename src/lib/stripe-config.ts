@@ -56,6 +56,36 @@ export const STRIPE_ADDONS = {
     description: 'Feature your services for 30 days',
     amount: 14900, // £149.00/month
   },
+  tenant_screening_basic: {
+    priceId: 'price_tenant_screening_basic_placeholder',
+    name: 'Basic Tenant Screening',
+    description: 'Credit check and employment verification',
+    amount: 2900, // £29.00
+  },
+  tenant_screening_enhanced: {
+    priceId: 'price_tenant_screening_enhanced_placeholder',
+    name: 'Enhanced Tenant Screening',
+    description: 'Full background check with references',
+    amount: 4900, // £49.00
+  },
+  api_license_starter: {
+    priceId: 'price_api_starter_placeholder',
+    name: 'API License - Starter',
+    description: '1,000 API calls per month',
+    amount: 9900, // £99.00/month
+  },
+  api_license_professional: {
+    priceId: 'price_api_professional_placeholder',
+    name: 'API License - Professional',
+    description: '10,000 API calls per month',
+    amount: 29900, // £299.00/month
+  },
+  api_license_enterprise: {
+    priceId: 'price_api_enterprise_placeholder',
+    name: 'API License - Enterprise',
+    description: 'Unlimited API calls with dedicated support',
+    amount: 99900, // £999.00/month
+  },
 } as const;
 
 export const STRIPE_ONE_TIME = {
