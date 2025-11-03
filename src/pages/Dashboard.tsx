@@ -162,7 +162,15 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => setShowForm(true)}>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  console.log('Start New Analysis clicked');
+                  setShowForm(true);
+                  setCurrentAnalysis(null);
+                  setEditingAnalysis(null);
+                }}
+              >
                 Start New Analysis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
