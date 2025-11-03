@@ -24,6 +24,9 @@ verify_jwt = false
 [functions.copilot-advisor]
 verify_jwt = true
 
+[functions.market-intelligence]
+verify_jwt = true
+
 [functions.forecast]
 verify_jwt = true
 

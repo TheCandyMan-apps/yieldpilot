@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatHistory } from "@/components/ai/ChatHistory";
 import { SmartRecommendations } from "@/components/ai/SmartRecommendations";
-import { MessageSquare, Sparkles } from "lucide-react";
+import { MarketIntelligence } from "@/components/ai/MarketIntelligence";
+import { MessageSquare, Sparkles, Globe } from "lucide-react";
 import { EntitlementGuard } from "@/components/EntitlementGuard";
 import { PREMIUM_FEATURES } from "@/lib/entitlements";
 
@@ -20,8 +21,12 @@ export default function AIAssistant() {
         </div>
 
         <EntitlementGuard feature={PREMIUM_FEATURES.AI_ASSISTANT}>
-          <Tabs defaultValue="recommendations" className="space-y-6">
+          <Tabs defaultValue="market-intelligence" className="space-y-6">
             <TabsList>
+              <TabsTrigger value="market-intelligence">
+                <Globe className="h-4 w-4 mr-2" />
+                Market Intelligence
+              </TabsTrigger>
               <TabsTrigger value="recommendations">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Recommendations
@@ -31,6 +36,10 @@ export default function AIAssistant() {
                 Chat History
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="market-intelligence" className="space-y-4">
+              <MarketIntelligence />
+            </TabsContent>
 
             <TabsContent value="recommendations" className="space-y-4">
               <SmartRecommendations />

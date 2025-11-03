@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_queries: {
+        Row: {
+          context_data: Json | null
+          created_at: string | null
+          id: string
+          query_text: string
+          query_type: string
+          response_text: string | null
+          user_id: string
+        }
+        Insert: {
+          context_data?: Json | null
+          created_at?: string | null
+          id?: string
+          query_text: string
+          query_type: string
+          response_text?: string | null
+          user_id: string
+        }
+        Update: {
+          context_data?: Json | null
+          created_at?: string | null
+          id?: string
+          query_text?: string
+          query_type?: string
+          response_text?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       alert_matches: {
         Row: {
           alert_id: string
