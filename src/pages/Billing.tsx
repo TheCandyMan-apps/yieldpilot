@@ -86,7 +86,20 @@ const Billing = () => {
   };
 
   useEffect(() => {
-    checkSubscription();
+    const initialize = async () => {
+      // Grant premium access first
+      try {
+        await supabase.functions.invoke("grant-premium-access");
+        console.log("Premium access granted");
+      } catch (error) {
+        console.error("Error granting premium access:", error);
+      }
+      
+      // Then check subscription
+      await checkSubscription();
+    };
+    
+    initialize();
     
     // Check subscription periodically
     const interval = setInterval(checkSubscription, 60000);

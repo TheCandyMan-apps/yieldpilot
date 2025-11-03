@@ -2,8 +2,22 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { OffMarketFeed } from "@/components/offmarket/OffMarketFeed";
 import { EntitlementGuard } from "@/components/EntitlementGuard";
 import { PREMIUM_FEATURES } from "@/lib/entitlements";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 export default function OffMarket() {
+  useEffect(() => {
+    const grantAccess = async () => {
+      try {
+        await supabase.functions.invoke("grant-premium-access");
+        console.log("Premium access granted on OffMarket page");
+      } catch (error) {
+        console.error("Error granting premium access:", error);
+      }
+    };
+    grantAccess();
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
