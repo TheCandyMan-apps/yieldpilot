@@ -8,13 +8,26 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, User, Bell, Shield, Globe, CheckCircle2, XCircle, Mail, Monitor, Smartphone, Globe2 } from "lucide-react";
+import { Loader2, User, Bell, Shield, Globe, CheckCircle2, XCircle, Mail, Monitor, Smartphone, Globe2, AlertTriangle, Download, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ActivityLog {
   id: string;
@@ -26,10 +39,19 @@ interface ActivityLog {
   created_at: string;
 }
 
+interface DeletionRequest {
+  id: string;
+  scheduled_deletion_at: string;
+  reason: string | null;
+  data_export_requested: boolean;
+}
+
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -39,6 +61,11 @@ const Settings = () => {
   const [preferredCurrency, setPreferredCurrency] = useState("GBP");
   const [preferredRegion, setPreferredRegion] = useState("UK");
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [deletionRequest, setDeletionRequest] = useState<DeletionRequest | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
+  const [exportData, setExportData] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -73,6 +100,18 @@ const Settings = () => {
 
         if (logs) {
           setActivityLogs(logs);
+        }
+
+        // Check for pending deletion request
+        const { data: deletion } = await supabase
+          .from("account_deletion_requests")
+          .select("*")
+          .eq("user_id", user.id)
+          .is("cancelled_at", null)
+          .maybeSingle();
+
+        if (deletion) {
+          setDeletionRequest(deletion);
         }
 
         // Log this session view
@@ -192,6 +231,87 @@ const Settings = () => {
       return <Smartphone className="h-4 w-4" />;
     }
     return <Monitor className="h-4 w-4" />;
+  };
+
+  const handleExportData = async () => {
+    try {
+      setExportLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke("export-user-data");
+
+      if (error) throw error;
+
+      // Download the data as JSON
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `yieldpilot-data-export-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Data exported successfully");
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast.error("Failed to export data");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleRequestDeletion = async () => {
+    try {
+      setDeleteLoading(true);
+
+      if (!deletePassword) {
+        toast.error("Please enter your password");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("request-account-deletion", {
+        body: {
+          password: deletePassword,
+          reason: deleteReason,
+          exportData: exportData,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message);
+      setDeleteDialogOpen(false);
+      setDeletePassword("");
+      setDeleteReason("");
+      setExportData(false);
+      
+      // Refresh to show deletion request
+      window.location.reload();
+    } catch (error) {
+      console.error("Error requesting deletion:", error);
+      toast.error("Failed to request account deletion");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    try {
+      setLoading(true);
+
+      const { error } = await supabase.functions.invoke("cancel-account-deletion");
+
+      if (error) throw error;
+
+      toast.success("Account deletion cancelled");
+      setDeletionRequest(null);
+    } catch (error) {
+      console.error("Error cancelling deletion:", error);
+      toast.error("Failed to cancel deletion");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -353,6 +473,163 @@ const Settings = () => {
                 </div>
 
                 <Button>Save Preferences</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="text-destructive flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Permanently delete your account and all associated data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {deletionRequest ? (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">
+                          Your account is scheduled for deletion
+                        </p>
+                        <p className="text-sm">
+                          Deletion date: {new Date(deletionRequest.scheduled_deletion_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm">
+                          You have until then to cancel this request.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancelDeletion}
+                          disabled={loading}
+                          className="mt-2"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            "Cancel Deletion"
+                          )}
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                      <div className="space-y-1">
+                        <p className="font-medium">Delete Account</p>
+                        <p className="text-sm text-muted-foreground">
+                          Permanently delete your account and all your data. This action cannot be undone.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleExportData}
+                        disabled={exportLoading}
+                      >
+                        {exportLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Exporting...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Export My Data
+                          </>
+                        )}
+                      </Button>
+
+                      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Account
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-4">
+                              <p>
+                                This will schedule your account for permanent deletion in 30 days.
+                                You can cancel this request within that time.
+                              </p>
+                              
+                              <div className="space-y-3 pt-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="deletePassword">Confirm your password</Label>
+                                  <Input
+                                    id="deletePassword"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    value={deletePassword}
+                                    onChange={(e) => setDeletePassword(e.target.value)}
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="deleteReason">Reason (optional)</Label>
+                                  <Textarea
+                                    id="deleteReason"
+                                    placeholder="Help us understand why you're leaving..."
+                                    value={deleteReason}
+                                    onChange={(e) => setDeleteReason(e.target.value)}
+                                    rows={3}
+                                  />
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id="exportBeforeDelete"
+                                    checked={exportData}
+                                    onCheckedChange={(checked) => setExportData(checked as boolean)}
+                                  />
+                                  <label
+                                    htmlFor="exportBeforeDelete"
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    Export my data before deletion
+                                  </label>
+                                </div>
+                              </div>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleRequestDeletion();
+                              }}
+                              disabled={deleteLoading || !deletePassword}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {deleteLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                "Delete Account"
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

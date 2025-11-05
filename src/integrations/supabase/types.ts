@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string | null
+          data_export_completed: boolean | null
+          data_export_requested: boolean | null
+          id: string
+          reason: string | null
+          requested_at: string | null
+          scheduled_deletion_at: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          data_export_completed?: boolean | null
+          data_export_requested?: boolean | null
+          id?: string
+          reason?: string | null
+          requested_at?: string | null
+          scheduled_deletion_at: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          data_export_completed?: boolean | null
+          data_export_requested?: boolean | null
+          id?: string
+          reason?: string | null
+          requested_at?: string | null
+          scheduled_deletion_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
@@ -3730,6 +3766,7 @@ export type Database = {
         Args: { _feature: string; _user_id: string }
         Returns: boolean
       }
+      has_pending_deletion: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
