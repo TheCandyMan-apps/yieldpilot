@@ -57,6 +57,7 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const ReportViewer = lazy(() => import("./pages/ReportViewer"));
 const MapSearch = lazy(() => import("./pages/MapSearch"));
 const Marketplace = lazy(() => import("./pages/MarketplaceNew"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 // Legal pages
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
@@ -143,6 +144,7 @@ const App = () => (
             <Route path="/stress-testing/:id" element={<StressTesting />} />
             <Route path="/reports/:id" element={<ReportViewer />} />
             <Route path="/map" element={<MapSearch />} />
+            <Route path="/settings" element={<Settings />} />
             {/* Legal pages */}
             <Route path="/legal/privacy" element={<Privacy />} />
             <Route path="/legal/terms" element={<Terms />} />
