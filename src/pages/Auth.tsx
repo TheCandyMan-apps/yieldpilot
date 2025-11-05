@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2 } from "lucide-react";
+import { logUserActivity } from "@/lib/activityLogger";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -19,8 +20,14 @@ const Auth = () => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Log successful sign-in
+        await logUserActivity(
+          session.user.id,
+          "signin",
+          "User signed in successfully"
+        );
         navigate("/dashboard");
       }
     });

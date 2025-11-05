@@ -8,11 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, User, Bell, Shield, Globe, CheckCircle2, XCircle, Mail } from "lucide-react";
+import { Loader2, User, Bell, Shield, Globe, CheckCircle2, XCircle, Mail, Monitor, Smartphone, Globe2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+
+interface ActivityLog {
+  id: string;
+  event_type: string;
+  event_description: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  device_info: any;
+  created_at: string;
+}
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -26,6 +38,7 @@ const Settings = () => {
   const [marketUpdates, setMarketUpdates] = useState(false);
   const [preferredCurrency, setPreferredCurrency] = useState("GBP");
   const [preferredRegion, setPreferredRegion] = useState("UK");
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -49,6 +62,21 @@ const Settings = () => {
         if (profile) {
           setFullName(profile.full_name || "");
         }
+
+        // Load activity logs
+        const { data: logs } = await supabase
+          .from("user_activity_log")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (logs) {
+          setActivityLogs(logs);
+        }
+
+        // Log this session view
+        await logActivity(user.id, "settings_viewed", "User viewed settings page");
       } catch (error) {
         console.error("Error loading user data:", error);
       }
@@ -56,6 +84,26 @@ const Settings = () => {
 
     loadUserData();
   }, [navigate]);
+
+  const logActivity = async (userId: string, eventType: string, description: string) => {
+    try {
+      const userAgent = navigator.userAgent;
+      const deviceInfo = {
+        platform: navigator.platform,
+        language: navigator.language,
+      };
+
+      await supabase.rpc("log_user_activity_event", {
+        p_user_id: userId,
+        p_event_type: eventType,
+        p_event_description: description,
+        p_user_agent: userAgent,
+        p_device_info: deviceInfo,
+      });
+    } catch (error) {
+      console.error("Error logging activity:", error);
+    }
+  };
 
   const handleResendVerification = async () => {
     try {
@@ -102,11 +150,18 @@ const Settings = () => {
   const handleUpdatePassword = async (currentPassword: string, newPassword: string) => {
     try {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) throw error;
+
+      // Log password change
+      if (user) {
+        await logActivity(user.id, "password_changed", "User changed their password");
+      }
 
       toast.success("Password updated successfully");
     } catch (error) {
@@ -115,6 +170,28 @@ const Settings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getEventIcon = (eventType: string) => {
+    switch (eventType) {
+      case "login":
+      case "signin":
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case "password_changed":
+        return <Shield className="h-4 w-4 text-blue-500" />;
+      case "settings_viewed":
+        return <User className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return <Globe2 className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getDeviceIcon = (userAgent: string | null) => {
+    if (!userAgent) return <Monitor className="h-4 w-4" />;
+    if (userAgent.toLowerCase().includes("mobile") || userAgent.toLowerCase().includes("android") || userAgent.toLowerCase().includes("iphone")) {
+      return <Smartphone className="h-4 w-4" />;
+    }
+    return <Monitor className="h-4 w-4" />;
   };
 
   return (
@@ -329,6 +406,59 @@ const Settings = () => {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Update Password
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Activity</CardTitle>
+                <CardDescription>
+                  Recent activity on your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px] pr-4">
+                  {activityLogs.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No activity logged yet
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {activityLogs.map((log) => (
+                        <div
+                          key={log.id}
+                          className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="mt-1">{getEventIcon(log.event_type)}</div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-sm">
+                                {log.event_description || log.event_type}
+                              </p>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                {getDeviceIcon(log.user_agent)}
+                                <span>
+                                  {log.user_agent?.includes("Mobile") ? "Mobile" : "Desktop"}
+                                </span>
+                              </div>
+                              {log.ip_address && (
+                                <div className="flex items-center gap-1">
+                                  <Globe2 className="h-3 w-3" />
+                                  <span>{log.ip_address}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>
