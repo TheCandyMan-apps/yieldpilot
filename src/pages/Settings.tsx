@@ -8,14 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, User, Bell, Shield, Globe } from "lucide-react";
+import { Loader2, User, Bell, Shield, Globe, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
   const [fullName, setFullName] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [priceAlerts, setPriceAlerts] = useState(true);
@@ -33,6 +37,7 @@ const Settings = () => {
         }
 
         setUserEmail(user.email || "");
+        setEmailVerified(!!user.email_confirmed_at);
 
         // Load profile data
         const { data: profile } = await supabase
@@ -51,6 +56,26 @@ const Settings = () => {
 
     loadUserData();
   }, [navigate]);
+
+  const handleResendVerification = async () => {
+    try {
+      setVerificationLoading(true);
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      });
+
+      if (error) throw error;
+
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      toast.error("Failed to send verification email");
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     try {
@@ -133,17 +158,56 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={userEmail}
-                    disabled
-                    className="bg-muted"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={userEmail}
+                      disabled
+                      className="bg-muted"
+                    />
+                    {emailVerified ? (
+                      <Badge variant="default" className="flex items-center gap-1 whitespace-nowrap">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="flex items-center gap-1 whitespace-nowrap">
+                        <XCircle className="h-3 w-3" />
+                        Unverified
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Contact support to change your email address
                   </p>
                 </div>
+
+                {!emailVerified && (
+                  <Alert>
+                    <Mail className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span className="text-sm">
+                        Please verify your email address to access all features
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResendVerification}
+                        disabled={verificationLoading}
+                      >
+                        {verificationLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Resend Email"
+                        )}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
