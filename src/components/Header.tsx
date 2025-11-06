@@ -7,6 +7,7 @@ import { HealthStatus } from "@/components/HealthStatus";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { TutorialMenu } from "@/components/tutorials/TutorialMenu";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -78,6 +79,7 @@ const Header = () => {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          <TutorialMenu />
           <GlobalSearch />
           <NotificationCenter />
           <HealthStatus />

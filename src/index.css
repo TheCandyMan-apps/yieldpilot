@@ -164,4 +164,20 @@ All colors MUST be HSL.
   .animate-fade-in-up {
     animation: fade-in-up 0.8s ease-out;
   }
+  
+  /* Tutorial highlight effect */
+  .tutorial-highlight {
+    position: relative;
+    z-index: 51 !important;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+    }
+  }
 }

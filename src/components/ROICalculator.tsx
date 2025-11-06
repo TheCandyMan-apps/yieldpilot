@@ -103,11 +103,11 @@ const ROICalculator = () => {
                   <div className="text-sm text-muted-foreground">Return on Investment</div>
                   <HelpTooltip content="Annual return as a percentage of your initial deposit. Shows how efficiently your cash investment generates income" />
                 </div>
-                <div className="text-4xl font-bold text-primary">{roi}%</div>
-                <div className="text-sm text-muted-foreground mt-1">Annual ROI</div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+              <div className="text-4xl font-bold text-primary">{roi}%</div>
+              <div className="text-sm text-muted-foreground mt-1">Annual ROI</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 roi-results">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="text-sm text-muted-foreground">Gross Yield</div>

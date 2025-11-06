@@ -323,7 +323,7 @@ const Hero = () => {
           )}
 
           {/* URL Input Section */}
-          <div className="space-y-4 mb-8 animate-fade-in-up [animation-delay:150ms]">
+          <div className="space-y-4 mb-8 animate-fade-in-up [animation-delay:150ms] hero-url-input">
             <div className="flex items-center gap-2 mb-2">
               <label className="text-sm font-medium">Property URL</label>
               <HelpTooltip 
@@ -391,7 +391,7 @@ const Hero = () => {
 
             {/* Progress Indicator */}
             {isAnalyzing && progressStep && (
-              <div className="text-sm text-primary flex items-center gap-2 animate-pulse">
+              <div className="text-sm text-primary flex items-center gap-2 animate-pulse progress-indicator">
                 <div className="h-2 w-2 rounded-full bg-primary animate-bounce" />
                 <span>{progressStep}</span>
               </div>
@@ -425,7 +425,7 @@ const Hero = () => {
               size="lg"
               onClick={handleAnalyze}
               disabled={!validationState.isValid || isAnalyzing}
-              className="w-full sm:w-auto text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group disabled:opacity-50"
+              className="w-full sm:w-auto text-lg gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all shadow-lg hover:shadow-glow group disabled:opacity-50 analyze-button"
             >
               {isAnalyzing ? (
                 <>Analyzing...</>
