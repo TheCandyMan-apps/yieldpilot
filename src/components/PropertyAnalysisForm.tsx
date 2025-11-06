@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/HelpTooltip";
 import {
   Select,
   SelectContent,
@@ -157,7 +158,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">Purchase Price (£)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="price">Purchase Price (£)</Label>
+                <HelpTooltip content="Total purchase price including stamp duty, legal fees, and other transaction costs" />
+              </div>
               <Input
                 id="price"
                 type="number"
@@ -173,7 +177,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Property Type</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="type">Property Type</Label>
+                <HelpTooltip content="Different property types have different tax treatments, lending criteria, and return profiles" />
+              </div>
               <Select
                 value={formData.propertyType}
                 onValueChange={(value) => handleChange("propertyType", value)}
@@ -193,7 +200,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="rent">Estimated Monthly Rent (£)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="rent">Estimated Monthly Rent (£)</Label>
+                <HelpTooltip content="Research comparable properties in the area. Check Rightmove, Zoopla, or speak to local letting agents for accurate rental values" />
+              </div>
               <Input
                 id="rent"
                 type="number"
@@ -209,7 +219,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mortgage">Mortgage Rate (%)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="mortgage">Mortgage Rate (%)</Label>
+                <HelpTooltip content="Current buy-to-let mortgage rates. Check with multiple lenders as rates vary significantly based on LTV and property type" />
+              </div>
               <Input
                 id="mortgage"
                 type="number"
@@ -228,7 +241,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="deposit">Deposit Amount (£)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="deposit">Deposit Amount (£)</Label>
+                <HelpTooltip content="Most buy-to-let mortgages require a minimum 25% deposit. Higher deposits typically secure better interest rates" />
+              </div>
               <Input
                 id="deposit"
                 type="number"
@@ -244,7 +260,10 @@ const PropertyAnalysisForm = ({ onComplete, onCancel, existingAnalysis }: Proper
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="costs">Monthly Costs (£)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="costs">Monthly Costs (£)</Label>
+                <HelpTooltip content="Include: maintenance (10-15% of rent), letting agent fees (10-15%), insurance, ground rent, service charges, and void periods" />
+              </div>
               <Input
                 id="costs"
                 type="number"

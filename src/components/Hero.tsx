@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { checkUsageLimit } from "@/lib/planLimits";
 import { Badge } from "@/components/ui/badge";
+import { HelpTooltip } from "@/components/HelpTooltip";
 
 const EXAMPLE_URLS = {
   zoopla: "https://www.zoopla.co.uk/for-sale/details/67891234/",
@@ -323,6 +324,13 @@ const Hero = () => {
 
           {/* URL Input Section */}
           <div className="space-y-4 mb-8 animate-fade-in-up [animation-delay:150ms]">
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-medium">Property URL</label>
+              <HelpTooltip 
+                content="Paste any Zoopla or Rightmove property listing URL. We'll automatically extract property details, photos, and market data for instant analysis"
+                side="right"
+              />
+            </div>
             <div className="relative">
               <Input
                 type="url"

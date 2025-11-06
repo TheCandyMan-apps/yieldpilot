@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, X } from "lucide-react";
+import { HelpTooltip } from "@/components/HelpTooltip";
 
 const strategies = [
   {
@@ -70,7 +71,19 @@ const ComparisonTable = () => {
             {strategies.map((strategy, index) => (
               <Card key={index} className="border-2 hover-scale">
                 <CardHeader className="text-center bg-primary/5">
-                  <CardTitle className="text-2xl mb-2">{strategy.name}</CardTitle>
+                  <div className="flex items-center justify-center gap-2">
+                    <CardTitle className="text-2xl mb-2">{strategy.name}</CardTitle>
+                    <HelpTooltip 
+                      content={
+                        strategy.name === "Buy-to-Let" 
+                          ? "Traditional rental property with single tenancy. Lower yields but simpler management and lower risk"
+                          : strategy.name === "HMO"
+                          ? "House in Multiple Occupation with individual room rentals. Higher yields but requires licensing and more intensive management"
+                          : "Property development or renovation for resale. Highest returns but requires significant capital and active project management"
+                      }
+                      side="bottom"
+                    />
+                  </div>
                   <p className="text-sm text-muted-foreground">{strategy.bestFor}</p>
                   <div className="text-3xl font-bold text-primary mt-4">{strategy.avgYield}</div>
                   <p className="text-sm text-muted-foreground">Average Yield</p>

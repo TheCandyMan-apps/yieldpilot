@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, TrendingUp } from "lucide-react";
+import { HelpTooltip } from "@/components/HelpTooltip";
 
 const ROICalculator = () => {
   const [propertyPrice, setPropertyPrice] = useState<number>(300000);
@@ -39,43 +40,51 @@ const ROICalculator = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="price">Property Price (£)</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="price">Property Price (£)</Label>
+                  <HelpTooltip content="The total purchase price of the property including all fees" />
+                </div>
                 <Input
                   id="price"
                   type="number"
                   value={propertyPrice}
                   onChange={(e) => setPropertyPrice(Number(e.target.value))}
-                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="deposit">Deposit Amount (£)</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="deposit">Deposit Amount (£)</Label>
+                  <HelpTooltip content="Your upfront cash investment. Typically 20-25% of property price for buy-to-let mortgages" />
+                </div>
                 <Input
                   id="deposit"
                   type="number"
                   value={deposit}
                   onChange={(e) => setDeposit(Number(e.target.value))}
-                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="rent">Monthly Rent (£)</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="rent">Monthly Rent (£)</Label>
+                  <HelpTooltip content="Expected monthly rental income before expenses. Research local market rates for accurate estimates" />
+                </div>
                 <Input
                   id="rent"
                   type="number"
                   value={monthlyRent}
                   onChange={(e) => setMonthlyRent(Number(e.target.value))}
-                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="costs">Monthly Costs (£)</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="costs">Monthly Costs (£)</Label>
+                  <HelpTooltip content="Include maintenance, insurance, management fees, and void periods. Typically 20-30% of rent" />
+                </div>
                 <Input
                   id="costs"
                   type="number"
                   value={monthlyCosts}
                   onChange={(e) => setMonthlyCosts(Number(e.target.value))}
-                  className="mt-1"
                 />
               </div>
             </CardContent>
@@ -90,18 +99,27 @@ const ROICalculator = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Return on Investment</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="text-sm text-muted-foreground">Return on Investment</div>
+                  <HelpTooltip content="Annual return as a percentage of your initial deposit. Shows how efficiently your cash investment generates income" />
+                </div>
                 <div className="text-4xl font-bold text-primary">{roi}%</div>
                 <div className="text-sm text-muted-foreground mt-1">Annual ROI</div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Gross Yield</div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-sm text-muted-foreground">Gross Yield</div>
+                    <HelpTooltip content="Annual rent as a percentage of property price before costs. UK average is 4-6%" side="left" />
+                  </div>
                   <div className="text-2xl font-bold">{grossYield}%</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Net Annual Income</div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-sm text-muted-foreground">Net Annual Income</div>
+                    <HelpTooltip content="Total yearly profit after deducting all operating costs and expenses" side="left" />
+                  </div>
                   <div className="text-2xl font-bold">£{netAnnualIncome.toLocaleString()}</div>
                 </div>
               </div>
