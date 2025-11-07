@@ -122,6 +122,57 @@ All colors MUST be HSL.
   }
 }
 
+@keyframes tutorial-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes achievement-sparkle {
+  0% {
+    transform: translateY(100%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%) scale(1);
+    opacity: 0;
+  }
+}
+
+.achievement-sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, #fbbf24 0%, transparent 70%);
+  border-radius: 50%;
+  animation: achievement-sparkle 2s ease-in-out infinite;
+}
+
+.achievement-sparkle:nth-child(1) {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.achievement-sparkle:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.5s;
+}
+
+.achievement-sparkle:nth-child(3) {
+  left: 80%;
+  animation-delay: 1s;
+}
+
+.animation-delay-150 {
+  animation-delay: 0.15s !important;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s !important;
+}
+
 @layer base {
   * {
     @apply border-border;

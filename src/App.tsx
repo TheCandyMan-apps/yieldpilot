@@ -10,6 +10,7 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { MobileNav } from "@/components/MobileNav";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { FirstTimeTutorialPrompt } from "@/components/tutorials";
+import { AchievementProvider } from "@/components/gamification";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,7 @@ const ForecastUsage = lazy(() => import("./pages/ForecastUsage"));
 const AITelemetry = lazy(() => import("./pages/AITelemetry"));
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Integrations = lazy(() => import("./pages/Integrations"));
+const Achievements = lazy(() => import("./pages/Achievements"));
 const Watchlist = lazy(() => import("./pages/Watchlist"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -70,33 +72,34 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Sentry.ErrorBoundary 
-        fallback={({ error, resetError }) => (
-          <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <div className="max-w-md w-full space-y-4 text-center">
-              <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
-              <p className="text-muted-foreground">
-                {error instanceof Error ? error.message : 'An unexpected error occurred'}
-              </p>
-              <div className="flex gap-4 justify-center">
-                <button onClick={resetError} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">
-                  Try again
-                </button>
-                <button onClick={() => window.location.href = '/'} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md">
-                  Go home
-                </button>
+      <AchievementProvider>
+        <Sentry.ErrorBoundary 
+          fallback={({ error, resetError }) => (
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
+              <div className="max-w-md w-full space-y-4 text-center">
+                <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+                <p className="text-muted-foreground">
+                  {error instanceof Error ? error.message : 'An unexpected error occurred'}
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <button onClick={resetError} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">
+                    Try again
+                  </button>
+                  <button onClick={() => window.location.href = '/'} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md">
+                    Go home
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        showDialog
-      >
-        <Toaster />
-        <Sonner />
-        <PWAUpdatePrompt />
-        <KeyboardShortcuts />
-        <FirstTimeTutorialPrompt />
-        <BrowserRouter>
+          )}
+          showDialog
+        >
+          <Toaster />
+          <Sonner />
+          <PWAUpdatePrompt />
+          <KeyboardShortcuts />
+          <FirstTimeTutorialPrompt />
+          <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>}>
             <MobileNav />
             <Routes>
@@ -136,6 +139,7 @@ const App = () => (
             <Route path="/ai-telemetry" element={<AITelemetry />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/achievements" element={<Achievements />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/blog" element={<Blog />} />
@@ -156,6 +160,7 @@ const App = () => (
           </Suspense>
         </BrowserRouter>
       </Sentry.ErrorBoundary>
+      </AchievementProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

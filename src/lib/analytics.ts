@@ -31,8 +31,16 @@ export const analytics = {
   // Page views (handled automatically by PostHog)
   
   // Property paste/URL entry
-  propertyUrlPasted: (url: string, source: 'zoopla' | 'rightmove' | 'unknown') => {
+  propertyUrlPasted: async (url: string, source: 'zoopla' | 'rightmove' | 'unknown') => {
     posthog.capture('property_url_pasted', { source, url_length: url.length });
+    
+    // Track achievement
+    try {
+      const { trackAchievementProgress } = await import("@/lib/achievements");
+      await trackAchievementProgress("feature_usage", "property_analysis");
+    } catch (error) {
+      console.error("Failed to track achievement:", error);
+    }
   },
   
   // Ingestion events
@@ -53,8 +61,16 @@ export const analytics = {
     posthog.capture('pdf_export_start', { deal_id: dealId });
   },
   
-  pdfExportSuccess: (dealId: string, durationMs: number) => {
+  pdfExportSuccess: async (dealId: string, durationMs: number) => {
     posthog.capture('pdf_export_success', { deal_id: dealId, duration_ms: durationMs });
+    
+    // Track achievement
+    try {
+      const { trackAchievementProgress } = await import("@/lib/achievements");
+      await trackAchievementProgress("feature_usage", "pdf_export");
+    } catch (error) {
+      console.error("Failed to track achievement:", error);
+    }
   },
   
   pdfExportFail: (dealId: string, error: string) => {
@@ -66,8 +82,16 @@ export const analytics = {
     posthog.capture('deal_viewed', { deal_id: dealId, score });
   },
   
-  dealSaved: (dealId: string) => {
+  dealSaved: async (dealId: string) => {
     posthog.capture('deal_saved', { deal_id: dealId });
+    
+    // Track achievement
+    try {
+      const { trackAchievementProgress } = await import("@/lib/achievements");
+      await trackAchievementProgress("feature_usage", "deal_saved");
+    } catch (error) {
+      console.error("Failed to track achievement:", error);
+    }
   },
   
   // Summary generation

@@ -267,11 +267,19 @@ export function getCompletedTutorials(): string[] {
   }
 }
 
-export function markTutorialComplete(tutorialId: string): void {
+export async function markTutorialComplete(tutorialId: string): Promise<void> {
   const completed = getCompletedTutorials();
   if (!completed.includes(tutorialId)) {
     completed.push(tutorialId);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+    
+    // Track achievement progress
+    try {
+      const { trackAchievementProgress } = await import("@/lib/achievements");
+      await trackAchievementProgress("tutorial_complete", tutorialId);
+    } catch (error) {
+      console.error("Failed to track tutorial achievement:", error);
+    }
   }
 }
 

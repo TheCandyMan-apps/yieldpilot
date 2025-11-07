@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Building2, Menu, User, Settings, CreditCard, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Building2, Menu, User, Settings, CreditCard, LogOut, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getUserAchievements } from "@/lib/achievements";
 import { RegionSelector } from "@/components/RegionSelector";
 import { HealthStatus } from "@/components/HealthStatus";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -22,6 +24,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [achievementCount, setAchievementCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,6 +40,14 @@ const Header = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      getUserAchievements().then(achievements => {
+        setAchievementCount(achievements.length);
+      });
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -83,6 +94,22 @@ const Header = () => {
           <GlobalSearch />
           <NotificationCenter />
           <HealthStatus />
+          
+          {/* Achievements Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/achievements")}
+            className="gap-2 relative"
+          >
+            <Trophy className="h-4 w-4" />
+            {achievementCount > 0 && (
+              <Badge variant="secondary" className="px-1.5 py-0 text-xs h-5 min-w-5">
+                {achievementCount}
+              </Badge>
+            )}
+          </Button>
+          
           <ThemeToggle />
           <RegionSelector />
           

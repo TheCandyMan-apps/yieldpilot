@@ -3472,6 +3472,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          progress: number | null
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: number | null
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: number | null
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activity: {
         Row: {
           action: string | null
